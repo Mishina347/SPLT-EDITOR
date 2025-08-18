@@ -16,3 +16,10 @@ export { useFullscreen } from './useFullscreen'
 export { useToolbarOverflow } from './useToolbarOverflow'
 
 export type { PinchZoomState } from './usePinchZoom'
+
+export { usePreviewNavigation } from './usePreviewNavigation'
+export { usePreviewInteraction } from './usePreviewInteraction'
+export { useDiffDisplay, useRightPaneDiff, useHistoryDiff } from './useDiffDisplay'
+export { useMonacoEditor } from './useMonacoEditor'
+export { useOptimizedCharCount } from './useOptimizedCharCount'
+export { usePerformanceMonitor, useRenderPerformanceMonitor } from './usePerformanceMonitor'

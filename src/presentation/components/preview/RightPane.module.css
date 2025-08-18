@@ -29,14 +29,6 @@
 	z-index: 1; /* 長押しエリアより下に配置 */
 }
 
-/* ドラッグ可能モード用のスタイル（簡素化） */
-
-.draggableTabContent {
-	flex: 1;
-	min-height: 0;
-	overflow: hidden;
-}
-
 /* ページ番号バーのスタイル */
 .pageNumberBar {
 	display: flex;

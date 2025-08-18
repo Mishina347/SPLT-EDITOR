@@ -83,13 +83,6 @@
 	}
 }
 
-/* 高さを固定してレイアウトシフトを防ぐ */
-.toolbarContainer {
-	min-height: 100px;
-	overflow: hidden;
-	position: relative;
-}
-
 /* ハンバーガーメニューのコンテナスタイル */
 .hamburgerContainer {
 	margin-left: 1.5rem;

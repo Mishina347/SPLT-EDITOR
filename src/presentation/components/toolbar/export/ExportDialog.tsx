@@ -1,5 +1,5 @@
 import React from 'react'
-import { Dialog } from '../../../shared/Dialog'
+import { Dialog } from '../../../shared/Dialog/Dialog'
 import { TxtExportButton } from './TxtExportButton'
 import { DocxExportButton } from './DocxExportButton'
 import { LayoutConfig } from '../../../../domain/preview/pdf/TextContent'

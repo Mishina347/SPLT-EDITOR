@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { EditorSettings } from '../../../domain'
 
 import styles from './EditorComponent.module.css'
-import buttonStyles from '../../shared/Button.module.css'
+import buttonStyles from '../../shared/Button/Button.module.css'
 
 type Props = {
 	textData: string

@@ -1,6 +1,6 @@
 import React from 'react'
 import { loadTextFile, LoadedFile } from '../../../../usecases/file/loadTextFile'
-import buttonStyles from '../../../shared/Button.module.css'
+import buttonStyles from '../../../shared/Button/Button.module.css'
 import styles from './FileLoadButton.module.css'
 
 interface FileLoadButtonProps {

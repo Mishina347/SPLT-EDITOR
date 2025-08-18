@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { TextSnapshot } from '../../../../domain/entities/TextHistory'
 import styles from './TextHistoryTimeline.module.css'
+import { formatTimestamp } from '../../../../utils'
 
 interface TextHistoryTimelineProps {
 	snapshots: TextSnapshot[]
@@ -13,21 +14,16 @@ export const TextHistoryTimeline: React.FC<TextHistoryTimelineProps> = ({
 	selectedSnapshotId,
 	onSnapshotSelect,
 }) => {
-	const formatTimestamp = (date: Date): string => {
-		return date.toLocaleString('ja-JP', {
-			month: '2-digit',
-			day: '2-digit',
-			hour: '2-digit',
-			minute: '2-digit',
-		})
-	}
-
-	const formatDescription = (snapshot: TextSnapshot): string => {
-		if (snapshot.description) {
-			return snapshot.description
-		}
-		return `保存 (${snapshot.content.length}文字)`
-	}
+	const formatDescription = useMemo(
+		() =>
+			(snapshot: TextSnapshot): string => {
+				if (snapshot.description) {
+					return snapshot.description
+				}
+				return `保存 (${snapshot.content.length}文字)`
+			},
+		[]
+	)
 
 	return (
 		<div className={styles.timelineContainer}>

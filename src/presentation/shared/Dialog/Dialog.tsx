@@ -1,7 +1,7 @@
 import React, { ReactNode, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import styles from './Dialog.module.css'
-import { Z_INDEX_DIALOG } from './zIndex'
+import { Z_INDEX_DIALOG } from '../constants/zIndex'
 
 interface DialogProps {
 	isOpen: boolean

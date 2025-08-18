@@ -4,6 +4,7 @@ import 'diff2html/bundles/css/diff2html.min.css'
 import { TextSnapshot } from '../../../../domain'
 import { Diff2HtmlAdapter } from '../../../../infra'
 import styles from './HistoryDiffViewer.module.css'
+import { formatTimestamp } from '../../../../utils'
 
 interface HistoryDiffViewerProps {
 	oldSnapshot: TextSnapshot
@@ -55,16 +56,6 @@ export const HistoryDiffViewer: React.FC<HistoryDiffViewerProps> = ({
 			}, 100)
 		}
 	}, [diffHtml])
-
-	const formatTimestamp = (date: Date): string => {
-		return date.toLocaleString('ja-JP', {
-			year: 'numeric',
-			month: '2-digit',
-			day: '2-digit',
-			hour: '2-digit',
-			minute: '2-digit',
-		})
-	}
 
 	return (
 		<div className={styles.diffViewerContainer}>

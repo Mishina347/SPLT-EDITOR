@@ -8,7 +8,7 @@ import { useFocusTrap } from '../../hooks'
 import { TabPanel, TabItem } from '../'
 import { Preview, TextHistoryTimeline, HistoryDetailDialog } from './'
 import styles from './RightPane.module.css'
-import buttonStyles from '../../shared/Button.module.css'
+import buttonStyles from '../../shared/Button/Button.module.css'
 
 interface PreviewPaneProps {
 	currentSavedText: string // Editorからリアルタイム取得

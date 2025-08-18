@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Dialog } from '../../shared/Dialog'
+import { Dialog } from '../../shared/Dialog/Dialog'
 import styles from './ThemeEditDialog.module.css'
-import buttonStyles from '../../shared/Button.module.css'
+import buttonStyles from '../../shared/Button/Button.module.css'
 import { hexToRgba, COLOR_CONSTANTS } from '../../../utils'
 
 interface ThemeEditDialogProps {

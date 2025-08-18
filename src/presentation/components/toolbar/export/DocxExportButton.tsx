@@ -8,7 +8,7 @@ import {
 import { DocxExporter } from '../../../../infra'
 import { ExportManuscriptAsDocx } from '../../../../usecases'
 import { ExportManuscriptController } from '../../../../adapters'
-import buttonStyles from '../../../shared/Button.module.css'
+import buttonStyles from '../../../shared/Button/Button.module.css'
 
 interface DocxExportButtonProps {
 	currentSavedText: string

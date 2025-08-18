@@ -37,19 +37,23 @@
 	font-weight: 500;
 	white-space: nowrap;
 	position: relative;
-	transition: all 0.2s ease;
+	transition: all 0.15s ease;
 	color: var(--app-text-color, #666);
 	min-width: 0;
 	flex-shrink: 0;
 }
 
-.tab:hover:not(.disabled) {
+.tab:hover:not(.disabled):not(.active) {
 	background-color: rgba(0, 0, 0, 0.05);
 	color: var(--app-text-color, #333);
 }
 
+.tab.active:hover {
+	background-color: rgba(0, 0, 0, 0.02);
+}
+
 .tab:focus {
-	outline: 2px solid var(--app-text-color, #007acc);
+	outline: 2px solid var(--active-tab-border-color, var(--app-text-color, #007acc));
 	outline-offset: -2px;
 	z-index: 1;
 }
@@ -66,7 +70,7 @@
 	left: 0;
 	right: 0;
 	height: 3px;
-	background-color: var(--app-text-color, #007acc);
+	background-color: var(--active-tab-border-color, var(--app-text-color, #007acc));
 	border-radius: 3px 3px 0 0;
 }
 
@@ -77,6 +81,8 @@
 	right: 0;
 	width: 3px;
 	height: auto;
+	background-color: var(--active-tab-border-color, var(--app-text-color, #007acc));
+
 	border-radius: 0 3px 3px 0;
 }
 
@@ -113,6 +119,7 @@
 
 .tab:active:not(.disabled) {
 	transform: translateY(1px);
+	background-color: rgba(0, 0, 0, 0.1);
 }
 
 /* レスポンシブ対応 */

@@ -1,7 +1,7 @@
 export const PREVIEW_CONSTANTS = {
 	CHARS_PER_LINE: {
 		MIN: 10,
-		MAX: 100,
+		MAX: 40,
 		DEFAULT: 40,
 		STEP: 1,
 	},
@@ -9,7 +9,7 @@ export const PREVIEW_CONSTANTS = {
 	// 1ページあたりの行数制限
 	LINES_PER_PAGE: {
 		MIN: 5,
-		MAX: 50,
+		MAX: 100,
 		DEFAULT: 20,
 		STEP: 1,
 	},

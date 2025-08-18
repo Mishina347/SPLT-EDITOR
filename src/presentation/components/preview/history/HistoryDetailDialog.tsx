@@ -68,6 +68,26 @@ export const HistoryDetailDialog: React.FC<HistoryDetailDialogProps> = ({
 		onClose()
 	}
 
+	// 履歴詳細ダイアログ専用のタブスタイル
+	const customTabStyles = {
+		tabList: {
+			background: '#fff',
+		},
+		tab: {
+			color: '#000',
+			background: '#fff',
+		},
+		activeTab: {
+			color: '#000',
+			background: '#fff',
+			fontWeight: 600,
+		},
+		tabPanel: {
+			background: '#fff',
+		},
+		activeTabBorderColor: '#000',
+	}
+
 	return (
 		<Dialog
 			isOpen={isOpen}
@@ -84,6 +104,7 @@ export const HistoryDetailDialog: React.FC<HistoryDetailDialogProps> = ({
 						activeTabId={viewMode}
 						onTabChange={handleTabChange}
 						className={styles.tabContainer}
+						customTabStyles={customTabStyles}
 					>
 						{viewMode === 'content' && (
 							<HistoryContentViewer snapshot={selectedSnapshot} onRestore={onRestore || (() => {})} />

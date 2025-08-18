@@ -1,0 +1,157 @@
+/* スワイプヒント */
+.swipeHint {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: rgba(0, 0, 0, 0.9);
+	color: white;
+	padding: 20px;
+	border-radius: 12px;
+	z-index: 1000;
+	max-width: 280px;
+	text-align: center;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+	animation: fadeInOut 3s ease-in-out;
+}
+
+.hintContent p {
+	margin: 0 0 16px 0;
+	font-size: 1.1rem;
+	font-weight: bold;
+}
+
+.hintItem {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 8px;
+	padding: 4px 0;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hintItem:last-child {
+	border-bottom: none;
+	margin-bottom: 0;
+}
+
+.hintItem span:first-child {
+	font-weight: 500;
+	color: #ffd700;
+}
+
+.hintItem span:last-child {
+	color: #e0e0e0;
+}
+
+/* 状態インジケーター */
+.statusIndicator {
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	display: flex;
+	gap: 8px;
+	z-index: 999;
+}
+
+.toolbarStatus,
+.previewStatus {
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 10px;
+	font-weight: bold;
+	background: rgba(0, 0, 0, 0.3);
+	color: rgba(255, 255, 255, 0.6);
+	border: 2px solid rgba(255, 255, 255, 0.2);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	transform-origin: center;
+}
+
+.toolbarStatus.active,
+.previewStatus.active {
+	background: rgba(34, 197, 94, 0.8);
+	color: white;
+	border-color: rgba(34, 197, 94, 0.8);
+	transform: scale(1.1);
+	animation: pulse 0.6s ease-in-out;
+}
+
+/* パルスアニメーション */
+@keyframes pulse {
+	0% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.8);
+	}
+	50% {
+		transform: scale(1.1);
+		box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.2);
+	}
+	100% {
+		transform: scale(1.1);
+		box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+	}
+}
+
+/* アニメーション */
+@keyframes fadeInOut {
+	0% {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.8);
+	}
+	10% {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
+	90% {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
+	100% {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.8);
+	}
+}
+
+/* タブレット用調整 */
+@media (min-width: 768px) and (max-width: 1024px) {
+	.swipeHint {
+		max-width: 320px;
+		padding: 24px;
+	}
+
+	.statusIndicator {
+		bottom: 30px;
+		right: 30px;
+	}
+
+	.toolbarStatus,
+	.previewStatus {
+		width: 40px;
+		height: 40px;
+		font-size: 11px;
+	}
+}
+
+/* 小さな画面用調整 */
+@media (max-width: 480px) {
+	.swipeHint {
+		max-width: 260px;
+		padding: 16px;
+		font-size: 0.9rem;
+	}
+
+	.statusIndicator {
+		bottom: 15px;
+		right: 15px;
+	}
+
+	.toolbarStatus,
+	.previewStatus {
+		width: 32px;
+		height: 32px;
+		font-size: 9px;
+	}
+}

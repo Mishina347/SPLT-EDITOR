@@ -1,0 +1,179 @@
+.resizeHandle {
+	position: absolute;
+	background: var(--app-text-color, #333);
+	opacity: 0;
+	transition: opacity 0.2s ease;
+	z-index: 10;
+}
+
+.resizeHandle:hover,
+.resizeHandle:focus {
+	opacity: 0.6;
+	background: var(--app-text-color, #333);
+}
+
+.resizeHandle:active {
+	opacity: 0.8;
+}
+
+/* 辺のハンドル */
+.top,
+.bottom {
+	left: 0;
+	right: 0;
+	height: 4px;
+}
+
+.left,
+.right {
+	top: 0;
+	bottom: 0;
+	width: 4px;
+}
+
+.top {
+	top: -2px;
+}
+
+.bottom {
+	bottom: -2px;
+}
+
+.left {
+	left: -2px;
+}
+
+.right {
+	right: -2px;
+}
+
+/* 角のハンドル */
+.topLeft,
+.topRight,
+.bottomLeft,
+.bottomRight {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+}
+
+.topLeft {
+	top: -4px;
+	left: -4px;
+}
+
+.topRight {
+	top: -4px;
+	right: -4px;
+}
+
+.bottomLeft {
+	bottom: -4px;
+	left: -4px;
+}
+
+.bottomRight {
+	bottom: -4px;
+	right: -4px;
+}
+
+/* フォーカス時のスタイル */
+.resizeHandle:focus {
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* ホバー時の親要素への適用 */
+.resizeHandle:hover {
+	background: rgba(59, 130, 246, 0.8);
+}
+
+/* アクセシビリティ */
+@media (prefers-reduced-motion: reduce) {
+	.resizeHandle {
+		transition: none;
+	}
+}
+
+/* ハイコントラストモード */
+@media (prefers-contrast: high) {
+	.resizeHandle {
+		background: ButtonText;
+		border: 1px solid ButtonText;
+	}
+}
+
+/* タッチデバイス用の大きなハンドル */
+@media (pointer: coarse) {
+	.top,
+	.bottom {
+		height: 8px;
+	}
+
+	.left,
+	.right {
+		width: 8px;
+	}
+
+	.topLeft,
+	.topRight,
+	.bottomLeft,
+	.bottomRight {
+		width: 12px;
+		height: 12px;
+	}
+
+	.top {
+		top: -4px;
+	}
+
+	.bottom {
+		bottom: -4px;
+	}
+
+	.left {
+		left: -4px;
+	}
+
+	.right {
+		right: -4px;
+	}
+
+	.topLeft {
+		top: -6px;
+		left: -6px;
+	}
+
+	.topRight {
+		top: -6px;
+		right: -6px;
+	}
+
+	.bottomLeft {
+		bottom: -6px;
+		left: -6px;
+	}
+
+	.bottomRight {
+		bottom: -6px;
+		right: -6px;
+	}
+
+	/* タッチフィードバック */
+	.resizeHandle:active {
+		background-color: rgba(59, 130, 246, 0.8) !important;
+		transform: scale(1.2);
+		transition: all 0.1s ease;
+		opacity: 1 !important;
+	}
+
+	/* タッチ時の表示改善 */
+	.resizeHandle {
+		opacity: 0.3;
+	}
+
+	.resizeHandle:hover,
+	.resizeHandle:focus {
+		opacity: 0.8;
+	}
+}

@@ -1,0 +1,150 @@
+/* ツールバーのアニメーション関連スタイル */
+.toolbar {
+	position: relative;
+	display: flex;
+	top: 0;
+	left: 0;
+	z-index: 100;
+	width: 100%;
+	align-content: center;
+	align-items: center;
+	height: 100px;
+	overflow: hidden; /* オーバーフロー要素を隠す */
+	transition:
+		transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+		opacity 0.3s ease,
+		box-shadow 0.3s ease,
+		height 0.2s ease 0.4s,
+		visibility 0s linear 0.4s;
+}
+
+/* 表示状態 */
+.toolbar.visible {
+	transform: translateY(0);
+	opacity: 1;
+	pointer-events: auto;
+	transition-delay: 0s, 0s, 0s, 0s, 0s;
+}
+
+/* 非表示状態 */
+.toolbar.hidden {
+	transform: translateY(-110%);
+	opacity: 0;
+	pointer-events: none;
+	box-shadow: none;
+	border-bottom: none;
+}
+
+/* テーマカラー対応 */
+.toolbar.visible {
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* アニメーション完了後の完全非表示状態 */
+.toolbar.collapsed {
+	visibility: hidden !important;
+	height: 0 !important;
+	overflow: auto;
+	margin: 0;
+	padding: 0;
+	min-height: 0;
+}
+
+/* アニメーション用のイージング関数 */
+.toolbar.smooth-enter {
+	animation: toolbarSlideIn 0.1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.toolbar.smooth-exit {
+	animation: toolbarSlideOut 0.1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* キーフレームアニメーション */
+@keyframes toolbarSlideIn {
+	from {
+		transform: translateY(-90%);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+@keyframes toolbarSlideOut {
+	from {
+		transform: translateY(0);
+		opacity: 1;
+	}
+	to {
+		transform: translateY(-90%);
+		opacity: 0;
+	}
+}
+
+/* 高さを固定してレイアウトシフトを防ぐ */
+.toolbarContainer {
+	min-height: 100px;
+	overflow: hidden;
+	position: relative;
+}
+
+/* ハンバーガーメニューのコンテナスタイル */
+.hamburgerContainer {
+	margin-left: 1.5rem;
+	margin-right: 0.8rem;
+	flex-shrink: 0; /* ハンバーガーメニューは常に表示 */
+}
+
+/* ツールバーコンテンツのコンテナ */
+.toolbarContent {
+	display: flex;
+	align-items: center;
+	flex: 1;
+	overflow: hidden; /* コンテンツがはみ出ないように */
+	gap: 0.5rem;
+}
+
+/* ツールバーアイテム */
+.toolbarItem {
+	flex-shrink: 1; /* 必要に応じて縮小 */
+	min-width: 0; /* フレックスアイテムの最小幅を0に */
+	transition: opacity 0.2s ease;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+	.toolbar {
+		height: 80px;
+	}
+
+	.toolbarContainer {
+		height: 80px;
+	}
+
+	.hamburgerContainer {
+		margin-left: 1rem;
+		margin-right: 0.5rem;
+	}
+}
+
+/* アクセシビリティ：motion-reduced対応 */
+@media (prefers-reduced-motion: reduce) {
+	.toolbar {
+		transition: opacity 0.2s ease;
+	}
+
+	.toolbar.visible {
+		transform: none;
+	}
+
+	.toolbar.hidden {
+		transform: none;
+	}
+
+	.toolbar.smooth-enter,
+	.toolbar.smooth-exit {
+		animation: none;
+	}
+}

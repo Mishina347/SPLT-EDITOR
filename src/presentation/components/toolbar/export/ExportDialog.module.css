@@ -1,0 +1,54 @@
+/* 書き出しダイアログ用のスタイル */
+.exportOptions {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.exportOption {
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	padding: 1.25rem;
+	background: #fafafa;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease;
+}
+
+.exportOption:hover {
+	background: #f5f5f5;
+	border-color: #d0d0d0;
+}
+
+.exportTitle {
+	margin: 0 0 0.5rem 0;
+	font-size: 1rem;
+	font-weight: 600;
+	color: #333;
+}
+
+.exportDescription {
+	margin: 0 0 1rem 0;
+	font-size: 0.875rem;
+	color: #666;
+	line-height: 1.4;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+	.exportOptions {
+		gap: 1rem;
+	}
+
+	.exportOption {
+		padding: 1rem;
+	}
+
+	.exportTitle {
+		font-size: 0.9rem;
+	}
+
+	.exportDescription {
+		font-size: 0.8rem;
+	}
+}

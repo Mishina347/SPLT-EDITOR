@@ -1,0 +1,67 @@
+.diffViewerContainer {
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	background: #fff;
+	margin: 1rem 0;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.diffHeader {
+	background-color: #f8f9fa;
+	padding: 1rem;
+	border-bottom: 1px solid #e0e0e0;
+}
+
+.diffInfo {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.snapshotInfo {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.875rem;
+}
+
+.label {
+	font-weight: 600;
+	color: #333;
+}
+
+.oldSnapshot {
+	color: #d32f2f;
+	font-weight: 500;
+}
+
+.arrow {
+	color: #666;
+	font-weight: bold;
+}
+
+.newSnapshot {
+	color: #388e3c;
+	font-weight: 500;
+}
+
+.diffContent {
+	padding: 1rem;
+	flex: 1;
+	overflow: auto;
+	min-height: 0;
+	color: #000;
+}
+
+/* diff2htmlのスタイルをカスタマイズ */
+.diff-container {
+	font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	overflow: hidden;
+	max-width: 100%;
+	width: 100%;
+}

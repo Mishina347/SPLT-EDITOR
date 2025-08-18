@@ -1,0 +1,189 @@
+.fullPane {
+	flex: 1;
+	height: 100%;
+	margin: 1rem;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+/* アニメーション用のコンテナ */
+.animatedContainer {
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	overflow: hidden;
+}
+
+/* ツールバーのアニメーション */
+.toolbarContainer {
+	overflow: hidden;
+}
+
+.toolbarContainer.hidden {
+	pointer-events: none;
+}
+
+.toolbarContainer.visible {
+	pointer-events: auto;
+}
+
+/* コンテンツエリアのアニメーション */
+.contentArea {
+	flex: 1;
+	display: flex;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	overflow: hidden;
+}
+
+/* エディタパネルのアニメーション */
+.editorPanel {
+	flex: 1;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	overflow: hidden;
+}
+
+.editorPanel.hidden {
+	flex: 0;
+	width: 0;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.editorPanel.visible {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+/* プレビューパネルのアニメーション */
+.previewPanel {
+	flex: 1;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	overflow: hidden;
+}
+
+.previewPanel.hidden {
+	flex: 0;
+	width: 0;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.previewPanel.visible {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+/* 最大化モードのアニメーション */
+.maximizedMode {
+	animation: slideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* スライドイン・アウトアニメーション */
+@keyframes slideIn {
+	from {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@keyframes slideOut {
+	from {
+		opacity: 1;
+		transform: scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+}
+
+/* フェードイン・アウト */
+.fadeIn {
+	animation: fadeIn 0.3s ease-in-out;
+}
+
+.fadeOut {
+	animation: fadeOut 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes fadeOut {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
+/* ツールバー切替ボタンのアニメーション */
+.toolbarToggle {
+	padding: 4px;
+	background-color: var(--app-bg-color, #ffffff);
+	color: var(--app-text-color, #000000);
+	z-index: 1000;
+	border: none;
+	transition: all 0.2s ease;
+	transform-origin: center;
+}
+
+.toolbarToggle:hover {
+	cursor: row-resize;
+	transform: scale(1.1);
+	transform: translateY(-2px);
+}
+
+/* レイアウト切替ボタン */
+.layoutToggle {
+	position: fixed;
+	top: 10px;
+	right: 10px;
+	z-index: 1000;
+	padding: 8px 12px;
+	background: var(--app-bg-color, #ffffff);
+	border: 1px solid var(--app-text-color, #d1d5db);
+	border-radius: 6px;
+	cursor: pointer;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	transition: all 0.2s ease;
+	font-size: 1rem;
+	color: var(--app-text-color, #000000); /* テキスト色をアプリのテキストカラーと統一 */
+}
+
+.layoutToggle:hover {
+	background: var(--app-bg-color-alpha, rgba(59, 130, 246, 0.1));
+	border-color: #3b82f6;
+	color: var(--app-text-color, #000000); /* ホバー時もアプリのテキストカラーを維持 */
+	transform: scale(1.05);
+}
+
+.layoutToggle:focus {
+	outline: none;
+	color: var(--app-text-color, #000000); /* フォーカス時もアプリのテキストカラーを維持 */
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* ドラッグ可能エリア */
+.draggableArea {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
+	background: var(--app-bg-color, #f8fafc);
+	overflow: hidden;
+	z-index: 1;
+}

@@ -1,0 +1,141 @@
+/* 共通ダイアログのスタイル */
+.dialogOverlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.35);
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	overflow: hidden;
+}
+
+.dialogContent {
+	background: white;
+	border-radius: 12px;
+	width: 90vw;
+	height: 90vh;
+	max-width: 1200px;
+	max-height: 800px;
+	display: flex;
+	flex-direction: column;
+	overflow: auto;
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+	z-index: 10000;
+	position: relative;
+}
+
+/* コンテナ制約時のスタイル */
+.dialogContent.constrained {
+	width: 85%;
+	height: 85%;
+	max-width: 800px;
+	max-height: 600px;
+}
+
+/* モバイル端末向けの調整 */
+@media (max-width: 768px) {
+	.dialogContent {
+		width: 95vw;
+		height: 85vh;
+		max-width: 95vw;
+		max-height: 85vh;
+		margin: 10px;
+	}
+
+	.dialogContent.constrained {
+		width: 90vw;
+		height: 80vh;
+		max-width: 90vw;
+		max-height: 80vh;
+	}
+}
+
+/* 小さな画面での調整 */
+@media (max-width: 480px) {
+	.dialogContent {
+		width: 98vw;
+		height: 90vh;
+		max-width: 98vw;
+		max-height: 90vh;
+		margin: 5px;
+		border-radius: 8px;
+	}
+
+	.dialogContent.constrained {
+		width: 95vw;
+		height: 85vh;
+		max-width: 95vw;
+		max-height: 85vh;
+	}
+}
+
+.dialogHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 16px 24px;
+	border-bottom: 1px solid #eee;
+	flex-shrink: 0;
+}
+
+.dialogHeader h3 {
+	margin: 0;
+	font-size: 18px;
+	color: #333;
+}
+
+.dialogCloseButton {
+	background: none;
+	border: none;
+	font-size: 24px;
+	cursor: pointer;
+	color: #666;
+	padding: 4px 8px;
+	border-radius: 4px;
+	transition: background-color 0.2s ease;
+}
+
+.dialogCloseButton:hover {
+	background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dialogBody {
+	flex: 1;
+	padding: 24px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+/* 書き出しオプション用のスタイル */
+.exportOptions {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.exportOption {
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	padding: 1.25rem;
+	background: #fafafa;
+}
+
+.exportOption h4 {
+	margin: 0 0 0.5rem 0;
+	font-size: 1rem;
+	font-weight: 600;
+	color: #333;
+}
+
+.exportOption p {
+	margin: 0 0 1rem 0;
+	font-size: 0.875rem;
+	color: #666;
+	line-height: 1.4;
+}

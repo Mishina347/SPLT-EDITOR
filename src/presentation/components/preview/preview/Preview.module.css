@@ -1,0 +1,227 @@
+.previewContainer {
+	position: relative;
+	display: flex;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	padding: 4px; /* 上下余白 */
+	background: transparent;
+	box-sizing: border-box; /* パディングとボーダーを幅・高さに含める */
+	max-width: 100%;
+	max-height: 100%;
+	min-width: 0; /* Flexboxの最小幅制限を解除 */
+	min-height: 0; /* Flexboxの最小高さ制限を解除 */
+	margin-top: 1rem; /* 上部に余白を追加して位置を下げる */
+}
+
+/* 最大化状態のスタイル */
+.previewContainer.maximized {
+	position: relative;
+	width: 90vw;
+	height: 90vh;
+	max-width: 90vw;
+	max-height: 90vh;
+	margin: auto;
+	box-sizing: border-box;
+}
+
+/* スワイプ中のスタイル */
+.previewContainer.swipping {
+	cursor: grabbing;
+	user-select: none;
+	transition: none;
+}
+
+.previewContainer.swipping .pageBase {
+	pointer-events: none;
+}
+
+.pageBase {
+	position: relative;
+	width: 100%;
+	padding: 2rem;
+	background: transparent;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	box-sizing: border-box; /* パディングとボーダーを幅・高さに含める */
+	writing-mode: vertical-rl; /* 縦書き */
+	text-orientation: upright; /* 縦中横も保持 */
+	overflow: auto; /* 内容がはみ出した場合のスクロール */
+	touch-action: manipulation; /* モバイルでのタッチイベントを有効化 */
+	cursor: pointer; /* クリック可能であることを示す */
+}
+
+.verticalLine {
+	writing-mode: vertical-rl; /* 縦書き */
+	text-orientation: upright; /* 縦中横も保持 */
+	line-break: strict; /* 禁則処理強め */
+	overflow-wrap: keep-all; /* 長い単語の改行を許可 */
+	word-break: keep-all; /* 単語単位で改行 */
+	display: block;
+	min-height: 1.5em; /* 空行でも最小高さを確保 */
+	margin-bottom: 0.5em; /* 行間の余白 */
+}
+
+.verticalChar {
+	font-family: 'Noto Serif JP', serif;
+	font-feature-settings: 'fwid';
+	text-spacing-trim: both; /* 両端の余白を詰める（対応ブラウザのみ） */
+	hanging-punctuation: allow-end;
+	display: inline-block;
+	margin: 0.1em 0; /* 文字間の縦の余白 */
+}
+
+.emptyLine {
+	display: inline-block;
+	width: 1em;
+	height: 1.5em;
+	opacity: 0.3; /* 空行を少し薄く表示 */
+}
+
+.lines {
+	padding: 0;
+	margin: 0;
+	list-style-type: none;
+	display: block;
+	writing-mode: vertical-rl; /* 縦書き */
+	text-orientation: upright; /* 縦中横も保持 */
+}
+
+.pageNumber {
+	z-index: 10;
+	position: absolute;
+	padding: 0.5rem 1rem;
+	top: 0px; /* previewContainerの外側の上に配置（margin-topを考慮） */
+	left: 50%;
+	transform: translateX(-50%); /* 中央揃え */
+	font-size: 14px;
+	font-weight: bold;
+	color: var(--app-text-color);
+	background: var(--app-bg-color);
+	/* 背景を少し透明に */
+	opacity: 0.9;
+	border-radius: 4px;
+	box-shadow: 0 2px 4px var(--app-text-color, rgba(0, 0, 0, 0.2));
+	color: var(--app-text-color);
+}
+
+.clickZoneRight {
+	border: none;
+	color: var(--app-text-color);
+	min-width: 44px;
+	background-color: transparent;
+	cursor: pointer;
+}
+
+.clickZoneLeft {
+	border: none;
+	color: var(--app-text-color);
+	min-width: 44px;
+	background-color: transparent;
+	cursor: pointer;
+}
+
+/* ページめくりエフェクト - 左側 */
+.pageTurnLeft {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 40px;
+	height: 60px; /* 下部のみに限定 */
+	background: linear-gradient(-90deg, var(--app-bg-color) 0%, transparent 100%);
+	opacity: 0;
+	transition: opacity 0.3s ease;
+	pointer-events: none;
+	z-index: 5;
+}
+
+.pageTurnLeft::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(225deg, transparent 0%, rgba(0, 0, 0, 0.08) 50%, transparent 100%);
+	transform: skewX(-15deg);
+	transform-origin: bottom left;
+	transition: transform 0.3s ease;
+}
+
+.pageTurnLeft.visible {
+	opacity: 1;
+}
+
+.pageTurnLeft.visible::before {
+	transform: skewX(-15deg) translateX(10px);
+}
+
+/* ページめくりエフェクト - 右側 */
+.pageTurnRight {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	width: 40px;
+	height: 60px; /* 下部のみに限定 */
+	background: linear-gradient(90deg, var(--app-bg-color) 0%, transparent 100%);
+	opacity: 0;
+	transition: opacity 0.3s ease;
+	pointer-events: none;
+	z-index: 5;
+}
+
+.pageTurnRight::before {
+	content: '';
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(135deg, transparent 0%, rgba(0, 0, 0, 0.08) 50%, transparent 100%);
+	transform: skewX(15deg);
+	transform-origin: bottom right;
+	transition: transform 0.3s ease;
+}
+
+.pageTurnRight.visible {
+	opacity: 1;
+}
+
+.pageTurnRight.visible::before {
+	transform: skewX(15deg) translateX(-10px);
+}
+
+.clickZoneLeft {
+	min-width: 44px;
+	background-color: transparent;
+	cursor: pointer;
+}
+
+.notVisible {
+	min-width: 44px;
+	visibility: hidden;
+}
+
+.clickZoneLeft:hover,
+.clickZoneRight:hover {
+	background-color: rgba(0, 0, 0, 0.05); /* デバッグ時に視覚化 */
+}
+
+/* モバイル向けタッチ対応 */
+@media (pointer: coarse) {
+	.pageBase {
+		touch-action: manipulation;
+		-webkit-tap-highlight-color: transparent;
+		min-height: 44px; /* タッチターゲットサイズ確保 */
+	}
+
+	.pageBase:active {
+		background-color: rgba(0, 0, 0, 0.05);
+		transition: background-color 0.1s ease;
+	}
+
+	/* スワイプ中はタッチフィードバックを無効化 */
+	.previewContainer.swipping .pageBase:active {
+		background-color: transparent;
+	}
+}

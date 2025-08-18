@@ -1,0 +1,305 @@
+.draggableContainer {
+	background: var(--app-bg-color, #ffffff);
+	border: 1px solid var(--app-text-color, #e5e7eb);
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	overflow: hidden;
+	transition: box-shadow 0.2s ease;
+	user-select: none;
+}
+
+.draggableContainer:hover {
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.draggableContainer:focus {
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.dragHandle {
+	background: var(--app-bg-color, #f8fafc);
+	border-bottom: 1px solid var(--app-text-color, #e5e7eb);
+	padding: 8px 12px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 32px;
+	cursor: grab;
+	user-select: none;
+	transition: background-color 0.2s ease;
+}
+
+.dragHandle:hover {
+	background: var(--app-bg-color-alpha, rgba(59, 130, 246, 0.1));
+}
+
+.dragHandle:active {
+	cursor: grabbing;
+	background: var(--app-bg-color-alpha, rgba(59, 130, 246, 0.2));
+}
+
+.dragHandle:focus {
+	outline: none;
+	background: var(--app-bg-color-alpha, rgba(59, 130, 246, 0.1));
+	box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.title {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--app-text-color, #374151);
+	margin-right: 8px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	flex: 1;
+}
+
+.dragIcon {
+	font-size: 0.75rem;
+	color: var(--app-text-color, #9ca3af);
+	letter-spacing: -1px;
+	line-height: 1;
+	cursor: grab;
+	padding: 4px;
+	border-radius: 4px;
+	transition: background-color 0.2s ease;
+}
+
+.dragIcon:hover {
+	background-color: rgba(0, 0, 0, 0.1);
+}
+
+.customHeaderContainer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	gap: 8px;
+}
+
+.customHeaderContainer .dragIcon {
+	flex-shrink: 0;
+}
+
+/* 分割ヘッダー用のスタイル */
+.splitHeaderContainer {
+	display: flex;
+	width: 100%;
+	height: 100%;
+	min-height: 42px; /* タブパネルと同じ高さを確保 */
+}
+
+.tabArea {
+	flex: 1;
+	display: flex;
+	max-width: 400px;
+	align-items: center;
+	min-width: 0; /* flexアイテムの縮小を許可 */
+	overflow: hidden;
+}
+
+.dragArea {
+	flex-shrink: 0;
+	/* ドラッグエリアの幅を拡大 */
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-left: 1px solid var(--app-border-color, rgba(0, 0, 0, 0.1));
+	transition: background-color 0.2s ease;
+	cursor: grab;
+	background: var(--app-header-bg, rgba(0, 0, 0, 0.02));
+}
+
+.dragArea:hover {
+	background-color: var(--app-hover-bg, rgba(0, 0, 0, 0.08));
+}
+
+.dragArea:active {
+	cursor: grabbing;
+	background-color: var(--app-active-bg, rgba(0, 0, 0, 0.12));
+}
+
+.dragArea .dragIcon {
+	margin: 0;
+	padding: 8px;
+	border-radius: 4px;
+	transition: all 0.2s ease;
+}
+
+.content {
+	height: calc(100% - 42px); /* ドラッグハンドルの高さを除く */
+	overflow: auto;
+	position: relative;
+}
+
+/* ドラッグハンドルがない場合 */
+.draggableContainer:not(:has(.dragHandle)) .content {
+	height: 100%;
+}
+
+/* スクリーンリーダー専用テキスト */
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ドラッグ中のスタイル */
+.draggableContainer[data-dragging='true'] {
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+	transform: scale(1.02);
+	opacity: 0.9;
+}
+
+/* リサイズ中のスタイル */
+.draggableContainer[data-resizing='true'] {
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* ピンチ中のスタイル */
+.draggableContainer[data-pinching='true'] {
+	box-shadow: 0 12px 40px rgba(59, 130, 246, 0.4);
+	border-color: #8b5cf6;
+	transform-origin: center center !important;
+}
+
+/* 最大化モード用のスタイル */
+.draggableContainer.maximized {
+	border: 2px solid var(--app-text-color, #3b82f6);
+	box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
+}
+
+.draggableContainer.maximized .dragHandle {
+	background: linear-gradient(90deg, var(--app-bg-color, #f8fafc) 0%, rgba(59, 130, 246, 0.1) 100%);
+	border-bottom: 2px solid var(--app-text-color, #3b82f6);
+}
+
+.draggableContainer.maximized .title {
+	color: var(--app-text-color, #1e40af);
+	font-weight: 700;
+}
+
+/* 内部要素にフォーカスが当たっている時のスタイル */
+.draggableContainer.contentFocused {
+	border-color: rgba(229, 231, 235, 0.3);
+	transition:
+		border-color 0.3s ease,
+		box-shadow 0.3s ease;
+}
+
+.draggableContainer.contentFocused .dragHandle {
+	opacity: 0.3;
+	background: rgba(var(--app-bg-color-rgb, 248, 250, 252), 0.3);
+	border-bottom-color: rgba(229, 231, 235, 0.3);
+	transition:
+		opacity 0.3s ease,
+		background 0.3s ease,
+		border-bottom-color 0.3s ease;
+}
+
+.draggableContainer.contentFocused .title {
+	opacity: 0.3;
+	transition: opacity 0.3s ease;
+}
+
+.draggableContainer.contentFocused .dragIcon {
+	opacity: 0.3;
+	transition: opacity 0.3s ease;
+}
+
+.draggableContainer.contentFocused .dragArea {
+	opacity: 0.3;
+	transition: opacity 0.3s ease;
+}
+
+/* 内部フォーカス時でもホバー時は少し不透明度を上げる */
+.draggableContainer.contentFocused .dragHandle:hover {
+	opacity: 0.6;
+}
+
+.draggableContainer.contentFocused .dragHandle:hover .title,
+.draggableContainer.contentFocused .dragHandle:hover .dragIcon {
+	opacity: 0.6;
+}
+
+.draggableContainer.contentFocused .dragArea:hover {
+	opacity: 0.6;
+}
+
+/* アニメーション */
+.draggableContainer {
+	transition:
+		box-shadow 0.2s ease,
+		transform 0.1s ease,
+		opacity 0.1s ease;
+}
+
+/* ハイコントラストモード */
+@media (prefers-contrast: high) {
+	.draggableContainer {
+		border: 2px solid ButtonText;
+	}
+
+	.dragHandle {
+		border-bottom: 2px solid ButtonText;
+	}
+}
+
+/* モーション設定を無効にする場合 */
+@media (prefers-reduced-motion: reduce) {
+	.draggableContainer {
+		transition: none;
+	}
+}
+
+/* タッチデバイス用の調整 */
+@media (pointer: coarse) {
+	.dragHandle {
+		min-height: 44px;
+		padding: 12px 16px;
+	}
+
+	.title {
+		font-size: 1rem;
+	}
+
+	.dragIcon {
+		font-size: 1rem;
+	}
+
+	/* タッチフィードバック */
+	.draggableContainer:active {
+		transform: scale(0.98);
+		transition: transform 0.1s ease;
+	}
+
+	/* ピンチ操作のヒント表示 */
+	.draggableContainer::before {
+		content: '📌 ピンチで拡大/縮小';
+		position: absolute;
+		top: 4px;
+		right: 4px;
+		background: rgba(0, 0, 0, 0.7);
+		color: white;
+		padding: 2px 6px;
+		border-radius: 4px;
+		font-size: 0.75rem;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.3s ease;
+		z-index: 1000;
+	}
+
+	.draggableContainer:hover::before,
+	.draggableContainer:focus::before {
+		opacity: 1;
+	}
+}

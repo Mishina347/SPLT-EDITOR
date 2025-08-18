@@ -1,0 +1,220 @@
+/* テーマ編集ダイアログのスタイル */
+.themeEditContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	height: 100%;
+	overflow-y: auto;
+	padding: 4px; /* 軽微なpadding追加でスクロールバーとの間隔を確保 */
+}
+
+/* プレビューセクション */
+.previewSection {
+	margin-bottom: 16px;
+	flex-shrink: 0; /* セクションの高さを固定 */
+}
+
+.previewSection h4 {
+	margin: 0 0 12px 0;
+	font-size: 1.1rem;
+	font-weight: 600;
+	color: #333;
+}
+
+.previewArea {
+	border: 2px solid #e0e0e0;
+	border-radius: 8px;
+	padding: 16px;
+	min-height: 80px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+	transition: all 0.3s ease;
+}
+
+.previewArea p {
+	margin: 0 0 8px 0;
+	font-size: 1rem;
+	line-height: 1.5;
+}
+
+/* カラーピッカーセクション */
+.colorPickerSection {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	flex-shrink: 0; /* セクションの高さを固定 */
+}
+
+.colorOption {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.colorOption label {
+	font-weight: 600;
+	font-size: 0.95rem;
+	color: #333;
+}
+
+.colorInputGroup {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+}
+
+.colorInput {
+	width: 60px;
+	height: 40px;
+	border: 2px solid #ddd;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: border-color 0.2s ease;
+	/* モバイル向けの改善 */
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.colorInput:hover {
+	border-color: #007acc;
+}
+
+.colorInput:focus {
+	outline: none;
+	border-color: #007acc;
+	box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+.colorTextInput {
+	flex: 1;
+	padding: 8px 12px;
+	border: 2px solid #ddd;
+	border-radius: 6px;
+	font-size: 0.9rem;
+	font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+	transition: border-color 0.2s ease;
+	/* モバイル向けの改善 */
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.colorTextInput:focus {
+	outline: none;
+	border-color: #007acc;
+	box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+/* プリセットセクション */
+.presetSection {
+	margin-bottom: 16px;
+	flex: 1; /* このセクションで残りのスペースを活用 */
+	min-height: 0; /* flexの最小高さ制限を解除 */
+}
+
+.presetSection h4 {
+	margin: 0 0 16px 0;
+	font-size: 1.1rem;
+	font-weight: 600;
+	color: #333;
+}
+
+.presetColors {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: 12px;
+	overflow-y: auto; /* グリッドアイテムが多い場合のスクロール対応 */
+	max-height: 200px; /* プリセットカラーエリアの最大高さ制限 */
+}
+
+.colorPresetButton {
+	padding: 12px 16px;
+	border: 2px solid #ddd;
+	border-radius: 8px;
+	cursor: pointer;
+	font-size: 0.85rem;
+	font-weight: 500;
+	text-align: center;
+	transition: all 0.2s ease;
+	min-height: 48px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.colorPresetButton:hover {
+	transform: translateY(-2px);
+	transform: scale(1.1);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+	border-color: #007acc;
+}
+
+.colorPresetButton:focus {
+	outline: none;
+	border-color: #007acc;
+	box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.3);
+}
+
+/* アクションボタン */
+.themeActionButtons {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 16px;
+	padding-top: 12px;
+	border-top: 1px solid #e0e0e0;
+	margin-top: auto;
+	flex-shrink: 0; /* ボタンエリアの高さを固定 */
+}
+
+.themeMainActions {
+	display: flex;
+	gap: 12px;
+}
+
+/* モバイル向けのタッチ操作改善 */
+.themeActionButtons button {
+	touch-action: manipulation; /* タッチ操作を最適化 */
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0); /* タップハイライトを無効化 */
+	min-height: 48px; /* モバイルでのタッチターゲットサイズ */
+	min-width: 48px;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+	.themeEditContainer {
+		gap: 8px; /* モバイルでは間隔を狭く */
+	}
+
+	.previewSection,
+	.presetSection {
+		margin-bottom: 12px; /* マージンを調整 */
+	}
+
+	.themeActionButtons {
+		flex-direction: column;
+		gap: 12px;
+		padding-top: 8px;
+	}
+
+	.themeMainActions {
+		width: 100%;
+		justify-content: space-between;
+	}
+
+	.themeMainActions button {
+		flex: 1;
+		min-height: 52px; /* モバイルではより大きく */
+	}
+
+	.presetColors {
+		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+		max-height: 150px; /* モバイルでは更に高さを制限 */
+	}
+
+	.colorPresetButton {
+		min-height: 52px; /* モバイルでのタッチターゲットサイズ */
+	}
+}

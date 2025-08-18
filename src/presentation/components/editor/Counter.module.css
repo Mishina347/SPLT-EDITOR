@@ -1,0 +1,133 @@
+/* フィールドグループ（ラベル + カウンター表示）のコンテナ */
+.fieldGroup {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	min-height: 80px;
+	max-width: 200px;
+}
+
+.label {
+	font-size: 0.8rem;
+	font-weight: 500;
+	max-height: 24px;
+	display: flex;
+	align-items: center;
+	white-space: nowrap;
+	cursor: pointer;
+	color: var(--app-text-color);
+}
+
+.counterDisplay {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	justify-content: center;
+	flex-wrap: wrap;
+	min-height: 64px;
+	min-width: 120px;
+	padding: 4px 8px;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	background: var(--app-bg-color);
+	border: 1px solid #e5e7eb;
+	transition: all 0.2s ease;
+}
+
+.characterCount {
+	font-size: 1rem;
+	font-weight: 500;
+	color: var(--app-text-color);
+	white-space: nowrap;
+}
+
+.lineCount {
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: var(--app-text-color);
+	opacity: 0.8;
+	white-space: nowrap;
+}
+
+.wordCount {
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: var(--app-text-color);
+	opacity: 0.8;
+	white-space: nowrap;
+}
+
+.counterDisplay:hover .lineCount,
+.counterDisplay:hover .wordCount {
+	opacity: 1;
+}
+
+/* フォーカス状態 */
+.fieldGroup:focus-within .counterDisplay {
+	transform: translateY(-1px);
+}
+
+.fieldGroup:focus-within .label {
+	color: var(--app-text-color);
+	font-weight: 600;
+}
+
+/* モバイル向けのレスポンシブ対応 */
+@media (max-width: 768px) {
+	.fieldGroup {
+		min-height: 72px;
+		max-width: 180px;
+	}
+
+	.counterDisplay {
+		gap: 6px;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.characterCount {
+		font-size: 1rem;
+	}
+
+	.lineCount,
+	.wordCount {
+		font-size: 0.8rem;
+	}
+}
+
+/* 小画面での調整 */
+@media (max-width: 480px) {
+	.fieldGroup {
+		min-height: 60px;
+		max-width: 150px;
+	}
+
+	.counterDisplay {
+		gap: 4px;
+	}
+
+	.characterCount {
+		font-size: 0.9rem;
+	}
+
+	.lineCount,
+	.wordCount {
+		font-size: 0.75rem;
+	}
+}
+
+/* アクセシビリティ：motion-reduced対応 */
+@media (prefers-reduced-motion: reduce) {
+	.counterDisplay {
+		transition: none;
+	}
+
+	.counterDisplay:hover .characterCount {
+		transform: none;
+	}
+
+	.fieldGroup:focus-within .counterDisplay {
+		transform: none;
+	}
+}

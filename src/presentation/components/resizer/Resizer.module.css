@@ -1,0 +1,348 @@
+/* スクリーンリーダー専用テキスト */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* リサイザーのベーススタイル */
+.resizer {
+	width: 8px;
+	background: transparent;
+	cursor: col-resize;
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.2s ease;
+	user-select: none;
+	touch-action: none;
+	z-index: 10;
+	outline: none;
+	background: rgba(0, 0, 0, 0.1);
+}
+
+/* 拡張されたタッチエリア（44px幅で44pxの最小タッチターゲットを確保） */
+.touchArea {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 44px;
+	height: 100%;
+	background: transparent;
+	cursor: col-resize;
+	z-index: 11; /* リサイザー本体より上に配置 */
+}
+
+.resizer:focus {
+	background: rgba(0, 122, 204, 0.1);
+	outline: 2px solid var(--app-text-color, #007acc);
+	outline-offset: 2px;
+}
+
+.resizer:focus-visible {
+	background: rgba(0, 122, 204, 0.15);
+	outline: 3px solid var(--app-text-color, #007acc);
+	outline-offset: 3px;
+}
+
+/* ハンドル */
+.handle {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 60px;
+	width: 100%;
+}
+
+/* グリップ（3本線） */
+.grip {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	opacity: 0.3;
+	transition: opacity 0.2s ease;
+}
+
+.resizer:hover .grip,
+.resizer:focus .grip {
+	opacity: 0.7;
+}
+
+.grip span {
+	width: 2px;
+	height: 24px;
+	background: var(--app-text-color, #666);
+	border-radius: 1px;
+	transition: all 0.2s ease;
+}
+
+/* キーボードモード */
+.resizer.keyboardMode {
+	background: rgba(0, 122, 204, 0.2);
+	cursor: default;
+	width: 12px;
+}
+
+.resizer.keyboardMode .grip {
+	opacity: 1;
+}
+
+.resizer.keyboardMode .grip span {
+	background: #007acc;
+	animation: keyboardPulse 1.5s ease-in-out infinite;
+	width: 3px;
+	height: 14px;
+}
+
+/* 長押し状態 */
+.resizer.longPressing {
+	background: rgba(34, 197, 94, 0.2);
+	cursor: grabbing;
+}
+
+.resizer.longPressing .grip {
+	opacity: 1;
+}
+
+.resizer.longPressing .grip span {
+	background: #22c55e;
+	animation: longPressPulse 1s ease-in-out infinite;
+}
+
+/* ドラッグ状態 */
+.resizer.dragging {
+	background: rgba(34, 197, 94, 0.3);
+	cursor: grabbing;
+}
+
+.resizer.dragging .grip span {
+	background: #22c55e;
+	transform: scaleX(1.5);
+}
+
+/* 状態コンテナ */
+.statusContainer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+/* ヒント表示 */
+.hint {
+	position: absolute;
+	top: -45px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: rgba(0, 0, 0, 0.9);
+	color: white;
+	padding: 6px 10px;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	white-space: nowrap;
+	pointer-events: none;
+	animation: fadeInScale 0.3s ease-out;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.hint::after {
+	content: '';
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	border: 5px solid transparent;
+	border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+/* キーボードインジケーター */
+.keyboardIndicator {
+	position: absolute;
+	top: -80px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: rgba(0, 122, 204, 0.95);
+	color: white;
+	padding: 8px 12px;
+	border-radius: 8px;
+	font-size: 0.7rem;
+	white-space: nowrap;
+	pointer-events: none;
+	animation: slideDown 0.3s ease-out;
+	box-shadow: 0 4px 12px rgba(0, 122, 204, 0.3);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.keyboardIndicator::after {
+	content: '';
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	border: 6px solid transparent;
+	border-top-color: rgba(0, 122, 204, 0.95);
+}
+
+.sizeDisplay {
+	font-size: 0.9rem;
+	font-weight: bold;
+	text-align: center;
+	margin-bottom: 4px;
+}
+
+.keyboardHints {
+	display: flex;
+	gap: 8px;
+	justify-content: center;
+	font-size: 0.6rem;
+	opacity: 0.9;
+}
+
+.keyboardHints span {
+	background: rgba(255, 255, 255, 0.2);
+	padding: 2px 4px;
+	border-radius: 3px;
+}
+
+/* アニメーション */
+@keyframes keyboardPulse {
+	0%,
+	100% {
+		transform: scaleY(1);
+		opacity: 1;
+	}
+	50% {
+		transform: scaleY(1.3);
+		opacity: 0.8;
+	}
+}
+
+@keyframes longPressPulse {
+	0%,
+	100% {
+		transform: scaleY(1);
+	}
+	50% {
+		transform: scaleY(1.2);
+	}
+}
+
+@keyframes fadeInScale {
+	from {
+		opacity: 0;
+		transform: translateX(-50%) scale(0.8) translateY(5px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(-50%) scale(1) translateY(0);
+	}
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateX(-50%) translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(-50%) translateY(0);
+	}
+}
+
+/* ハイコントラストモード対応 */
+@media (prefers-contrast: high) {
+	.resizer:focus {
+		outline: 3px solid;
+		outline-color: Highlight;
+	}
+
+	.grip span {
+		background: ButtonText;
+	}
+
+	.resizer.keyboardMode .grip span {
+		background: Highlight;
+	}
+
+	.hint,
+	.keyboardIndicator {
+		background: ButtonFace;
+		color: ButtonText;
+		border: 2px solid ButtonText;
+	}
+}
+
+/* 動作軽減モード対応 */
+@media (prefers-reduced-motion: reduce) {
+	.resizer,
+	.grip,
+	.grip span,
+	.hint,
+	.keyboardIndicator {
+		transition: none;
+		animation: none;
+	}
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+	.resizer {
+		width: 12px;
+	}
+
+	.resizer.keyboardMode {
+		width: 16px;
+	}
+
+	.handle {
+		height: 80px;
+	}
+
+	.grip span {
+		width: 3px;
+		height: 16px;
+	}
+
+	.hint {
+		font-size: 0.7rem;
+		padding: 8px 12px;
+		top: -50px;
+	}
+
+	.keyboardIndicator {
+		font-size: 0.75rem;
+		padding: 10px 14px;
+		top: -90px;
+	}
+}
+
+/* タブレット対応 */
+@media (min-width: 768px) and (max-width: 1024px) {
+	.resizer {
+		width: 10px;
+	}
+
+	.resizer.keyboardMode {
+		width: 14px;
+	}
+
+	.handle {
+		height: 70px;
+	}
+
+	.grip span {
+		width: 2.5px;
+		height: 14px;
+	}
+}

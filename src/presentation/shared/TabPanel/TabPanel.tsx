@@ -16,6 +16,13 @@ interface TabPanelProps {
 	className?: string
 	orientation?: 'horizontal' | 'vertical'
 	isTransparent?: boolean
+	customTabStyles?: {
+		tabList?: React.CSSProperties
+		tab?: React.CSSProperties
+		activeTab?: React.CSSProperties
+		tabPanel?: React.CSSProperties
+		activeTabBorderColor?: string
+	}
 }
 
 export const TabPanel: React.FC<TabPanelProps> = ({
@@ -26,6 +33,7 @@ export const TabPanel: React.FC<TabPanelProps> = ({
 	className = '',
 	orientation = 'horizontal',
 	isTransparent = false,
+	customTabStyles,
 }) => {
 	const tabListRef = useRef<HTMLDivElement>(null)
 	const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
@@ -101,6 +109,7 @@ export const TabPanel: React.FC<TabPanelProps> = ({
 				className={`${styles.tabList} ${styles[orientation]} ${isTransparent ? styles.transparentTabList : ''}`}
 				role="tablist"
 				aria-orientation={orientation}
+				style={customTabStyles?.tabList}
 			>
 				{tabs.map(tab => (
 					<button
@@ -117,6 +126,15 @@ export const TabPanel: React.FC<TabPanelProps> = ({
 						disabled={tab.disabled}
 						onClick={() => !tab.disabled && onTabChange(tab.id)}
 						onKeyDown={event => handleKeyDown(event, tab.id)}
+						style={{
+							...customTabStyles?.tab,
+							...(activeTabId === tab.id ? customTabStyles?.activeTab : {}),
+							...(customTabStyles?.activeTabBorderColor
+								? {
+										'--active-tab-border-color': customTabStyles.activeTabBorderColor,
+									}
+								: {}),
+						}}
 					>
 						{tab.label}
 					</button>
@@ -129,6 +147,7 @@ export const TabPanel: React.FC<TabPanelProps> = ({
 				role="tabpanel"
 				id={`tabpanel-${activeTabId}`}
 				aria-labelledby={`tab-${activeTabId}`}
+				style={customTabStyles?.tabPanel}
 			>
 				{children}
 			</div>

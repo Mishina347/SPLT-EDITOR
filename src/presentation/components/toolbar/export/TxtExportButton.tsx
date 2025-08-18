@@ -1,6 +1,6 @@
 import { ExportTxtUseCase } from '../../../../application/preview/usePagination'
 import { TxtWriter } from '../../../../infra/plainText/TxtWriter'
-import buttonStyles from '../../../shared/Button.module.css'
+import buttonStyles from '../../../shared/Button/Button.module.css'
 
 type Props = {
 	text: string

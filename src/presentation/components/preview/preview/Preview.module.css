@@ -14,17 +14,6 @@
 	margin-top: 1rem; /* 上部に余白を追加して位置を下げる */
 }
 
-/* 最大化状態のスタイル */
-.previewContainer.maximized {
-	position: relative;
-	width: 90vw;
-	height: 90vh;
-	max-width: 90vw;
-	max-height: 90vh;
-	margin: auto;
-	box-sizing: border-box;
-}
-
 /* スワイプ中のスタイル */
 .previewContainer.swipping {
 	cursor: grabbing;

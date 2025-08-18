@@ -10,8 +10,8 @@ export const LAYOUT_CONSTANTS = {
 			HEIGHT: 150,
 		},
 		MAX_SIZE: {
-			WIDTH: 1200,
-			HEIGHT: 1000,
+			WIDTH: 1600,
+			HEIGHT: 1200,
 		},
 		DEFAULT_SIZE: {
 			WIDTH: 400,

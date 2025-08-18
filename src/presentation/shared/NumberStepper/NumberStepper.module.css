@@ -1,0 +1,143 @@
+/* NumberStepper共通コンポーネントのスタイル */
+.fieldGroup {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	min-height: 80px;
+	max-width: 200px;
+	padding: 4px;
+	background: var(--app-bg-color, #f9f9f9);
+	color: var(--app-text-color, #333);
+	border-radius: 12px;
+	transition: all 0.2s ease;
+	touch-action: manipulation;
+	user-select: none;
+}
+
+.fieldGroup:focus-within {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.fieldGroup:focus-within .label {
+	color: var(--app-text-color, #007acc);
+	font-weight: 600;
+}
+
+.label {
+	font-size: 0.8rem;
+	font-weight: 500;
+	max-height: 24px;
+	display: flex;
+	align-items: center;
+	white-space: nowrap;
+	cursor: pointer;
+	color: var(--app-text-color, #666);
+	transition: all 0.2s ease;
+	margin: 0;
+}
+
+.inputGroup {
+	display: flex;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	border: 1px solid #e5e7eb;
+	align-items: center;
+	min-height: 64px;
+	min-width: 80px;
+	padding: 2px;
+	border-radius: 8px;
+	overflow: hidden;
+	background: var(--app-bg-color);
+	transition: all 0.2s ease;
+}
+
+.input {
+	width: 60px;
+	text-align: center;
+	padding: 4px;
+	font-size: 0.9rem;
+	font-weight: 500;
+	border: none;
+	color: var(--app-text-color, #333);
+	background: var(--app-bg-color, #fff);
+	transition: all 0.2s ease;
+}
+
+.input:focus {
+	color: var(--app-text-color, #333);
+	background: var(--app-bg-color, #fff);
+	border: none;
+	border-bottom: 1px solid var(--app-text-color, #333);
+}
+
+.input:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+	background: var(--app-bg-color, #f5f5f5);
+}
+
+/* Chrome、Safari、Edge、Operaの数値入力スピンボタンを非表示 */
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+/* Firefoxの数値入力スピンボタンを非表示 */
+.input[type='number'] {
+	appearance: textfield;
+	-moz-appearance: textfield;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+	.fieldGroup {
+		min-height: 70px;
+		max-width: 180px;
+		padding: 12px;
+		gap: 6px;
+	}
+
+	.label {
+		font-size: 0.75rem;
+	}
+
+	.input {
+		width: 50px;
+		padding: 4px 2px;
+		font-size: 0.85rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.fieldGroup {
+		min-height: 60px;
+		max-width: 160px;
+		padding: 10px;
+		gap: 4px;
+	}
+
+	.label {
+		font-size: 0.7rem;
+	}
+
+	.input {
+		width: 45px;
+		padding: 3px 2px;
+		font-size: 0.8rem;
+	}
+}
+
+/* アニメーション無効設定対応 */
+@media (prefers-reduced-motion: reduce) {
+	.fieldGroup,
+	.label,
+	.input {
+		transition: none;
+	}
+
+	.fieldGroup:focus-within {
+		transform: none;
+	}
+}

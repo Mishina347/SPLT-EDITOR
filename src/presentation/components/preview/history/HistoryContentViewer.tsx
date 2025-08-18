@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { TextSnapshot } from '../../../../domain/entities/TextHistory'
 import styles from './HistoryContentViewer.module.css'
-import buttonStyles from '../../../shared/Button.module.css'
+import buttonStyles from '../../../shared/Button/Button.module.css'
 
 interface HistoryContentViewerProps {
 	snapshot: TextSnapshot

@@ -71,18 +71,6 @@
 	background-color: rgba(0, 0, 0, 0.1);
 }
 
-.customHeaderContainer {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	width: 100%;
-	gap: 8px;
-}
-
-.customHeaderContainer .dragIcon {
-	flex-shrink: 0;
-}
-
 /* 分割ヘッダー用のスタイル */
 .splitHeaderContainer {
 	display: flex;

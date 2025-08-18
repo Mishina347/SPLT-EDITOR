@@ -11,3 +11,8 @@ export { wordCounter } from './wordCounter'
 export { hexToRgba } from './hexToRgba'
 export { COLOR_CONSTANTS } from '../presentation/constants/ColorConstants'
 export { UI_CONSTANTS } from '../presentation/constants/UIConstants'
+
+export * from './dateFormatter'
+export * from './textValidator'
+export * from './testHelpers'
+export * from './performanceOptimizer'

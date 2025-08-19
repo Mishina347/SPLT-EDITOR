@@ -1,5 +1,6 @@
 export { useCharCount } from './useCharCount'
 export { useTextHistory } from './useTextHistory'
+export { useAutoSave } from './useAutoSave'
 export { useSwipeGesture } from './useSwipeGesture'
 export { useResizable } from './useResizable'
 export { useFocusTrap } from './useFocusTrap'
@@ -23,3 +24,4 @@ export { useDiffDisplay, useRightPaneDiff, useHistoryDiff } from './useDiffDispl
 export { useMonacoEditor } from './useMonacoEditor'
 export { useOptimizedCharCount } from './useOptimizedCharCount'
 export { usePerformanceMonitor, useRenderPerformanceMonitor } from './usePerformanceMonitor'
+export { useDebounce, useDebouncedCallback, useThrottledCallback } from './useDebounce'

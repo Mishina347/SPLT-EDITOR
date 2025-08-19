@@ -1,8 +1,8 @@
 import React from 'react'
-import { EditorComponent } from '../editor/EditorComponent'
 import { RightPane } from '../preview/RightPane'
 import { LayoutContainer } from './LayoutContainer'
 import { EditorSettings, LayoutConfig, TextSnapshot } from '../../../domain'
+import { EditorComponent } from '..'
 interface CommonProps {
 	// エディター関連
 	editorSettings: EditorSettings

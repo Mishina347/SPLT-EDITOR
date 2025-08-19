@@ -11,6 +11,7 @@ import {
 import {
 	useCharCount,
 	useTextHistory,
+	useAutoSave,
 	useSwipeGesture,
 	useResizable,
 	useDraggableLayout,
@@ -109,6 +110,24 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings: Settings }
 	const { currentNotSavedText, charCount, updateText } = useCharCount()
 	const { history, saveSnapshot, getLatestSnapshot, getPreviousSnapshot } = useTextHistory(20)
 
+	// Auto save機能
+	const handleAutoSave = useCallback(
+		(content: string) => {
+			setLastSavedText(content)
+			setCurrentSavedText(content)
+			// 自動保存時にスナップショットを追加
+			saveSnapshot(content, `自動保存 - ${new Date().toLocaleString('ja-JP')}`)
+		},
+		[saveSnapshot]
+	)
+
+	const { forceSave } = useAutoSave(currentNotSavedText, {
+		enabled: editorSettings.autoSave.enabled,
+		delay: editorSettings.autoSave.delay,
+		fileName: 'document.json',
+		onSave: handleAutoSave,
+	})
+
 	// 履歴復元機能
 	const handleRestoreHistory = useCallback(
 		(snapshot: TextSnapshot) => {
@@ -175,23 +194,21 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings: Settings }
 		onChangeToolbarDisplayMode(focusedPane)
 	}, [focusedPane])
 
-	//保存機能
+	//手動保存機能（Cmd+S / Ctrl+S）
 	useEffect(() => {
 		const handleKeyDown = async (e: KeyboardEvent) => {
 			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
 				e.preventDefault()
-				await saveText('document.json', currentNotSavedText)
-				setLastSavedText(currentSavedText)
-				setCurrentSavedText(currentNotSavedText)
-
-				// 変更履歴にスナップショットを追加
-				saveSnapshot(currentNotSavedText, `保存 - ${new Date().toLocaleString('ja-JP')}`)
+				// forceSaveを使用してauto saveタイマーをリセット＆即座に保存
+				await forceSave()
+				// 手動保存時のスナップショットを追加
+				saveSnapshot(currentNotSavedText, `手動保存 - ${new Date().toLocaleString('ja-JP')}`)
 			}
 		}
 		window.addEventListener('keydown', handleKeyDown)
 
 		return () => window.removeEventListener('keydown', handleKeyDown)
-	}, [currentSavedText, currentNotSavedText, saveSnapshot])
+	}, [currentNotSavedText, saveSnapshot, forceSave])
 
 	const onChangeText = useCallback(
 		(v: string) => {

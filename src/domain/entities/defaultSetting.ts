@@ -18,6 +18,12 @@ export const DEFAULT_SETTING: Settings = {
 		wordWrapColumn: 60,
 		backgroundColor: '#ffffff',
 		textColor: '#000000',
+		fontFamily:
+			'"UD デジタル 教科書体 N-R", "Hiragino Sans", "Yu Gothic UI", "Meiryo UI", sans-serif',
+		autoSave: {
+			enabled: true,
+			delay: 3000, // 3秒後に自動保存
+		},
 	},
 	preview: {
 		charsPerLine: 20,

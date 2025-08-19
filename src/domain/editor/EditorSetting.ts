@@ -26,4 +26,8 @@ export interface EditorSettings {
 	backgroundColor: string
 	textColor: string
 	fontFamily: FontFamily
+	autoSave: {
+		enabled: boolean
+		delay: number // 自動保存までの遅延時間（ミリ秒）
+	}
 }

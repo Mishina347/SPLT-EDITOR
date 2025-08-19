@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 import { EditorSettings, DISPLAY_MODE, EDITOR_CONSTANTS, FontFamily } from '../../../../domain'
 import styles from './editorSettingsPanel.module.css'
-import { Counter } from '../../editor/Counter'
+import { Counter } from './Counter'
 import { NumberStepper, FontSelector } from '../../'
 
 type Props = {
@@ -33,6 +33,26 @@ export const EditorSettingsPanel = React.memo<Props>(
 		const handleFontFamilyChange = useCallback(
 			(fontFamily: FontFamily) => {
 				onChange({ ...settings, fontFamily })
+			},
+			[settings, onChange]
+		)
+
+		const handleAutoSaveEnabledChange = useCallback(
+			(enabled: boolean) => {
+				onChange({
+					...settings,
+					autoSave: { ...settings.autoSave, enabled },
+				})
+			},
+			[settings, onChange]
+		)
+
+		const handleAutoSaveDelayChange = useCallback(
+			(delay: number) => {
+				onChange({
+					...settings,
+					autoSave: { ...settings.autoSave, delay },
+				})
 			},
 			[settings, onChange]
 		)
@@ -80,6 +100,37 @@ export const EditorSettingsPanel = React.memo<Props>(
 					decrementLabel="一行あたりの文字数を減らす"
 					incrementLabel="文字数を増やす"
 				/>
+
+				{/* Auto Save設定 
+				<div className={styles.autoSaveSection}>
+					<label className={styles.checkboxLabel}>
+						<input
+							type="checkbox"
+							checked={settings.autoSave.enabled}
+							onChange={e => handleAutoSaveEnabledChange(e.target.checked)}
+							onFocus={handleFocus}
+							className={styles.checkbox}
+						/>
+						自動保存を有効にする
+					</label>
+
+					{settings.autoSave.enabled && (
+						<NumberStepper
+							label="自動保存間隔（分）"
+							value={settings.autoSave.delay}
+							onChange={minute => handleAutoSaveDelayChange(minute * 1000)}
+							onFocus={handleFocus}
+							min={1}
+							max={60}
+							step={1}
+							ariaDescribedBy="autosave-delay-help"
+							decrementLabel="自動保存間隔を短くする"
+							incrementLabel="自動保存間隔を長くする"
+						/>
+					)}
+				</div>
+				*/}
+
 				<Counter text={text} />
 			</div>
 		)

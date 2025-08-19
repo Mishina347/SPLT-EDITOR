@@ -11,8 +11,8 @@ import styles from './RightPane.module.css'
 import buttonStyles from '../../shared/Button/Button.module.css'
 
 interface PreviewPaneProps {
-	currentSavedText: string // Editorからリアルタイム取得
-	lastSavedText: string // 保存時のテキスト
+	currentNotSavedText: string // 現在編集中のテキスト（リアルタイム）
+	lastSavedText: string // 最後に保存されたテキスト
 	previewSetting: LayoutConfig
 	textHistory: TextSnapshot[]
 	isMaximized: boolean
@@ -25,7 +25,7 @@ interface PreviewPaneProps {
 }
 
 export const RightPane: React.FC<PreviewPaneProps> = ({
-	currentSavedText,
+	currentNotSavedText,
 	lastSavedText,
 	previewSetting,
 	textHistory,
@@ -69,24 +69,58 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	// DIFFモードが選択された時のみ差分を計算
 	useEffect(() => {
 		if (mode === PreviewMode.DIFF) {
-			const unifiedDiff = diffService.generateUnifiedDiff(
-				'previous',
-				'current',
-				lastSavedText,
-				currentSavedText
-			)
-			const diffJson = diffParse(unifiedDiff)
-			const diffHtmlResult = diff2html(diffJson, {
-				drawFileList: false,
-				matching: 'lines',
-				outputFormat: 'line-by-line',
-			})
-			setDiffHtml(diffHtmlResult)
+			try {
+				// 同じ内容の場合は差分なしのメッセージを表示
+				if (lastSavedText === currentNotSavedText) {
+					setDiffHtml('<div class="no-diff">変更はありません</div>')
+					return
+				}
+
+				const unifiedDiff = diffService.generateUnifiedDiff(
+					'保存済み',
+					'編集中',
+					lastSavedText,
+					currentNotSavedText
+				)
+
+				// unified diffが生成されているかチェック
+				if (!unifiedDiff || unifiedDiff.trim() === '') {
+					setDiffHtml('<div class="no-diff">差分を検出できませんでした</div>')
+					return
+				}
+
+				const diffJson = diffParse(unifiedDiff)
+
+				// diffJsonが正常に解析されているかチェック
+				if (!diffJson || diffJson.length === 0) {
+					setDiffHtml('<div class="no-diff">差分の解析に失敗しました</div>')
+					return
+				}
+
+				const diffHtmlResult = diff2html(diffJson, {
+					drawFileList: false,
+					matching: 'lines',
+					outputFormat: 'line-by-line',
+				})
+
+				// HTMLが生成されているかチェック
+				if (!diffHtmlResult || diffHtmlResult.trim() === '') {
+					setDiffHtml('<div class="no-diff">差分HTMLの生成に失敗しました</div>')
+					return
+				}
+
+				setDiffHtml(diffHtmlResult)
+			} catch (error) {
+				console.error('Error generating diff:', error)
+				setDiffHtml(
+					'<div class="error-message">差分の生成に失敗しました。詳細はコンソールを確認してください。</div>'
+				)
+			}
 		} else {
 			// DIFFモードでない場合は空文字を設定
 			setDiffHtml('')
 		}
-	}, [mode, diffService, lastSavedText, currentSavedText])
+	}, [mode, diffService, lastSavedText, currentNotSavedText])
 
 	const charsPerLine = useMemo(() => {
 		return previewSetting.charsPerLine
@@ -157,7 +191,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		} else {
 			return (
 				<Preview
-					text={currentSavedText}
+					text={currentNotSavedText}
 					isMaximized={isMaximized}
 					config={{ charsPerLine, linesPerPage }}
 					onFocusMode={handleFocusMode}
@@ -171,7 +205,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		diffHtml,
 		textHistory,
 		selectedSnapshotId,
-		currentSavedText,
+		currentNotSavedText,
 		isMaximized,
 		charsPerLine,
 		linesPerPage,
@@ -234,8 +268,11 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 
 			{/* ページ番号表示（プレビューモード時のみ） */}
 			{mode === PreviewMode.VERTICAL && currentPageInfo.totalPages > 1 && (
-				<div className={styles.pageNumberBar}>
-					<span className={styles.pageNumber}>
+				<div className={styles.pageNumberBar} role="status" aria-live="polite">
+					<span
+						className={styles.pageNumber}
+						aria-label={`現在のページ: ${currentPageInfo.currentPage}、全ページ数: ${currentPageInfo.totalPages}`}
+					>
 						{currentPageInfo.currentPage} / {currentPageInfo.totalPages} ページ
 					</span>
 				</div>

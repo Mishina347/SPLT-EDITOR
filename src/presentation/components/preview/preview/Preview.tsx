@@ -122,6 +122,77 @@ export function Preview({ text, config, isMaximized, onFocusMode, onPageInfoChan
 		VERTICAL_THRESHOLD,
 	])
 
+	// キーボードイベントハンドラー
+	const handleKeyDown = useCallback(
+		(e: React.KeyboardEvent) => {
+			// プレビューエリアにフォーカスがある時のみ処理
+			if (e.currentTarget !== e.target) return
+
+			let handled = false
+
+			switch (e.key) {
+				case 'ArrowLeft':
+				case 'ArrowUp':
+					// 左矢印・上矢印 → 次のページ（縦書きレイアウトでは左が次）
+					if (notLastPage) {
+						goNext()
+						handled = true
+					}
+					break
+				case 'ArrowRight':
+				case 'ArrowDown':
+					// 右矢印・下矢印 → 前のページ（縦書きレイアウトでは右が前）
+					if (notInitPage) {
+						goPrev()
+						handled = true
+					}
+					break
+				case 'Home':
+					// Homeキー → 最初のページ
+					if (pageIndex !== 0) {
+						setPageIndex(0)
+						handled = true
+					}
+					break
+				case 'End':
+					// Endキー → 最後のページ
+					if (pageIndex !== pages.length - 1) {
+						setPageIndex(pages.length - 1)
+						handled = true
+					}
+					break
+				case 'PageUp':
+					// PageUpキー → 前のページ（複数ページ戻る）
+					if (notInitPage) {
+						setPageIndex(Math.max(0, pageIndex - 5))
+						handled = true
+					}
+					break
+				case 'PageDown':
+					// PageDownキー → 次のページ（複数ページ進む）
+					if (notLastPage) {
+						setPageIndex(Math.min(pages.length - 1, pageIndex + 5))
+						handled = true
+					}
+					break
+				case 'Escape':
+					// Escapeキー → フォーカスモード解除
+					if (isFocusMode) {
+						setIsFocusMode(false)
+						onFocusMode?.(false)
+						handled = true
+					}
+					break
+			}
+
+			if (handled) {
+				e.preventDefault()
+				e.stopPropagation()
+			}
+		},
+		[pageIndex, pages.length, notInitPage, notLastPage, goPrev, goNext, isFocusMode, onFocusMode]
+	)
+
 	// スワイプ検出のuseEffect
 	useEffect(() => {
 		if (touchEnd !== null) {
@@ -212,16 +283,24 @@ export function Preview({ text, config, isMaximized, onFocusMode, onPageInfoChan
 				transition: 'background-color 0.3s ease, color 0.3s ease',
 			}}
 		>
+			{/* スクリーンリーダー向け操作説明 */}
+			<div id="preview-instructions" className="sr-only">
+				キーボード操作:
+				左矢印・上矢印で次のページ、右矢印・下矢印で前のページ、Homeで最初のページ、Endで最後のページ、PageUp/PageDownで5ページずつ移動、Escapeでフォーカス解除
+			</div>
 			<div
 				className={`${styles.previewContainer} ${isSwipping ? styles.swipping : ''}`}
-				aria-label="縦書きプレビュー"
+				aria-label={`プレビュー: ページ ${pageIndex + 1} / ${pages.length}。矢印キーでページめくり、Escapeキーでフォーカス解除`}
+				aria-describedby="preview-instructions"
 				ref={containerRef}
+				tabIndex={0}
 				onClick={e => handleClick(e)}
 				onMouseMove={handleMouseMove}
 				onMouseLeave={handleMouseLeave}
 				onTouchStart={handleTouchStart}
 				onTouchMove={handleTouchMove}
 				onTouchEnd={handleTouchEnd}
+				onKeyDown={handleKeyDown}
 			>
 				{/* 左側のページめくりエフェクト */}
 				<div

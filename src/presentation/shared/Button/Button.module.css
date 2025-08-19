@@ -40,9 +40,9 @@
 }
 
 .button:focus {
-	outline: none;
-	border-color: #007acc;
-	box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.3);
+	outline: 3px solid var(--app-text-color, #005fcc); /* WCAGに準拠した濃いアウトライン */
+	outline-offset: 2px;
+	border-color: var(--app-text-color, #005fcc);
 }
 
 /* アニメーション効果をaria-pressed状態でも適用 */
@@ -169,13 +169,14 @@
 }
 
 .stepperButton:focus {
-	outline: none;
-	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+	outline: 3px solid #005fcc; /* WCAGに準拠した濃いアウトライン */
+	outline-offset: 2px;
 	z-index: 2;
 }
 
-.stepperButton:focus:not(:focus-visible) {
-	box-shadow: none;
+.stepperButton:focus-visible {
+	outline: 3px solid #005fcc; /* focus-visibleでも同じスタイル */
+	outline-offset: 2px;
 }
 
 .stepperButton:disabled {

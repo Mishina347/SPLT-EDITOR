@@ -35,6 +35,60 @@
 	contain: layout style;
 }
 
+/* エディタWrapper - 2段階フォーカス制御 */
+.editorWrapper {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	outline: none;
+	border-radius: 4px;
+	transition: all 0.2s ease;
+}
+
+/* 外部フォーカス状態 */
+.editorWrapper[data-inner-focus='false']:focus {
+	outline: 3px solid var(--app-text-color, #005fcc);
+	outline-offset: 2px;
+	background: var(--app-bg-color, rgba(0, 95, 204, 0.05));
+}
+
+/* 内部フォーカス状態 */
+.editorWrapper[data-inner-focus='true'] {
+	outline: 2px solid var(--app-text-color, #007acc);
+	outline-offset: 1px;
+}
+
+/* 指示テキスト */
+.instructions {
+	position: absolute;
+	bottom: 4px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: var(--app-bg-color, rgba(0, 0, 0, 0.8));
+	color: var(--app-text-color, #ffffff);
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 0.75rem;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+	z-index: 1000;
+}
+
+/* 外部フォーカス時に指示テキストを表示 */
+.editorWrapper[data-inner-focus='false']:focus .instructions {
+	opacity: 1;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+	.instructions {
+		font-size: 0.7rem;
+		padding: 3px 6px;
+		bottom: 8px;
+	}
+}
+
 /* タイピング中の再描画抑制最適化 */
 .editorBody .monaco-editor .view-lines {
 	/* レイヤー合成を最適化 */

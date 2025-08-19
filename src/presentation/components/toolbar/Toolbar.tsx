@@ -88,6 +88,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 			fileInput.type = 'file'
 			fileInput.accept = '.txt,.md,.json'
 			fileInput.style.display = 'none'
+			fileInput.setAttribute('aria-label', 'テキストファイルを選択')
+			fileInput.setAttribute('aria-describedby', 'file-input-help')
 			fileInputRef.current = fileInput
 		}
 

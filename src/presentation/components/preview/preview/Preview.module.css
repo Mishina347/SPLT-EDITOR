@@ -12,6 +12,24 @@
 	min-width: 0; /* Flexboxの最小幅制限を解除 */
 	min-height: 0; /* Flexboxの最小高さ制限を解除 */
 	margin-top: 1rem; /* 上部に余白を追加して位置を下げる */
+	outline: none;
+	border-radius: 8px;
+	transition:
+		box-shadow 0.2s ease,
+		border 0.2s ease;
+}
+
+/* フォーカス時のスタイル */
+.previewContainer:focus {
+	outline: 3px solid var(--app-text-color, #005fcc);
+	outline-offset: 2px;
+	box-shadow: 0 0 0 3px rgba(0, 95, 204, 0.2);
+}
+
+.previewContainer:focus-visible {
+	outline: 3px solid var(--app-text-color, #005fcc);
+	outline-offset: 2px;
+	box-shadow: 0 0 0 3px rgba(0, 95, 204, 0.3);
 }
 
 /* スワイプ中のスタイル */
@@ -189,6 +207,19 @@
 .notVisible {
 	min-width: 44px;
 	visibility: hidden;
+}
+
+/* スクリーンリーダー専用テキスト */
+:global(.sr-only) {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
 }
 
 .clickZoneLeft:hover,

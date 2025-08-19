@@ -31,6 +31,8 @@ export const EditorComponent = ({
 }: Props) => {
 	const containerRef = useRef<HTMLDivElement>(null)
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
+	const wrapperRef = useRef<HTMLDivElement>(null) // エディタ全体のWrapper
+	const isInnerFocusRef = useRef(false) // エディタ内部フォーカス状態
 	const imeCompositionRef = useRef(false) // IME入力中フラグ
 	// IME入力中の未確定文字を保持するref
 	const imeCompositionTextRef = useRef<string>('')
@@ -94,6 +96,58 @@ export const EditorComponent = ({
 		[onChange]
 	)
 
+	// エディタ内部にフォーカスを移す関数
+	const focusIntoEditor = useCallback(() => {
+		if (editorRef.current && wrapperRef.current) {
+			isInnerFocusRef.current = true
+			editorRef.current.focus()
+			// 視覚的フィードバックを追加
+			wrapperRef.current.setAttribute('data-inner-focus', 'true')
+		}
+	}, [])
+
+	// エディタ外部にフォーカスを戻す関数
+	const focusOutOfEditor = useCallback(() => {
+		if (wrapperRef.current) {
+			isInnerFocusRef.current = false
+			wrapperRef.current.focus()
+			wrapperRef.current.setAttribute('data-inner-focus', 'false')
+		}
+	}, [])
+
+	// 次のフォーカス可能要素に移動する関数
+	const focusNextElement = useCallback(() => {
+		if (!wrapperRef.current) return
+
+		// 現在のフォーカス可能要素を取得
+		const focusableElements = document.querySelectorAll(
+			'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+		)
+		const currentIndex = Array.from(focusableElements).indexOf(wrapperRef.current)
+
+		if (currentIndex !== -1 && currentIndex < focusableElements.length - 1) {
+			// 次の要素にフォーカス
+			const nextElement = focusableElements[currentIndex + 1] as HTMLElement
+			nextElement.focus()
+		}
+	}, [])
+
+	// 前のフォーカス可能要素に移動する関数
+	const focusPrevElement = useCallback(() => {
+		if (!wrapperRef.current) return
+
+		const focusableElements = document.querySelectorAll(
+			'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+		)
+		const currentIndex = Array.from(focusableElements).indexOf(wrapperRef.current)
+
+		if (currentIndex > 0) {
+			// 前の要素にフォーカス
+			const prevElement = focusableElements[currentIndex - 1] as HTMLElement
+			prevElement.focus()
+		}
+	}, [])
+
 	// Monaco Editorの自動折り返し設定を更新する関数
 	const updateWordWrapColumn = useCallback(() => {
 		if (!editorRef.current) return
@@ -131,7 +185,7 @@ export const EditorComponent = ({
 			accessibilitySupport: 'off' as const, // IME入力の自動制御を無効化
 			renderFinalNewline: 'off' as const,
 			minimap: { enabled: false },
-			tabFocusMode: false,
+			tabFocusMode: false, // 外部でフォーカス制御するため無効化
 			tabSize: 1,
 			scrollbar: {
 				vertical: 'hidden' as const,
@@ -283,6 +337,28 @@ export const EditorComponent = ({
 			mouseWheelZoom: false, // マウスホイールズームを無効
 		})
 		editorRef.current = editor
+
+		// Monaco Editor内でのTabキー処理を設定
+		editor.addCommand(monaco.KeyCode.Tab, () => {
+			if (isInnerFocusRef.current) {
+				// 内部フォーカス時はTab文字を挿入
+				editor.trigger('keyboard', 'type', { text: '\t' })
+				return true
+			} else {
+				// 外部フォーカス時はTab文字挿入を無効化
+				return false
+			}
+		})
+
+		// Shift+Tab でアウトデント（内部フォーカス時のみ）
+		editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.Tab, () => {
+			if (isInnerFocusRef.current) {
+				editor.trigger('keyboard', 'editor.action.outdentLines', {})
+				return true
+			} else {
+				return false
+			}
+		})
 
 		// フォントファミリーを初期設定で適用
 		setTimeout(() => {
@@ -556,6 +632,28 @@ export const EditorComponent = ({
 			return () => {}
 		}
 
+		// Monaco Editorのフォーカスイベント監視
+		const focusDisposable = editor.onDidFocusEditorText(() => {
+			isInnerFocusRef.current = true
+			if (wrapperRef.current) {
+				wrapperRef.current.setAttribute('data-inner-focus', 'true')
+			}
+		})
+
+		const blurDisposable = editor.onDidBlurEditorText(() => {
+			// エディタからフォーカスが外れた時の処理
+			// Tabキーによる移動の場合は、外部フォーカスを維持せずに次の要素へ移動
+			setTimeout(() => {
+				if (isInnerFocusRef.current && document.activeElement !== wrapperRef.current) {
+					// エディタ外の要素にフォーカスが移った場合は、内部フォーカス状態をリセット
+					isInnerFocusRef.current = false
+					if (wrapperRef.current) {
+						wrapperRef.current.setAttribute('data-inner-focus', 'false')
+					}
+				}
+			}, 0)
+		})
+
 		// IMEハンドラーをセットアップ（少し遅延してDOMの準備を待つ）
 		let imeCleanupFn: (() => void) | null = null
 		const imeTimer = setTimeout(() => {
@@ -589,6 +687,8 @@ export const EditorComponent = ({
 		return () => {
 			disposable.dispose()
 			cursorDisposable.dispose()
+			focusDisposable.dispose()
+			blurDisposable.dispose()
 			cleanupCurrentLineStyle()
 			clearTimeout(imeTimer)
 			if (imeCleanupFn) {
@@ -809,19 +909,78 @@ export const EditorComponent = ({
 		}
 	}, [textData])
 
+	// エディタwrapperのキーボードハンドラー
+	const handleWrapperKeyDown = useCallback(
+		(e: React.KeyboardEvent) => {
+			if (!isInnerFocusRef.current) {
+				// 外部フォーカス状態でのキー処理
+				if (e.key === ' ' || e.key === 'Enter') {
+					e.preventDefault()
+					focusIntoEditor()
+				}
+				// Tab キーは通常通り処理される（prevent しない）
+			} else {
+				// 内部フォーカス状態でのキー処理
+				if (e.key === 'Escape') {
+					e.preventDefault()
+					focusOutOfEditor()
+				} else if (e.key === 'Tab' && (e.ctrlKey || e.metaKey)) {
+					// Ctrl+Tab または Cmd+Tab: フォーカス移動
+					e.preventDefault()
+					if (e.shiftKey) {
+						// Ctrl+Shift+Tab: 前の要素へ
+						focusOutOfEditor()
+						setTimeout(() => focusPrevElement(), 0)
+					} else {
+						// Ctrl+Tab: 次の要素へ
+						focusOutOfEditor()
+						setTimeout(() => focusNextElement(), 0)
+					}
+				}
+				// 通常のTabキーは Monaco Editor に委ねる（文字挿入）
+			}
+		},
+		[focusIntoEditor, focusOutOfEditor, focusNextElement, focusPrevElement]
+	)
+
 	return (
 		<>
 			<main className={styles.editorBody} onFocus={handleFocusPane}>
 				<div
-					ref={containerRef}
-					className="monaco-editor-container"
-					style={{
-						...containerStyle,
-						touchAction: 'auto', // Monaco Editorのタッチ操作を有効にする
-						userSelect: 'text', // Monaco Editor内でのテキスト選択を明示的に有効
-						WebkitUserSelect: 'text', // Webkit系ブラウザ対応
+					ref={wrapperRef}
+					className={styles.editorWrapper}
+					tabIndex={0}
+					role="textbox"
+					aria-label="テキストエディタ - スペースキー、Enterキー、またはダブルクリックで編集モードに入ります。編集中はTabキーで文字挿入、Ctrl+Tabでフォーカス移動"
+					aria-multiline="true"
+					aria-describedby="editor-instructions"
+					data-inner-focus="false"
+					onKeyDown={handleWrapperKeyDown}
+					onClick={() => {
+						// シングルクリックでは外部フォーカスのみ
+						if (wrapperRef.current && !isInnerFocusRef.current) {
+							wrapperRef.current.focus()
+						}
 					}}
-				/>
+					onDoubleClick={focusIntoEditor}
+				>
+					<div
+						ref={containerRef}
+						className="monaco-editor-container"
+						style={{
+							...containerStyle,
+							touchAction: 'auto', // Monaco Editorのタッチ操作を有効にする
+							userSelect: 'text', // Monaco Editor内でのテキスト選択を明示的に有効
+							WebkitUserSelect: 'text', // Webkit系ブラウザ対応
+						}}
+					/>
+					<div id="editor-instructions" className={styles.instructions}>
+						<p>
+							スペースキー・Enterキー・ダブルクリックで編集開始 • Tabキーで文字挿入 • Ctrl+Tabで次へ移動 •
+							Escapeキーで編集終了
+						</p>
+					</div>
+				</div>
 			</main>
 			<button
 				className={`${buttonStyles.maximizeBtn} ${styles.maximizeBtnPosition} 

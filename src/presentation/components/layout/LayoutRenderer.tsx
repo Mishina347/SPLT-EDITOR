@@ -79,6 +79,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 	// プレビューコンポーネントの共通props
 	const previewProps = {
 		currentSavedText,
+		currentNotSavedText,
 		lastSavedText,
 		previewSetting: previewSettings,
 		textHistory,
@@ -102,12 +103,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 							flexShrink: 0,
 						}}
 					>
-						<EditorComponent
-							{...editorProps}
-							extended={!showPreview}
-							isMaximized={false}
-							currentEditorSize={currentEditorSize}
-						/>
+						<EditorComponent {...editorProps} extended={!showPreview} isMaximized={false} />
 					</LayoutContainer>
 				)}
 
@@ -154,7 +150,6 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 							{...editorProps}
 							extended={layoutType === 'draggable-editor'}
 							isMaximized={editorContainerConfig.isMaximized}
-							currentEditorSize={100}
 						/>
 					</LayoutContainer>
 				)}

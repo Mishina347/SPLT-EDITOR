@@ -22,9 +22,16 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 				`[DEBUG] performAutoSave called - isManualSave: ${isManualSave}, isSaving: ${isSavingRef.current}, contentLength: ${textContent.length}`
 			)
 
-			if (isSavingRef.current || textContent === lastSavedContentRef.current) {
+			// 保存中かどうかをチェック
+			if (isSavingRef.current) {
+				console.log(`[DEBUG] Skipping save - already saving`)
+				return
+			}
+
+			// 内容が変更されていない場合はスキップ（ただし空文字の場合は保存を許可）
+			if (textContent === lastSavedContentRef.current) {
 				console.log(
-					`[DEBUG] Skipping save - isSaving: ${isSavingRef.current}, contentUnchanged: ${textContent === lastSavedContentRef.current}`
+					`[DEBUG] Skipping save - content unchanged: "${textContent}" === "${lastSavedContentRef.current}"`
 				)
 				return
 			}
@@ -63,9 +70,18 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 			`[DEBUG] useEffect triggered - enabled: ${enabled}, contentLength: ${content.length}, isSaving: ${isSavingRef.current}, contentChanged: ${content !== lastSavedContentRef.current}`
 		)
 
-		if (!enabled || content === lastSavedContentRef.current || isSavingRef.current) {
+		// 自動保存が無効、保存中、または内容が変更されていない場合はタイマー設定をスキップ
+		if (!enabled || isSavingRef.current) {
 			console.log(
-				`[DEBUG] Skipping timer setup - enabled: ${enabled}, contentUnchanged: ${content === lastSavedContentRef.current}, isSaving: ${isSavingRef.current}`
+				`[DEBUG] Skipping timer setup - enabled: ${enabled}, isSaving: ${isSavingRef.current}`
+			)
+			return
+		}
+
+		// 内容が変更されていない場合もスキップ（空文字も含む）
+		if (content === lastSavedContentRef.current) {
+			console.log(
+				`[DEBUG] Skipping timer setup - content unchanged: "${content}" === "${lastSavedContentRef.current}"`
 			)
 			return
 		}

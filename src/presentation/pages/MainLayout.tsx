@@ -181,8 +181,18 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings: Settings }
 	useEffect(() => {
 		;(async () => {
 			const initialText = await loadText('document.json')
-			setCurrentSavedText(initialText)
-			setLastSavedText(initialText)
+
+			// 初回起動時の状態設定
+			if (initialText) {
+				// ファイルが存在する場合
+				setCurrentSavedText(initialText)
+				setLastSavedText(initialText)
+			} else {
+				// 初回起動時（ファイルが存在しない場合）
+				setCurrentSavedText('')
+				setLastSavedText('') // 明示的に空文字列を設定
+			}
+
 			// エディタの初期化完了を待ってからテキストを設定
 			setTimeout(() => {
 				updateText(initialText)
@@ -208,20 +218,26 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings: Settings }
 				}
 
 				try {
-					console.log(`[DEBUG] Starting manual save process`)
+					console.log(
+						`[DEBUG] Starting manual save process - content: "${currentNotSavedText}" (length: ${currentNotSavedText.length})`
+					)
 
 					// forceSaveを使用してauto saveタイマーをリセット＆即座に保存
 					await forceSave()
 
 					console.log(`[DEBUG] Manual save completed, updating state`)
 
-					// 手動保存成功時に状態を更新
+					// 手動保存成功時に状態を更新（空文字でも更新）
 					setLastSavedText(currentNotSavedText)
 					setCurrentSavedText(currentNotSavedText)
 
-					// 手動保存時のスナップショットを追加
-					console.log(`[DEBUG] Creating manual save snapshot`)
+					// 手動保存時のスナップショットを追加（空文字でも記録）
+					console.log(`[DEBUG] Creating manual save snapshot for content: "${currentNotSavedText}"`)
 					saveSnapshot(currentNotSavedText, `手動保存 - ${new Date().toLocaleString('ja-JP')}`)
+
+					console.log(
+						`[DEBUG] Manual save state updated - currentSavedText: "${currentNotSavedText}", lastSavedText: "${currentNotSavedText}"`
+					)
 				} catch (error) {
 					console.error('Manual save failed:', error)
 				}
@@ -371,7 +387,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings: Settings }
 						editorSettings={editorSettings}
 						previewSettings={previewSettings}
 						currentText={currentNotSavedText}
-						currentSavedText={currentNotSavedText}
+						currentSavedText={currentSavedText}
 						onEditorSettingChange={setEditorSettings}
 						onPreviewSettingChange={setPreviewSettings}
 						onToolbarFocusChange={onChangeToolbarDisplayMode}
@@ -411,7 +427,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings: Settings }
 						onChangeText={onChangeText}
 						onFocusEditor={handleFocusEditor}
 						onMaximizeEditor={handleMaximizeEditor}
-						currentSavedText={currentNotSavedText}
+						currentSavedText={currentSavedText}
 						lastSavedText={lastSavedText}
 						previewSettings={previewSettings}
 						textHistory={history}
@@ -461,7 +477,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings: Settings }
 						onChangeText={onChangeText}
 						onFocusEditor={handleFocusEditor}
 						onMaximizeEditor={handleMaximizeEditor}
-						currentSavedText={currentNotSavedText}
+						currentSavedText={currentSavedText}
 						lastSavedText={lastSavedText}
 						previewSettings={previewSettings}
 						textHistory={history}
@@ -497,7 +513,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings: Settings }
 						onChangeText={onChangeText}
 						onFocusEditor={handleFocusEditor}
 						onMaximizeEditor={handleMaximizeEditor}
-						currentSavedText={currentNotSavedText}
+						currentSavedText={currentSavedText}
 						lastSavedText={lastSavedText}
 						previewSettings={previewSettings}
 						textHistory={history}

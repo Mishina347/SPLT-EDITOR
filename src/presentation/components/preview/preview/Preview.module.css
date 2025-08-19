@@ -222,6 +222,27 @@
 	border: 0;
 }
 
+/* 空のプレビュー時の案内メッセージ */
+.emptyPreview {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 200px;
+	color: var(--app-text-color, #666);
+	padding: 2rem;
+}
+
+.emptyPreview p {
+	margin: 0.5rem 0;
+	font-size: 1rem;
+	line-height: 1.5;
+}
+
+.emptyPreview p:first-child {
+	font-weight: 600;
+	color: var(--app-text-color, #333);
+}
+
 .clickZoneLeft:hover,
 .clickZoneRight:hover {
 	background-color: rgba(0, 0, 0, 0.05); /* デバッグ時に視覚化 */

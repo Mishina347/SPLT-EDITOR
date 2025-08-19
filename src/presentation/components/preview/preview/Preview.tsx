@@ -316,17 +316,24 @@ export function Preview({ text, config, isMaximized, onFocusMode, onPageInfoChan
 						role="region"
 						aria-label={`ページ ${pageIndex + 1} / ${pages.length}`}
 					>
-						<ol className={styles.lines} role="list">
-							{currentPage.map((line, lineIndex) => (
-								<li key={lineIndex} className={styles.verticalLine} aria-label={`行 ${lineIndex + 1}`}>
-									{line.split('').map((char, charIndex) => (
-										<span key={charIndex} className={styles.verticalChar}>
-											{char}
-										</span>
-									))}
-								</li>
-							))}
-						</ol>
+						{currentPage.length === 1 && currentPage[0] === '' ? (
+							<div className={styles.emptyPreview}>
+								<p>ここにプレビューが表示されます</p>
+								<p>左側のエディタでテキストを入力してください</p>
+							</div>
+						) : (
+							<ol className={styles.lines} role="list">
+								{currentPage.map((line, lineIndex) => (
+									<li key={lineIndex} className={styles.verticalLine} aria-label={`行 ${lineIndex + 1}`}>
+										{line.split('').map((char, charIndex) => (
+											<span key={charIndex} className={styles.verticalChar}>
+												{char}
+											</span>
+										))}
+									</li>
+								))}
+							</ol>
+						)}
 					</article>
 				</section>
 			</div>

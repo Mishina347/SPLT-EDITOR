@@ -1,227 +1,135 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
-import { calculateCharCount } from '../../domain/text/calculateCharCount'
-import { createThrottledHandler, TextProcessor } from '../../utils/performanceOptimizer'
+import { useState, useCallback, useMemo, useRef } from 'react'
+import { wordCounter } from '../../utils/wordCounter'
+import { useDebounce, useThrottledCallback } from './useDebounce'
 
-interface CharCountState {
-	characters: number
-	lines: number
-	words: number
+interface CharCountResult {
+	characterCount: number
+	lineCount: number
+	pageCount: number
 }
 
-interface UseOptimizedCharCountOptions {
-	throttleDelay?: number
-	enableBatching?: boolean
-	asyncThreshold?: number
+interface UseOptimizedCharCountConfig {
+	/** デバウンス遅延時間（ミリ秒） */
+	debounceDelay?: number
+	/** キャッシュサイズ */
+	cacheSize?: number
+	/** 即座に更新する文字数の閾値 */
+	immediateUpdateThreshold?: number
 }
 
 /**
  * 最適化された文字数カウントフック
+ * デバウンス、キャッシュ、スロットリングを組み合わせて高性能化
  */
-export function useOptimizedCharCount(options: UseOptimizedCharCountOptions = {}) {
-	const { throttleDelay = 300, enableBatching = true, asyncThreshold = 10000 } = options
+export function useOptimizedCharCount(config: UseOptimizedCharCountConfig = {}) {
+	const { debounceDelay = 300, cacheSize = 100, immediateUpdateThreshold = 1000 } = config
 
 	const [currentText, setCurrentText] = useState('')
-	const [charCount, setCharCount] = useState<CharCountState>({
-		characters: 0,
-		lines: 0,
-		words: 0,
+	const [charCountResult, setCharCountResult] = useState<CharCountResult>({
+		characterCount: 0,
+		lineCount: 1,
+		pageCount: 1,
 	})
-	const [isCalculating, setIsCalculating] = useState(false)
 
-	// 計算キャッシュ
-	const cacheRef = useRef(new Map<string, CharCountState>())
-	const lastCalculationRef = useRef<string>('')
+	// キャッシュ管理
+	const cacheRef = useRef<Map<string, CharCountResult>>(new Map())
+	const lastCalculatedTextRef = useRef('')
 
-	// 非同期計算のキャンセル用
-	const abortControllerRef = useRef<AbortController | null>(null)
+	// デバウンスされたテキスト（重い計算用）
+	const debouncedText = useDebounce(currentText, debounceDelay)
 
-	/**
-	 * 高速文字数計算（同期）
-	 */
-	const calculateCountSync = useCallback((text: string): CharCountState => {
-		// キャッシュチェック
-		const cacheKey = generateTextHash(text)
-		const cached = cacheRef.current.get(cacheKey)
-
-		if (cached) {
-			return cached
-		}
-
-		// 計算実行
-		const result = TextProcessor.countCharactersOptimized(text)
-
-		// キャッシュ保存（サイズ制限）
-		if (cacheRef.current.size > 50) {
-			// 古いキャッシュを削除（LRU風）
-			const firstKey = cacheRef.current.keys().next().value
-			if (firstKey) {
-				cacheRef.current.delete(firstKey)
-			}
-		}
-		cacheRef.current.set(cacheKey, result)
-
-		return result
-	}, [])
-
-	/**
-	 * 非同期文字数計算（大きなテキスト用）
-	 */
-	const calculateCountAsync = useCallback(async (text: string): Promise<CharCountState> => {
-		setIsCalculating(true)
-
-		try {
-			// 前の計算をキャンセル
-			if (abortControllerRef.current) {
-				abortControllerRef.current.abort()
+	// 高速な文字数計算（キャッシュ付き）
+	const calculateCharCount = useCallback(
+		(text: string): CharCountResult => {
+			// キャッシュから取得を試行
+			const cached = cacheRef.current.get(text)
+			if (cached) {
+				return cached
 			}
 
-			const abortController = new AbortController()
-			abortControllerRef.current = abortController
+			// 計算実行
+			const result = wordCounter(text)
 
-			// チャンク処理で計算
-			const chunks = await TextProcessor.processTextInChunks(
-				text,
-				chunk => TextProcessor.countCharactersOptimized(chunk),
-				progress => {
-					// 進捗は必要に応じて使用
+			// キャッシュサイズ管理（LRU的な動作）
+			if (cacheRef.current.size >= cacheSize) {
+				const firstKey = cacheRef.current.keys().next().value
+				if (firstKey) {
+					cacheRef.current.delete(firstKey)
 				}
-			)
-
-			// キャンセルチェック
-			if (abortController.signal.aborted) {
-				throw new Error('Calculation cancelled')
 			}
 
-			// 結果をマージ
-			const result = chunks.reduce(
-				(total, chunk) => ({
-					characters: total.characters + chunk.characters,
-					lines: total.lines + chunk.lines - 1, // 重複する改行を調整
-					words: total.words + chunk.words,
-				}),
-				{ characters: 0, lines: 1, words: 0 }
-			)
+			// キャッシュに保存
+			cacheRef.current.set(text, result)
 
 			return result
-		} finally {
-			setIsCalculating(false)
-			abortControllerRef.current = null
-		}
-	}, [])
+		},
+		[cacheSize]
+	)
 
-	/**
-	 * 文字数計算のメイン処理
-	 */
-	const performCalculation = useCallback(
-		async (text: string) => {
-			// 同じテキストの重複計算を避ける
-			if (text === lastCalculationRef.current) {
-				return
-			}
-			lastCalculationRef.current = text
-
-			try {
-				let result: CharCountState
-
-				if (text.length > asyncThreshold) {
-					// 大きなテキストは非同期処理
-					result = await calculateCountAsync(text)
-				} else {
-					// 小さなテキストは同期処理
-					result = calculateCountSync(text)
-				}
-
-				setCharCount(result)
-			} catch (error) {
-				console.error('Character count calculation failed:', error)
-				// エラー時はフォールバック
-				const fallback = calculateCharCount(text)
-				setCharCount({
-					characters: fallback,
-					lines: text.split('\n').length,
-					words: text.split(/\s+/).filter(word => word.length > 0).length,
-				})
+	// 即座に更新する場合の処理（軽量な変更用）
+	const updateCharCountImmediate = useCallback(
+		(text: string) => {
+			// 短いテキストの場合は即座に計算
+			if (text.length <= immediateUpdateThreshold) {
+				const result = calculateCharCount(text)
+				setCharCountResult(result)
+				lastCalculatedTextRef.current = text
 			}
 		},
-		[asyncThreshold, calculateCountAsync, calculateCountSync]
+		[calculateCharCount, immediateUpdateThreshold]
 	)
 
-	/**
-	 * スロットル化された更新処理
-	 */
-	const throttledUpdate = useMemo(
-		() => createThrottledHandler(performCalculation, throttleDelay),
-		[performCalculation, throttleDelay]
+	// スロットリングされた即時更新
+	const throttledUpdate = useThrottledCallback(
+		updateCharCountImmediate,
+		100, // 100ms間隔
+		[updateCharCountImmediate]
 	)
 
-	/**
-	 * テキスト更新
-	 */
+	// デバウンスされたテキストが変更されたときの処理
+	useMemo(() => {
+		if (debouncedText !== lastCalculatedTextRef.current) {
+			const result = calculateCharCount(debouncedText)
+			setCharCountResult(result)
+			lastCalculatedTextRef.current = debouncedText
+		}
+	}, [debouncedText, calculateCharCount])
+
+	// テキスト更新関数
 	const updateText = useCallback(
 		(newText: string) => {
 			setCurrentText(newText)
 
-			if (enableBatching) {
-				// バッチ処理で更新
+			// 短いテキストの場合は即座に更新
+			if (newText.length <= immediateUpdateThreshold) {
 				throttledUpdate(newText)
-			} else {
-				// 即座に更新
-				void performCalculation(newText)
 			}
 		},
-		[enableBatching, throttledUpdate, performCalculation]
+		[immediateUpdateThreshold, throttledUpdate]
 	)
 
-	/**
-	 * 即座に計算実行（強制更新）
-	 */
-	const forceUpdate = useCallback(() => {
-		void performCalculation(currentText)
-	}, [currentText, performCalculation])
-
-	/**
-	 * キャッシュクリア
-	 */
+	// キャッシュクリア関数
 	const clearCache = useCallback(() => {
 		cacheRef.current.clear()
 	}, [])
 
-	// クリーンアップ
-	useEffect(() => {
-		return () => {
-			if (abortControllerRef.current) {
-				abortControllerRef.current.abort()
-			}
-		}
-	}, [])
+	// 強制更新関数
+	const forceUpdate = useCallback(() => {
+		const result = calculateCharCount(currentText)
+		setCharCountResult(result)
+		lastCalculatedTextRef.current = currentText
+	}, [currentText, calculateCharCount])
 
 	return {
 		currentText,
-		charCount,
-		isCalculating,
+		characterCount: charCountResult.characterCount,
+		lineCount: charCountResult.lineCount,
+		pageCount: charCountResult.pageCount,
 		updateText,
-		forceUpdate,
 		clearCache,
+		forceUpdate,
+		// デバッグ用
+		cacheSize: cacheRef.current.size,
+		isCalculating: currentText !== lastCalculatedTextRef.current,
 	}
-}
-
-/**
- * テキストの簡易ハッシュ生成
- */
-function generateTextHash(text: string): string {
-	if (text.length < 100) {
-		return text
-	}
-
-	// 長いテキストの場合は一部をサンプリング
-	const sample = text.slice(0, 50) + text.slice(-50) + text.length.toString()
-
-	let hash = 0
-	for (let i = 0; i < sample.length; i++) {
-		const char = sample.charCodeAt(i)
-		hash = (hash << 5) - hash + char
-		hash = hash & hash // 32bit整数に変換
-	}
-
-	return hash.toString(36)
 }

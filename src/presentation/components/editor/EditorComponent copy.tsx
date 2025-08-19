@@ -6,8 +6,6 @@ import { getOptimizedEditorOptions } from '../../../utils/editorOptimization'
 import styles from './EditorComponent.module.css'
 import buttonStyles from '../../shared/Button/Button.module.css'
 
-import { useCaretAnimation, useIMEFloat, useLineDecorations } from './components'
-
 type Props = {
 	textData: string
 	extended: boolean
@@ -34,12 +32,12 @@ export const EditorComponent = ({
 	const imeCompositionRef = useRef(false) // IME入力中フラグ
 	// IME入力中の未確定文字を保持するref
 	const imeCompositionTextRef = useRef<string>('')
+	// IMEフロート表示用のref
+	const imeFloatRef = useRef<HTMLDivElement | null>(null)
 	// IME開始時のエディタ状態を保存するref
 	const imeStartValueRef = useRef<string>('')
 	const imeStartPositionRef = useRef<monaco.IPosition | null>(null)
 	const imeStartSelectionRef = useRef<monaco.ISelection | null>(null)
-	// IME確定直後のカーソル移動許可フラグ
-	const imeJustCompletedRef = useRef(false)
 
 	// 設定値をメモ化
 	const { fontSize, wordWrapColumn, backgroundColor, textColor, fontFamily } = useMemo(
@@ -60,60 +58,6 @@ export const EditorComponent = ({
 	)
 
 	const cellSize = useMemo(() => fontSize * 1.6, [fontSize])
-
-	// 分離されたコンポーネントを使用
-	const { triggerCaretAnimation, addCaretAnimationStyles, createRippleEffect } = useCaretAnimation({
-		editorRef,
-		containerRef,
-		fontSize,
-		textColor,
-		enabled: true,
-	})
-
-	const { createIMEFloat, updateIMEFloatContent, removeIMEFloat } = useIMEFloat({
-		containerRef,
-		editorRef,
-		fontSize,
-		fontFamily,
-		backgroundColor,
-		textColor,
-		enabled: true,
-	})
-
-	const { addLineDecorations } = useLineDecorations({
-		editorRef,
-		textColor,
-		enabled: true,
-	})
-
-	// 通常のonChange関数
-	const handleChange = useCallback(
-		(newValue: string) => {
-			onChange(newValue)
-		},
-		[onChange]
-	)
-
-	// Monaco Editorの自動折り返し設定を更新する関数
-	const updateWordWrapColumn = useCallback(() => {
-		if (!editorRef.current) return
-
-		const editor = editorRef.current
-		const currentWordWrapColumn = wordWrapColumn || DEFAULT_SETTING.editor.wordWrapColumn
-
-		if (imeCompositionRef.current) {
-			// IME入力中：wordWrapを無効にして要素の呼び出しを許可
-		} else {
-			// 通常時：ソフトラップ有効 + 日本語禁則処理適用
-			editor.updateOptions({
-				wordWrap: 'wordWrapColumn' as const,
-				wordWrapColumn: currentWordWrapColumn,
-				// 日本語禁則処理：空文字列でデフォルト動作を使用
-				wordWrapBreakAfterCharacters: '',
-				wordWrapBreakBeforeCharacters: '',
-			})
-		}
-	}, [wordWrapColumn])
 
 	// エディタの設定オブジェクトをメモ化（最適化版）
 	const editorOptions = useMemo(() => {
@@ -211,6 +155,336 @@ export const EditorComponent = ({
 		// エディタの設定を更新
 		editor.updateOptions(kinsokuOptions)
 	}, [])
+
+	// 通常のonChange関数
+	const handleChange = useCallback(
+		(newValue: string) => {
+			onChange(newValue)
+		},
+		[onChange]
+	)
+
+	// Monaco Editorの自動折り返し設定を更新する関数
+	const updateWordWrapColumn = useCallback(() => {
+		if (!editorRef.current) return
+
+		const editor = editorRef.current
+		const currentWordWrapColumn = wordWrapColumn || DEFAULT_SETTING.editor.wordWrapColumn
+
+		if (imeCompositionRef.current) {
+			// IME入力中：wordWrapを無効にして要素の呼び出しを許可
+		} else {
+			// 通常時：ソフトラップ有効 + 日本語禁則処理適用
+			editor.updateOptions({
+				wordWrap: 'wordWrapColumn' as const,
+				wordWrapColumn: currentWordWrapColumn,
+				// 日本語禁則処理：空文字列でデフォルト動作を使用
+				wordWrapBreakAfterCharacters: '',
+				wordWrapBreakBeforeCharacters: '',
+			})
+		}
+	}, [wordWrapColumn])
+
+	// IMEフロート要素を作成する関数
+	const createIMEFloat = useCallback(() => {
+		if (!editorRef.current || !containerRef.current) return
+
+		const editor = editorRef.current
+		const position = editor.getPosition()
+		if (!position) return
+
+		// カーソル位置を取得
+		const coords = editor.getScrolledVisiblePosition(position)
+		if (!coords) return
+
+		// エディタのテーマ色を取得
+		const floatBg = backgroundColor
+		const floatTextColor = textColor
+
+		// キャレットの高さを計算（フォントサイズベース）
+		const caretHeight = fontSize * 1.4 // 行の高さに合わせる
+
+		// フロート要素を作成
+		const floatDiv = document.createElement('div')
+		floatDiv.style.position = 'absolute'
+		floatDiv.style.left = `${coords.left}px`
+		floatDiv.style.top = `${coords.top}px`
+		floatDiv.style.height = `${caretHeight}px`
+		floatDiv.style.lineHeight = `${caretHeight}px`
+		floatDiv.style.backgroundColor = floatBg
+		floatDiv.style.color = floatTextColor
+		floatDiv.style.borderRadius = '2px'
+		floatDiv.style.padding = '0 4px'
+		floatDiv.style.fontSize = `${fontSize * 1.1}px`
+		floatDiv.style.fontFamily = fontFamily
+		floatDiv.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)'
+		floatDiv.style.zIndex = '1000'
+		floatDiv.style.pointerEvents = 'none'
+		floatDiv.style.whiteSpace = 'nowrap'
+		floatDiv.style.display = 'flex'
+		floatDiv.style.alignItems = 'center'
+		floatDiv.style.opacity = '1'
+
+		// キャレット点滅アニメーションのCSSを追加
+		if (!document.getElementById('ime-caret-animation')) {
+			const style = document.createElement('style')
+			style.id = 'ime-caret-animation'
+			style.textContent = `
+				@keyframes blink {
+					0%, 40% { 
+						opacity: 1;
+						transform: scaleX(1);
+					}
+					50%, 90% { 
+						opacity: 0.3;
+						transform: scaleX(0.8);
+					}
+					100% { 
+						opacity: 1;
+						transform: scaleX(1);
+					}
+				}
+			`
+			document.head.appendChild(style)
+		}
+
+		// 擬似キャレット用のspan要素を作成
+		const caretSpan = document.createElement('span')
+		caretSpan.style.width = '2px'
+		caretSpan.style.height = `${fontSize * 1.2}px`
+		caretSpan.style.backgroundColor = floatTextColor
+		caretSpan.style.marginLeft = '2px'
+		caretSpan.style.display = 'inline-block'
+		caretSpan.style.borderRadius = '1px'
+		caretSpan.style.animation = 'blink 0.8s infinite'
+		caretSpan.style.opacity = '1'
+		caretSpan.style.transformOrigin = 'center'
+
+		// 初期状態では擬似キャレットのみ表示
+		floatDiv.appendChild(caretSpan)
+
+		// コンテナに追加
+		containerRef.current.appendChild(floatDiv)
+		imeFloatRef.current = floatDiv
+	}, [fontSize, fontFamily, backgroundColor, textColor])
+
+	// IMEフロート内容を更新する関数
+	const updateIMEFloatContent = useCallback(
+		(text: string) => {
+			if (!imeFloatRef.current) return
+
+			// 既存の内容をクリア
+			imeFloatRef.current.innerHTML = ''
+
+			// テキストを追加
+			if (text) {
+				const textSpan = document.createElement('span')
+				textSpan.textContent = text
+				imeFloatRef.current.appendChild(textSpan)
+			}
+
+			// 擬似キャレットを追加
+			const caretSpan = document.createElement('span')
+			caretSpan.style.width = '2px'
+			caretSpan.style.height = `${fontSize * 1.2}px`
+			caretSpan.style.backgroundColor = textColor
+			caretSpan.style.marginLeft = '2px'
+			caretSpan.style.borderRadius = '1px'
+			caretSpan.style.display = 'inline-block'
+			caretSpan.style.animation = 'blink 0.8s infinite'
+			caretSpan.style.opacity = '1'
+			caretSpan.style.transformOrigin = 'center'
+			imeFloatRef.current.appendChild(caretSpan)
+
+			console.log(`IMEフロート更新: "${text}" + 擬似キャレット`)
+		},
+		[fontSize, textColor]
+	)
+
+	// IMEフロート表示を削除する関数
+	const removeIMEFloat = useCallback(() => {
+		if (imeFloatRef.current) {
+			imeFloatRef.current.remove()
+			imeFloatRef.current = null
+			console.log('IMEフロート削除')
+		}
+	}, [])
+
+	// キャレットアニメーション用のCSS
+	const addCaretAnimationStyles = useCallback(() => {
+		let animationStyle = document.getElementById('caret-animation-styles') as HTMLStyleElement
+		if (!animationStyle) {
+			animationStyle = document.createElement('style')
+			animationStyle.id = 'caret-animation-styles'
+			document.head.appendChild(animationStyle)
+		}
+
+		animationStyle.textContent = `
+			@keyframes caretPulse {
+				0% { 
+					transform: scale(1);
+					opacity: 1;
+				}
+				25% { 
+					transform: scale(1.8);
+					opacity: 0.7;
+				}
+				50% { 
+					transform: scale(1.4);
+					opacity: 0.8;
+				}
+				75% { 
+					transform: scale(1.2);
+					opacity: 0.9;
+				}
+				100% { 
+					transform: scale(1);
+					opacity: 1;
+				}
+			}
+			
+			@keyframes rippleWave {
+				0% {
+					transform: translate(-50%, -50%) scale(0);
+					opacity: 0;
+				}
+				10% {
+					opacity: 0.8;
+				}
+				50% {
+					opacity: 0.6;
+				}
+				90% {
+					opacity: 0.2;
+				}
+				100% {
+					transform: translate(-50%, -50%) scale(2);
+					opacity: 0;
+				}
+			}
+			
+			@keyframes caretBlink {
+				0%, 50% { opacity: 1; }
+				51%, 100% { opacity: 0.2; }
+			}
+			
+			.monaco-editor .cursors-layer .cursor {
+				transition: transform 0.1s ease-out !important;
+			}
+			
+			.monaco-editor .cursors-layer .cursor.caret-pulse-animation {
+				animation: caretPulse 0.8s ease-out !important;
+			}
+			
+			.monaco-editor .cursors-layer .cursor.caret-blink-animation {
+				animation: caretBlink 0.8s ease-in-out 2 !important;
+			}
+		`
+	}, [])
+
+	// 波紋効果を作成する関数
+	const createRippleEffect = useCallback(() => {
+		if (!editorRef.current || !containerRef.current) return
+
+		const editor = editorRef.current
+		const position = editor.getPosition()
+		if (!position) return
+
+		// キャレットの位置を取得
+		const coords = editor.getScrolledVisiblePosition(position)
+		if (!coords) return
+
+		// 波紋要素を作成
+		const ripple = document.createElement('div')
+		ripple.style.position = 'absolute'
+		ripple.style.margin = 'auto'
+		ripple.style.left = `${coords.left}px`
+		ripple.style.top = `${coords.top + fontSize * 0.5}px` // キャレット中央
+		ripple.style.width = `${fontSize}px`
+		ripple.style.height = `${fontSize}px`
+		ripple.style.border = `0.5px solid ${textColor}`
+		ripple.style.borderRadius = '50%'
+		ripple.style.pointerEvents = 'none'
+		ripple.style.zIndex = '1001'
+		ripple.style.backgroundColor = 'transparent'
+		ripple.style.animation = 'rippleWave 0.8s ease-out forwards'
+
+		// エディタコンテナに追加
+		containerRef.current.appendChild(ripple)
+
+		// アニメーション終了後に削除
+		setTimeout(() => {
+			if (ripple.parentNode) {
+				ripple.parentNode.removeChild(ripple)
+			}
+		}, 1200)
+
+		console.log('独立した波紋効果を作成')
+	}, [fontSize, textColor])
+
+	// キャレットアニメーションを実行する関数
+	const triggerCaretAnimation = useCallback(
+		(type: 'pulse' | 'blink' = 'pulse', withRipple: boolean = false) => {
+			if (!editorRef.current) return
+
+			const caretElement = document.querySelector(
+				'.monaco-editor .cursors-layer .cursor'
+			) as HTMLElement
+			if (!caretElement) return
+
+			// 既存のアニメーションクラスを削除
+			caretElement.classList.remove('caret-pulse-animation', 'caret-blink-animation')
+
+			// 新しいアニメーションクラスを追加
+			const animationClass = type === 'pulse' ? 'caret-pulse-animation' : 'caret-blink-animation'
+			caretElement.classList.add(animationClass)
+
+			// 波紋効果の実行（withRippleフラグがtrueの場合のみ）
+			if (withRipple) {
+				createRippleEffect()
+			}
+
+			// アニメーション終了後にクラスを削除
+			const duration = type === 'pulse' ? 800 : 2000 // pulse: 0.8s, blink: 0.5s * 4 = 2s
+			setTimeout(() => {
+				caretElement.classList.remove(animationClass)
+			}, duration)
+
+			console.log(`キャレットアニメーション実行: ${type}`)
+		},
+		[createRippleEffect]
+	)
+
+	// 各行に半透明な線を描画する関数
+	const addLineDecorations = useCallback(() => {
+		if (!editorRef.current) return
+
+		const editor = editorRef.current
+		const model = editor.getModel()
+		if (!model) return
+
+		// 半透明な線のCSS
+		const lineColor = textColor
+		const alpha = '33' // 透明度（16進数で約20%）
+		const transparentColor =
+			lineColor.length === 7 ? lineColor + alpha : lineColor.replace(/rgb\(([^)]+)\)/, 'rgba($1, 0.2)')
+
+		// CSS スタイルを動的に追加/更新
+		let style = document.getElementById('editor-line-decoration') as HTMLStyleElement
+		if (!style) {
+			style = document.createElement('style')
+			style.id = 'editor-line-decoration'
+			document.head.appendChild(style)
+		}
+
+		style.textContent = `
+			.monaco-editor .view-lines .view-line {
+				border-bottom: 1px solid ${transparentColor} !important;
+			}
+		`
+
+		console.log(`行デコレーション追加: 色: ${transparentColor}`)
+	}, [textColor])
 
 	// エディタの初期化（設定変更時のみ再作成）
 	useEffect(() => {
@@ -333,6 +607,7 @@ export const EditorComponent = ({
 				}
 			`
 			document.head.appendChild(currentLineStyle)
+			console.log(`現在行 ${position.lineNumber} のワードラップを無効化`)
 		}
 
 		// クリーンアップ関数
@@ -347,8 +622,9 @@ export const EditorComponent = ({
 		const disposable = editor.onDidChangeModelContent(() => {
 			const currentValue = editor.getValue()
 
-			// IME入力中（ただし確定直後は除く）は状態更新を抑制
-			if (imeCompositionRef.current && !imeJustCompletedRef.current) {
+			// IME入力中は状態更新を抑制
+			if (imeCompositionRef.current) {
+				console.log('IME入力中: エディタ状態更新を抑制')
 				return
 			}
 
@@ -368,11 +644,6 @@ export const EditorComponent = ({
 
 		// カーソル位置変更時の制御
 		const cursorDisposable = editor.onDidChangeCursorPosition(() => {
-			// IME確定直後はカーソル固定を無効にする
-			if (imeJustCompletedRef.current) {
-				return
-			}
-
 			// IME入力中はカーソル移動を元の位置に戻す
 			if (imeCompositionRef.current && imeStartPositionRef.current) {
 				const currentPosition = editor.getPosition()
@@ -385,6 +656,7 @@ export const EditorComponent = ({
 						currentPosition.column !== startPosition.column)
 				) {
 					editor.setPosition(startPosition)
+					console.log('IME入力中: カーソル位置を固定')
 					return
 				}
 			}
@@ -406,6 +678,7 @@ export const EditorComponent = ({
 						imeStartValueRef.current = editorRef.current.getValue()
 						imeStartPositionRef.current = editorRef.current.getPosition()
 						imeStartSelectionRef.current = editorRef.current.getSelection()
+						console.log('IME入力開始: エディタ状態保存（内容+位置+選択）')
 					}
 
 					// IME開始時にwordWrapを無効化
@@ -429,128 +702,123 @@ export const EditorComponent = ({
 
 						// IME入力中の文字をフロート内容更新
 						updateIMEFloatContent(imeCompositionTextRef.current)
+						console.log(`IME更新: "${imeCompositionTextRef.current}" (エディタ状態強制固定)`)
 					}
 				}
 
 				const handleCompositionEnd = (e: CompositionEvent) => {
 					const finalText = e.data || ''
 
-					// IME確定直後フラグを設定（カーソル移動を許可）
-					imeJustCompletedRef.current = true
-
 					// フロート表示を削除
 					removeIMEFloat()
 
-					if (editorRef.current && imeCompositionRef.current) {
-						// エディタ状態をIME開始時点に復元
+					if (editorRef.current && imeStartPositionRef.current) {
+						// エディタを元の状態に戻す
 						editorRef.current.setValue(imeStartValueRef.current)
-						if (imeStartPositionRef.current) {
-							editorRef.current.setPosition(imeStartPositionRef.current)
-						}
-						if (imeStartSelectionRef.current) {
-							editorRef.current.setSelection(imeStartSelectionRef.current)
-						}
+						editorRef.current.setPosition(imeStartPositionRef.current)
 
-						// 確定したテキストを挿入
+						// 確定文字を挿入
 						if (finalText) {
 							const position = imeStartPositionRef.current
-							if (position) {
-								// 確定文字数を正確に計算（サロゲートペア対応）
-								const textLength = Array.from(finalText).length
+							const model = editorRef.current.getModel()
 
-								// テキストを挿入
-								const range = new monaco.Range(
-									position.lineNumber,
-									position.column,
-									position.lineNumber,
-									position.column
-								)
+							if (model) {
+								// 現在の行内容を取得
+								const lineContent = model.getLineContent(position.lineNumber)
+								const beforeCursor = lineContent.substring(0, position.column - 1)
+								const afterCursor = lineContent.substring(position.column - 1)
 
-								// executeEditsを使用してテキスト挿入とカーソル位置を同時に処理
-								const edits = [
-									{
-										range,
-										text: finalText,
-									},
-								]
+								// 新しい行内容を作成（確定文字を挿入）
+								const newLineContent = beforeCursor + finalText + afterCursor
 
-								// テキスト挿入を実行
-								editorRef.current.executeEdits('ime-insert', edits)
-
-								// 挿入後の新しいカーソル位置を計算
-								const newPosition = {
-									lineNumber: position.lineNumber,
-									column: position.column + textLength,
+								// 行全体を置換
+								const range = {
+									startLineNumber: position.lineNumber,
+									startColumn: 1,
+									endLineNumber: position.lineNumber,
+									endColumn: lineContent.length + 1,
 								}
 
-								// 複数のタイミングでカーソル位置を設定（確実に反映されるように）
-								editorRef.current.setPosition(newPosition)
+								editorRef.current.executeEdits('ime-insert', [
+									{
+										range: range,
+										text: newLineContent,
+									},
+								])
 
-								// requestAnimationFrameを使用して次のフレームでもカーソル位置を設定
-								requestAnimationFrame(() => {
+								// キャレット位置を確定文字の後に設定
+								setTimeout(() => {
 									if (editorRef.current) {
+										const textLength = finalText.length
+										const newPosition = {
+											lineNumber: position.lineNumber,
+											column: position.column + textLength,
+										}
+
+										// 強制的にキャレット位置を設定
 										editorRef.current.setPosition(newPosition)
 										editorRef.current.revealPosition(newPosition)
+										editorRef.current.focus()
 
-										// さらに少し遅延してもう一度設定
+										// キャレット移動アニメーションを実行（波紋なし）
 										setTimeout(() => {
-											if (editorRef.current) {
-												editorRef.current.setPosition(newPosition)
-												editorRef.current.focus()
+											triggerCaretAnimation('pulse', false)
+										}, 100)
 
-												// キャレットアニメーションを実行
-												triggerCaretAnimation('pulse', false)
-
-												// IME確定直後フラグをリセット
-												imeJustCompletedRef.current = false
-
-												// IME確定後にonChangeを明示的に呼び出し（プレビュー更新のため）
-												const updatedValue = editorRef.current?.getValue()
-												if (updatedValue && updatedValue !== textData) {
-													handleChange(updatedValue)
-												}
-											}
-										}, 10)
+										console.log(
+											`IME確定: "${finalText}" (${textLength}文字) 挿入完了, キャレット移動: 列${position.column} → ${newPosition.column}`
+										)
 									}
-								})
+								}, 50)
 							}
 						}
 					}
 
-					// wordWrap設定を通常に戻す（カーソル位置設定の後で実行）
+					// IME状態をリセット
+					imeCompositionRef.current = false
+					imeCompositionTextRef.current = ''
+					imeStartValueRef.current = ''
+					imeStartPositionRef.current = null
+					imeStartSelectionRef.current = null
+
+					// IME入力完了後の処理
 					setTimeout(() => {
-						updateWordWrapColumn()
-
-						// IME状態をリセット（最後に実行）
-						imeCompositionRef.current = false
-						imeCompositionTextRef.current = ''
-						imeStartValueRef.current = ''
-						imeStartPositionRef.current = null
-						imeStartSelectionRef.current = null
-
-						// 念のためフラグもリセット
-						imeJustCompletedRef.current = false
-
-						// 最終的にonChangeを呼び出してプレビューを確実に更新
 						if (editorRef.current) {
-							const finalValue = editorRef.current.getValue()
-							if (finalValue !== textData) {
-								handleChange(finalValue)
+							// IME終了時にwordWrapを再有効化
+							updateWordWrapColumn()
+
+							console.log('IME入力完了: ソフトラップ再有効化')
+
+							// 状態更新
+							const currentValue = editorRef.current.getValue()
+							if (currentValue !== textData) {
+								handleChange(currentValue)
 							}
 						}
-					}, 50)
+					}, 100)
 				}
 
-				// イベントリスナーを追加
+				// IME関連のイベントハンドラー
+				const handleInput = (e: Event) => {
+					// IME入力中はinputイベントを無効化
+					if (imeCompositionRef.current) {
+						e.preventDefault()
+						e.stopPropagation()
+						console.log('IME入力中: inputイベントを抑制')
+						return false
+					}
+				}
+
 				textArea.addEventListener('compositionstart', handleCompositionStart)
 				textArea.addEventListener('compositionupdate', handleCompositionUpdate)
 				textArea.addEventListener('compositionend', handleCompositionEnd)
+				textArea.addEventListener('input', handleInput, true) // キャプチャフェーズで実行
 
-				// クリーンアップ関数を返す
 				return () => {
 					textArea.removeEventListener('compositionstart', handleCompositionStart)
 					textArea.removeEventListener('compositionupdate', handleCompositionUpdate)
 					textArea.removeEventListener('compositionend', handleCompositionEnd)
+					textArea.removeEventListener('input', handleInput, true)
 				}
 			}
 			return () => {}
@@ -599,7 +867,10 @@ export const EditorComponent = ({
 			document.removeEventListener('keydown', handleKeyDown)
 
 			// IMEフロート要素をクリーンアップ
-			removeIMEFloat()
+			if (imeFloatRef.current) {
+				imeFloatRef.current.remove()
+				imeFloatRef.current = null
+			}
 
 			editor.dispose()
 			editorRef.current = null
@@ -614,7 +885,6 @@ export const EditorComponent = ({
 		addCaretAnimationStyles,
 		triggerCaretAnimation,
 		createRippleEffect,
-		removeIMEFloat,
 	]) // テーマ設定も依存関係に追加
 
 	// fontSize,fontFamily変化時にエディタ更新
@@ -661,6 +931,7 @@ export const EditorComponent = ({
 
 		// IME入力中は設定変更を抑制（IME完了後に自動適用される）
 		if (imeCompositionRef.current) {
+			console.log('IME入力中のため折り返し設定変更を保留')
 			return
 		}
 

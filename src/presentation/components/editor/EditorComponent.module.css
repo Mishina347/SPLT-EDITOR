@@ -19,6 +19,39 @@
 	-ms-user-select: text !important;
 	touch-action: auto !important;
 	pointer-events: auto !important;
+	/* IME入力最適化 */
+	-webkit-composition-fill-color: transparent;
+	-webkit-composition-frame-color: transparent;
+	ime-mode: active;
+	will-change: auto; /* GPU加速を避けてIME入力を安定化 */
+}
+
+/* IME入力候補ウィンドウの位置調整 */
+.editorBody .monaco-editor textarea {
+	/* IME入力時のフォントレンダリング最適化 */
+	text-rendering: optimizeSpeed;
+	font-kerning: none;
+	/* レイアウトシフトを防ぐ */
+	contain: layout style;
+}
+
+/* タイピング中の再描画抑制最適化 */
+.editorBody .monaco-editor .view-lines {
+	/* レイヤー合成を最適化 */
+	transform: translateZ(0);
+	/* 描画範囲の最適化 */
+	contain: layout style paint;
+	/* アニメーション無効化 */
+	animation: none !important;
+	transition: none !important;
+}
+
+/* スクロール時の描画最適化 */
+.editorBody .monaco-editor .monaco-scrollable-element {
+	/* スクロール中の再描画を最小化 */
+	contain: layout;
+	/* GPU合成の最適化 */
+	will-change: scroll-position;
 }
 
 .maximizeBtnPosition {

@@ -102,33 +102,51 @@ export const EditorSettingsPanel = React.memo<Props>(
 				/>
 
 				{/* Auto Save設定 
-				<div className={styles.autoSaveSection}>
-					<label className={styles.checkboxLabel}>
-						<input
-							type="checkbox"
-							checked={settings.autoSave.enabled}
-							onChange={e => handleAutoSaveEnabledChange(e.target.checked)}
-							onFocus={handleFocus}
-							className={styles.checkbox}
-						/>
-						自動保存を有効にする
-					</label>
+					<fieldset
+						className={styles.autoSaveSection}
+						role="group"
+						aria-labelledby="autosave-settings-heading"
+					>
+						<legend id="autosave-settings-heading" className={styles.sectionHeading}>
+							自動保存設定
+						</legend>
+						<label className={styles.checkboxLabel}>
+							<input
+								type="checkbox"
+								checked={settings.autoSave.enabled}
+								onChange={e => handleAutoSaveEnabledChange(e.target.checked)}
+								onFocus={handleFocus}
+								className={styles.checkbox}
+								aria-describedby="autosave-enabled-help"
+								id="autosave-enabled"
+							/>
+							自動保存を有効にする
+						</label>
+						<div id="autosave-enabled-help" className={styles.helpText}>
+							文章の編集中に自動的に保存を行います
+						</div>
+					
 
-					{settings.autoSave.enabled && (
-						<NumberStepper
-							label="自動保存間隔（分）"
-							value={settings.autoSave.delay}
-							onChange={minute => handleAutoSaveDelayChange(minute * 1000)}
-							onFocus={handleFocus}
-							min={1}
-							max={60}
-							step={1}
-							ariaDescribedBy="autosave-delay-help"
-							decrementLabel="自動保存間隔を短くする"
-							incrementLabel="自動保存間隔を長くする"
-						/>
-					)}
-				</div>
+						{settings.autoSave.enabled && (
+							<NumberStepper
+								label="自動保存間隔（分）"
+								value={settings.autoSave.delay}
+								onChange={minute => handleAutoSaveDelayChange(minute * 1000)}
+								onFocus={handleFocus}
+								min={1}
+								max={60}
+								step={1}
+								ariaDescribedBy="autosave-delay-help"
+								decrementLabel="自動保存間隔を短くする"
+								incrementLabel="自動保存間隔を長くする"
+							/>
+						)}
+						{settings.autoSave.enabled && (
+							<div id="autosave-delay-help" className={styles.helpText}>
+								1分から60分の範囲で設定できます
+							</div>
+						)}
+					</fieldset>
 				*/}
 
 				<Counter text={text} />

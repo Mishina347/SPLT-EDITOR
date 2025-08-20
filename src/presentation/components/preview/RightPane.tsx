@@ -74,21 +74,19 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 			try {
 				// 初回起動時やファイルが存在しない場合
 				if (!lastSavedText && !currentNotSavedText) {
-					setDiffHtml('<div class="no-diff">まだテキストが入力されていません</div>')
+					setDiffHtml('<p class="no-diff">まだテキストが入力されていません</p>')
 					return
 				}
 
 				// 保存済みテキストがない場合（初回起動時）
 				if (!lastSavedText && currentNotSavedText) {
-					setDiffHtml(
-						'<div class="no-diff">まだ保存されていません。Ctrl+S (⌘+S) で保存してください</div>'
-					)
+					setDiffHtml('<p class="no-diff">まだ保存されていません。Ctrl+S (⌘+S) で保存してください</p>')
 					return
 				}
 
 				// 同じ内容の場合は差分なしのメッセージを表示
 				if (lastSavedText === currentNotSavedText) {
-					setDiffHtml('<div class="no-diff">変更はありません</div>')
+					setDiffHtml('<p class="no-diff">変更はありません</p>')
 					return
 				}
 
@@ -101,7 +99,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 
 				// unified diffが生成されているかチェック
 				if (!unifiedDiff || unifiedDiff.trim() === '') {
-					setDiffHtml('<div class="no-diff">差分を検出できませんでした</div>')
+					setDiffHtml('<p class="no-diff">差分を検出できませんでした</p>')
 					return
 				}
 
@@ -109,7 +107,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 
 				// diffJsonが正常に解析されているかチェック
 				if (!diffJson || diffJson.length === 0) {
-					setDiffHtml('<div class="no-diff">差分の解析に失敗しました</div>')
+					setDiffHtml('<p class="no-diff">差分の解析に失敗しました</p>')
 					return
 				}
 
@@ -121,7 +119,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 
 				// HTMLが生成されているかチェック
 				if (!diffHtmlResult || diffHtmlResult.trim() === '') {
-					setDiffHtml('<div class="no-diff">差分HTMLの生成に失敗しました</div>')
+					setDiffHtml('<p class="no-diff">差分HTMLの生成に失敗しました</p>')
 					return
 				}
 
@@ -129,7 +127,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 			} catch (error) {
 				console.error('Error generating diff:', error)
 				setDiffHtml(
-					'<div class="error-message">差分の生成に失敗しました。詳細はコンソールを確認してください。</div>'
+					'<p class="error-message">差分の生成に失敗しました。詳細はコンソールを確認してください。</p>	'
 				)
 			}
 		} else {

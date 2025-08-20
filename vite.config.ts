@@ -16,9 +16,12 @@ export default defineConfig({
           monaco: ['monaco-editor', '@monaco-editor/react']
         }
       }
-    }
+    },
+    // GitHub Pages用の設定
+    assetsDir: 'assets',
+    chunkSizeWarningLimit: 1000
   },
   optimizeDeps: {
     include: ['@tauri-apps/api/fs']
-  }
+  },
 })

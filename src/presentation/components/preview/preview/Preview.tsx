@@ -283,6 +283,7 @@ export function Preview({ text, config, isMaximized, onFocusMode, onPageInfoChan
 				transition: 'background-color 0.3s ease, color 0.3s ease',
 			}}
 		>
+			<h2 className="sr-only">プレビュー</h2>
 			{/* スクリーンリーダー向け操作説明 */}
 			<div id="preview-instructions" className="sr-only">
 				キーボード操作:
@@ -322,17 +323,17 @@ export function Preview({ text, config, isMaximized, onFocusMode, onPageInfoChan
 								<p>左側のエディタでテキストを入力してください</p>
 							</div>
 						) : (
-							<ol className={styles.lines} role="list">
+							<div className={styles.lines} role="text">
 								{currentPage.map((line, lineIndex) => (
-									<li key={lineIndex} className={styles.verticalLine} aria-label={`行 ${lineIndex + 1}`}>
+									<div key={lineIndex} className={styles.verticalLine} aria-label={`行 ${lineIndex + 1}`}>
 										{line.split('').map((char, charIndex) => (
-											<span key={charIndex} className={styles.verticalChar}>
+											<p key={charIndex} className={styles.verticalChar}>
 												{char}
-											</span>
+											</p>
 										))}
-									</li>
+									</div>
 								))}
-							</ol>
+							</div>
 						)}
 					</article>
 				</section>

@@ -24,7 +24,7 @@
 	transform: translateY(-2px);
 	transform: scale(1.1);
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-	border-color: #007acc;
+	border-color: #005fcc; /* WCAG準拠の濃い色に変更 */
 }
 
 /* aria-pressed 状態のスタイル */
@@ -62,7 +62,7 @@
 	transform: translateY(-2px);
 	transform: scale(1.1);
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-	border-color: #007acc;
+	border-color: #005fcc; /* WCAG準拠の濃い色に変更 */
 }
 
 .buttonPrimary[aria-pressed='true'] {
@@ -82,7 +82,7 @@
 	transform: translateY(-2px);
 	transform: scale(1.1);
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-	border-color: #007acc;
+	border-color: #005fcc; /* WCAG準拠の濃い色に変更 */
 }
 
 .buttonSecondary[aria-pressed='true'] {

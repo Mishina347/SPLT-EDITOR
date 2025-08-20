@@ -245,7 +245,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 							className={styles.menuItem}
 							onClick={handleThemeEdit}
 							role="menuitem"
-							aria-label="テーマ編集画面を開く"
+							aria-label="エディタの背景色と文字色を変更"
 						>
 							テーマ編集
 						</button>
@@ -253,7 +253,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 							className={styles.menuItem}
 							onClick={handleFileLoad}
 							role="menuitem"
-							aria-label="ファイル読み込みを開く"
+							aria-label="テキストファイルを読み込んでエディタに表示"
 						>
 							読み込み
 						</button>
@@ -261,7 +261,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 							className={styles.menuItem}
 							onClick={handleExportClick}
 							role="menuitem"
-							aria-label="ファイル書き出し画面を開く"
+							aria-label="エディタの内容をWord文書またはテキストファイルとして保存"
 						>
 							書き出し
 						</button>
@@ -269,7 +269,11 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 							className={styles.menuItem}
 							onClick={handleFullscreenToggle}
 							role="menuitem"
-							aria-label={isFullscreen ? 'フルスクリーンを終了' : 'フルスクリーンにする'}
+							aria-label={
+								isFullscreen
+									? 'フルスクリーンモードを終了して通常表示に戻す'
+									: 'アプリケーションをフルスクリーン表示にする'
+							}
 							aria-pressed={isFullscreen}
 						>
 							{isFullscreen ? '通常表示' : 'フルスクリーン'}

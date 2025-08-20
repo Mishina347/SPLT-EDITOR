@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import styles from './Counter.module.css'
-import { wordCounter } from '../../../../utils'
+import { wordCounter, formatNumber } from '../../../../utils'
 import { useDebounce } from '../../../hooks/useDebounce'
 
 type CounterProps = {
@@ -27,14 +27,14 @@ export const Counter: React.FC<CounterProps> = ({ text }) => {
 			<div className={styles.counterDisplay} role="status" aria-label="文書統計">
 				<span className={styles.characterCount} aria-label={`${characterCount}文字`}>
 					{/* 計算中は即座に更新、完了したら正確な値を表示 */}
-					{text === debouncedText ? characterCount : immediateCharCount} 文字
+					{text === debouncedText ? formatNumber(characterCount) : formatNumber(immediateCharCount)} 文字
 					{text !== debouncedText && <span style={{ opacity: 0.6 }}>...</span>}
 				</span>
 				<span className={styles.lineCount} aria-label={`${lineCount}行`}>
-					（1行20文字換算）{lineCount} 行
+					（1行20文字換算）{formatNumber(lineCount)} 行
 				</span>
 				<span className={styles.wordCount} aria-label={`${pageCount}枚`}>
-					(20×20換算) {pageCount} 枚
+					(20×20換算) {formatNumber(pageCount)} 枚
 				</span>
 			</div>
 		</div>

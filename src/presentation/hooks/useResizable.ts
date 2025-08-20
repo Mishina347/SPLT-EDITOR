@@ -26,15 +26,46 @@ export const useResizable = (options: UseResizableOptions = {}) => {
 
 	const containerRef = useRef<HTMLDivElement>(null)
 	const resizerRef = useRef<HTMLDivElement>(null)
+	const announceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+	const lastAnnounceTimeRef = useRef<number>(0)
+
+	// デバウンス付きアナウンス関数
+	const announceWithDebounce = useCallback((message: string, force: boolean = false) => {
+		const now = Date.now()
+
+		// 最後のアナウンスから500ms未満の場合はデバウンス（強制フラグがない場合）
+		if (!force && now - lastAnnounceTimeRef.current < 500) {
+			if (announceTimeoutRef.current) {
+				clearTimeout(announceTimeoutRef.current)
+			}
+			announceTimeoutRef.current = setTimeout(() => {
+				setAnnounceText(message)
+				lastAnnounceTimeRef.current = Date.now()
+			}, 300)
+		} else {
+			setAnnounceText(message)
+			lastAnnounceTimeRef.current = now
+		}
+	}, [])
 
 	const updateSize = useCallback(
-		(newSize: number) => {
+		(newSize: number, isFromDrag: boolean = false) => {
 			const clampedSize = Math.max(minSize, Math.min(maxSize, newSize))
 			setSize(clampedSize)
 			onResize?.(clampedSize)
 
 			// スクリーンリーダー向けアナウンス
-			setAnnounceText(`${label}: ${Math.round(clampedSize)}%`)
+			const editorPercent = Math.round(clampedSize)
+			const previewPercent = Math.round(100 - clampedSize)
+			const message = `エディタ ${editorPercent}%, プレビュー ${previewPercent}%`
+
+			if (isFromDrag) {
+				// ドラッグ中はデバウンス付きでアナウンス
+				announceWithDebounce(message)
+			} else {
+				// キーボード操作は即座にアナウンス
+				announceWithDebounce(message, true)
+			}
 
 			// MonacoEditorなどのコンポーネントにリサイズを通知
 			// 少し遅延をつけてDOMの更新を待つ
@@ -44,7 +75,7 @@ export const useResizable = (options: UseResizableOptions = {}) => {
 
 			return clampedSize
 		},
-		[minSize, maxSize, onResize, label]
+		[minSize, maxSize, onResize, announceWithDebounce]
 	)
 
 	const startResize = useCallback(
@@ -55,7 +86,7 @@ export const useResizable = (options: UseResizableOptions = {}) => {
 
 			const containerRect = containerRef.current.getBoundingClientRect()
 			const percentage = ((clientX - containerRect.left) / containerRect.width) * 100
-			updateSize(percentage)
+			updateSize(percentage, true) // ドラッグフラグをtrueで渡す
 		},
 		[updateSize]
 	)
@@ -65,25 +96,30 @@ export const useResizable = (options: UseResizableOptions = {}) => {
 		(e: React.KeyboardEvent) => {
 			let newSize = size
 			let handled = true
+			let actionDescription = ''
 
 			switch (e.key) {
 				case 'ArrowLeft':
 				case 'ArrowDown':
 					newSize = size - step
 					setIsKeyboardMode(true)
+					actionDescription = `${step}%縮小`
 					break
 				case 'ArrowRight':
 				case 'ArrowUp':
 					newSize = size + step
 					setIsKeyboardMode(true)
+					actionDescription = `${step}%拡大`
 					break
 				case 'Home':
 					newSize = minSize
 					setIsKeyboardMode(true)
+					actionDescription = `最小サイズ(${minSize}%)に設定`
 					break
 				case 'End':
 					newSize = maxSize
 					setIsKeyboardMode(true)
+					actionDescription = `最大サイズ(${maxSize}%)に設定`
 					break
 				case 'PageDown':
 					newSize = size - step * 2

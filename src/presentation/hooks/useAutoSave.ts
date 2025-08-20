@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { saveText } from '../../usecases/file/saveText'
 
 interface UseAutoSaveOptions {
@@ -13,23 +13,52 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 	const lastSavedContentRef = useRef<string>('')
 	const isSavingRef = useRef<boolean>(false)
+	const [isSaving, setIsSaving] = useState<boolean>(false)
 
 	// auto save を実行する関数
 	const performAutoSave = useCallback(
-		async (textContent: string) => {
-			if (isSavingRef.current || textContent === lastSavedContentRef.current) {
+		async (textContent: string, isManualSave: boolean = false) => {
+			console.log(
+				`[DEBUG] performAutoSave called - isManualSave: ${isManualSave}, isSaving: ${isSavingRef.current}, contentLength: ${textContent.length}`
+			)
+
+			// 保存中かどうかをチェック
+			if (isSavingRef.current) {
+				console.log(`[DEBUG] Skipping save - already saving`)
+				return
+			}
+
+			// 内容が変更されていない場合はスキップ（ただし空文字の場合は保存を許可）
+			if (textContent === lastSavedContentRef.current) {
+				console.log(
+					`[DEBUG] Skipping save - content unchanged: "${textContent}" === "${lastSavedContentRef.current}"`
+				)
 				return
 			}
 
 			try {
 				isSavingRef.current = true
+				setIsSaving(true)
+				console.log(`[DEBUG] Starting ${isManualSave ? 'manual' : 'auto'} save`)
+
 				await saveText(fileName, textContent)
 				lastSavedContentRef.current = textContent
-				onSave?.(textContent)
+
+				// 手動保存の場合はonSaveコールバックを呼び出さない
+				// （呼び出し元で個別にスナップショットを作成するため）
+				if (!isManualSave) {
+					console.log(`[DEBUG] Calling onSave callback for auto save`)
+					onSave?.(textContent)
+				} else {
+					console.log(`[DEBUG] Skipping onSave callback for manual save`)
+				}
+
+				console.log(`[DEBUG] ${isManualSave ? 'Manual' : 'Auto'} save completed`)
 			} catch (error) {
-				console.error('Auto save failed:', error)
+				console.error(isManualSave ? 'Manual save failed:' : 'Auto save failed:', error)
 			} finally {
 				isSavingRef.current = false
+				setIsSaving(false)
 			}
 		},
 		[fileName, onSave]
@@ -37,19 +66,39 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 
 	// コンテンツ変更時にタイマーをリセット
 	useEffect(() => {
-		if (!enabled || content === lastSavedContentRef.current) {
+		console.log(
+			`[DEBUG] useEffect triggered - enabled: ${enabled}, contentLength: ${content.length}, isSaving: ${isSavingRef.current}, contentChanged: ${content !== lastSavedContentRef.current}`
+		)
+
+		// 自動保存が無効、保存中、または内容が変更されていない場合はタイマー設定をスキップ
+		if (!enabled || isSavingRef.current) {
+			console.log(
+				`[DEBUG] Skipping timer setup - enabled: ${enabled}, isSaving: ${isSavingRef.current}`
+			)
+			return
+		}
+
+		// 内容が変更されていない場合もスキップ（空文字も含む）
+		if (content === lastSavedContentRef.current) {
+			console.log(
+				`[DEBUG] Skipping timer setup - content unchanged: "${content}" === "${lastSavedContentRef.current}"`
+			)
 			return
 		}
 
 		// 既存のタイマーをクリア
 		if (timeoutRef.current) {
+			console.log(`[DEBUG] Clearing existing timer`)
 			clearTimeout(timeoutRef.current)
+			timeoutRef.current = null
 		}
 
 		// 新しいタイマーを設定
+		console.log(`[DEBUG] Setting new auto-save timer for ${delay} minutes`)
 		timeoutRef.current = setTimeout(
 			() => {
-				performAutoSave(content)
+				console.log(`[DEBUG] Auto-save timer fired`)
+				performAutoSave(content, false)
 			},
 			delay * 60 * 1000
 		)
@@ -57,6 +106,7 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 		// クリーンアップ
 		return () => {
 			if (timeoutRef.current) {
+				console.log(`[DEBUG] Cleanup: clearing timer`)
 				clearTimeout(timeoutRef.current)
 				timeoutRef.current = null
 			}
@@ -65,11 +115,19 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 
 	// 手動保存（即座に実行）
 	const forceSave = useCallback(async () => {
+		console.log(`[DEBUG] forceSave called`)
+
+		// 既存のタイマーをクリア（自動保存を停止）
 		if (timeoutRef.current) {
+			console.log(`[DEBUG] Clearing existing auto-save timer`)
 			clearTimeout(timeoutRef.current)
 			timeoutRef.current = null
+		} else {
+			console.log(`[DEBUG] No existing timer to clear`)
 		}
-		await performAutoSave(content)
+
+		// 手動保存として実行
+		await performAutoSave(content, true)
 	}, [content, performAutoSave])
 
 	// コンポーネント アンマウント時のクリーンアップ
@@ -83,7 +141,7 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 
 	return {
 		forceSave,
-		isSaving: isSavingRef.current,
+		isSaving,
 		lastSavedContent: lastSavedContentRef.current,
 	}
 }

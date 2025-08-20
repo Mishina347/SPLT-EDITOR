@@ -22,7 +22,7 @@ export const DEFAULT_SETTING: Settings = {
 			'"UD デジタル 教科書体 N-R", "Hiragino Sans", "Yu Gothic UI", "Meiryo UI", sans-serif',
 		autoSave: {
 			enabled: true,
-			delay: 3000, // 3秒後に自動保存
+			delay: 10, // 10分後に自動保存
 		},
 	},
 	preview: {

@@ -17,7 +17,6 @@ interface ResizerProps {
 
 export const Resizer: React.FC<ResizerProps> = ({
 	isDragging,
-
 	isKeyboardMode,
 	announceText,
 	size,
@@ -96,8 +95,30 @@ export const Resizer: React.FC<ResizerProps> = ({
 
 	return (
 		<>
+			{/* スクリーンリーダー向けライブリージョン */}
+			<div
+				id="resizer-live-region"
+				aria-live="assertive"
+				aria-atomic="true"
+				className={styles['sr-only']}
+			>
+				{announceText}
+			</div>
+
+			{/* 操作説明（スクリーンリーダー向け） */}
+			<div id="resizer-instructions" className={styles['sr-only']}>
+				{getInstructions()}
+			</div>
+
+			{/* 現在の状態（スクリーンリーダー向け） */}
+			<div id="resizer-state" className={styles['sr-only']}>
+				現在の状態: {getCurrentState()}, エディタ {Math.round(size)}%, プレビュー{' '}
+				{Math.round(100 - size)}%
+			</div>
+
 			<div
 				ref={resizerRef}
+				tabIndex={0}
 				className={`${styles.resizer} ${isDragging ? styles.dragging : ''} ${
 					isKeyboardMode ? styles.keyboardMode : ''
 				}`}
@@ -106,7 +127,6 @@ export const Resizer: React.FC<ResizerProps> = ({
 				onFocus={onFocus}
 				onBlur={onBlur}
 				role="separator"
-				tabIndex={0}
 				aria-label="エディタとプレビューのサイズ調整"
 				aria-orientation="vertical"
 				aria-valuemin={20}

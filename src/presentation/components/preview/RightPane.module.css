@@ -42,7 +42,7 @@
 
 .pageNumber {
 	font-size: 0.85rem;
-	color: var(--app-text-color, #666);
+	color: var(--app-text-color, #424242); /* #666 → #424242 でコントラスト比改善 */
 	font-weight: 500;
 	user-select: none;
 }
@@ -66,15 +66,15 @@
 	white-space: nowrap;
 	border-radius: 4px;
 	transition: all 0.2s ease;
-	color: var(--app-text-color, #666);
+	color: var(--app-text-color, #424242); /* #666 → #424242 でコントラスト比改善 */
 	min-width: 0;
 	flex-shrink: 1;
 	position: relative;
 }
 
 .inlineTab:hover:not(.active):not(:disabled) {
-	background-color: rgba(0, 0, 0, 0.05);
-	color: var(--app-text-color, #333);
+	background-color: rgba(0, 0, 0, 0.1); /* 0.05 → 0.1 でコントラスト改善 */
+	color: var(--app-text-color, #212121); /* #333 → #212121 でコントラスト改善 */
 }
 
 .inlineTab:focus {
@@ -87,6 +87,19 @@
 	background-color: #007acc;
 	color: white;
 	font-weight: 600;
+	border: 2px solid #005fcc; /* 境界線でも active状態を表現 */
+	position: relative;
+}
+
+/* アクティブタブに視覚的なインジケーターを追加 */
+.inlineTab.active::before {
+	content: '●';
+	position: absolute;
+	left: 2px;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 0.6rem;
+	color: white;
 }
 
 .inlineTab:disabled {
@@ -135,6 +148,7 @@
 	overflow: hidden;
 	display: flex;
 	flex-direction: column;
+	border-radius: 8px;
 	color: #000;
 }
 
@@ -143,11 +157,39 @@
 	overflow: auto;
 	outline: none;
 	flex: 1;
+	border-radius: 8px;
 	max-height: 100%;
 }
 
 .diffViewer:focus {
-	outline: none;
+	outline: 3px solid #005fcc; /* WCAGに準拠した濃いアウトライン */
+	outline-offset: 2px;
+}
+
+/* 差分表示用のメッセージスタイル */
+.diffViewer :global(.no-diff) {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 200px;
+	color: #000;
+	font-size: 1rem;
+	text-align: center;
+}
+
+.diffViewer :global(.error-message) {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 200px;
+	color: #d32f2f;
+	font-size: 1rem;
+	text-align: center;
+	background-color: #ffebee;
+	border: 1px solid #f8bbd9;
+	border-radius: 4px;
+	margin: 1rem;
+	padding: 1rem;
 }
 
 /* テーマ編集ダイアログ用のスタイル */

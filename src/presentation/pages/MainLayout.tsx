@@ -121,7 +121,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings: Settings }
 		[saveSnapshot]
 	)
 
-	const { forceSave } = useAutoSave(currentNotSavedText, {
+	const { forceSave, isSaving } = useAutoSave(currentNotSavedText, {
 		enabled: editorSettings.autoSave.enabled,
 		delay: editorSettings.autoSave.delay,
 		fileName: 'document.json',
@@ -181,8 +181,18 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings: Settings }
 	useEffect(() => {
 		;(async () => {
 			const initialText = await loadText('document.json')
-			setCurrentSavedText(initialText)
-			setLastSavedText(initialText)
+
+			// 初回起動時の状態設定
+			if (initialText) {
+				// ファイルが存在する場合
+				setCurrentSavedText(initialText)
+				setLastSavedText(initialText)
+			} else {
+				// 初回起動時（ファイルが存在しない場合）
+				setCurrentSavedText('')
+				setLastSavedText('') // 明示的に空文字列を設定
+			}
+
 			// エディタの初期化完了を待ってからテキストを設定
 			setTimeout(() => {
 				updateText(initialText)
@@ -199,16 +209,44 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings: Settings }
 		const handleKeyDown = async (e: KeyboardEvent) => {
 			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
 				e.preventDefault()
-				// forceSaveを使用してauto saveタイマーをリセット＆即座に保存
-				await forceSave()
-				// 手動保存時のスナップショットを追加
-				saveSnapshot(currentNotSavedText, `手動保存 - ${new Date().toLocaleString('ja-JP')}`)
+				console.log(`[DEBUG] Manual save triggered - isSaving: ${isSaving}`)
+
+				// 既に保存処理中の場合は何もしない
+				if (isSaving) {
+					console.log(`[DEBUG] Skipping manual save - already saving`)
+					return
+				}
+
+				try {
+					console.log(
+						`[DEBUG] Starting manual save process - content: "${currentNotSavedText}" (length: ${currentNotSavedText.length})`
+					)
+
+					// forceSaveを使用してauto saveタイマーをリセット＆即座に保存
+					await forceSave()
+
+					console.log(`[DEBUG] Manual save completed, updating state`)
+
+					// 手動保存成功時に状態を更新（空文字でも更新）
+					setLastSavedText(currentNotSavedText)
+					setCurrentSavedText(currentNotSavedText)
+
+					// 手動保存時のスナップショットを追加（空文字でも記録）
+					console.log(`[DEBUG] Creating manual save snapshot for content: "${currentNotSavedText}"`)
+					saveSnapshot(currentNotSavedText, `手動保存 - ${new Date().toLocaleString('ja-JP')}`)
+
+					console.log(
+						`[DEBUG] Manual save state updated - currentSavedText: "${currentNotSavedText}", lastSavedText: "${currentNotSavedText}"`
+					)
+				} catch (error) {
+					console.error('Manual save failed:', error)
+				}
 			}
 		}
 		window.addEventListener('keydown', handleKeyDown)
 
 		return () => window.removeEventListener('keydown', handleKeyDown)
-	}, [currentNotSavedText, saveSnapshot, forceSave])
+	}, [currentNotSavedText, saveSnapshot, forceSave, isSaving])
 
 	const onChangeText = useCallback(
 		(v: string) => {

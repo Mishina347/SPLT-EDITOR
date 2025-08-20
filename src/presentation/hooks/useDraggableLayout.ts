@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import { DISPLAY_MODE } from '../../domain'
 import { useViewportSize } from './useViewportSize'
+import { formatNumber } from '../../utils'
 
 interface DraggableLayoutConfig {
 	editorPosition: { x: number; y: number }
@@ -89,7 +90,7 @@ export const useDraggableLayout = (
 
 			const baseTitle = isMaximizedMode ? 'エディター (最大化)' : 'エディター'
 			const titleWithCharCount =
-				charCount !== undefined ? `${baseTitle} - ${charCount}文字` : baseTitle
+				charCount !== undefined ? `${baseTitle} - ${formatNumber(charCount)}文字` : baseTitle
 
 			return {
 				title: titleWithCharCount,

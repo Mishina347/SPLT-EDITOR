@@ -24,7 +24,7 @@ import {
 	EditorSettings,
 	EditorUIState,
 } from '../../domain'
-import { saveText, loadText } from '../../usecases'
+import { loadText } from '../../usecases'
 import { editorService } from '../../application'
 import { hexToRgba, isMobile } from '../../utils'
 import styles from './MainLayout.module.css'
@@ -33,9 +33,9 @@ interface EditorPageProps {
 	initSettings: Settings
 }
 
-export const EditorPage: React.FC<EditorPageProps> = ({ initSettings: Settings }) => {
-	const [editorSettings, setEditorSettings] = useState<EditorSettings>(Settings.editor)
-	const [previewSettings, setPreviewSettings] = useState<LayoutConfig>(Settings.preview)
+export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
+	const [editorSettings, setEditorSettings] = useState<EditorSettings>(initSettings.editor)
+	const [previewSettings, setPreviewSettings] = useState<LayoutConfig>(initSettings.preview)
 	const [viewMode, setViewMode] = useState<DISPLAY_MODE>(DISPLAY_MODE.BOTH)
 	const [focusedPane, setFocusedPane] = useState<DISPLAY_MODE>(DISPLAY_MODE.BOTH)
 

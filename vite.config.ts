@@ -7,24 +7,7 @@ export default defineConfig(({ command, mode }) => {
   return {
     plugins: [
       react(),
-      // 本番環境でのみconsole.logを削除するプラグイン
-      isProduction && {
-        name: 'remove-console-production',
-        transform(code, id) {
-          if (id.includes('node_modules')) return code
-          
-          // console.log系の呼び出しを削除
-          return code
-            .replace(/console\.log\s*\([^)]*\);?/g, '')
-            .replace(/console\.warn\s*\([^)]*\);?/g, '')
-            .replace(/console\.error\s*\([^)]*\);?/g, '')
-            .replace(/console\.info\s*\([^)]*\);?/g, '')
-            .replace(/console\.debug\s*\([^)]*\);?/g, '')
-            // 空行を削除
-            .replace(/^\s*[\r\n]/gm, '')
-        }
-      }
-    ].filter(Boolean),
+    ],
     server: { port: 3000 },
     base: '/SPLT-EDITOR/',
     build: {

@@ -40,8 +40,6 @@ export const EditorComponent = ({
 	const imeStartValueRef = useRef<string>('')
 	const imeStartPositionRef = useRef<monaco.IPosition | null>(null)
 	const imeStartSelectionRef = useRef<monaco.ISelection | null>(null)
-	// IME確定直後のカーソル移動許可フラグ
-	const imeJustCompletedRef = useRef(false)
 
 	// 設定値をメモ化
 	const { fontSize, wordWrapColumn, backgroundColor, textColor, fontFamily } = useMemo(
@@ -326,8 +324,6 @@ export const EditorComponent = ({
 			theme: 'custom-theme',
 			language: 'plaintext', // 言語を明示的に設定
 			// モバイル対応の設定
-			acceptSuggestionOnEnter: 'off', // モバイルでの誤動作を防ぐ
-			acceptSuggestionOnCommitCharacter: false,
 			automaticLayout: true, // レイアウトの自動調整
 			quickSuggestions: false, // クイック提案を無効（モバイルで邪魔になる場合）
 			wordBasedSuggestions: 'off', // 正しい型を使用
@@ -423,8 +419,9 @@ export const EditorComponent = ({
 		const disposable = editor.onDidChangeModelContent(() => {
 			const currentValue = editor.getValue()
 
-			// IME入力中（ただし確定直後は除く）は状態更新を抑制
-			if (imeCompositionRef.current && !imeJustCompletedRef.current) {
+			// IME入力中は状態更新を抑制
+			if (imeCompositionRef.current) {
+				console.log('IME入力中: エディタ状態更新を抑制')
 				return
 			}
 
@@ -444,11 +441,6 @@ export const EditorComponent = ({
 
 		// カーソル位置変更時の制御
 		const cursorDisposable = editor.onDidChangeCursorPosition(() => {
-			// IME確定直後はカーソル固定を無効にする
-			if (imeJustCompletedRef.current) {
-				return
-			}
-
 			// IME入力中はカーソル移動を元の位置に戻す
 			if (imeCompositionRef.current && imeStartPositionRef.current) {
 				const currentPosition = editor.getPosition()
@@ -461,6 +453,7 @@ export const EditorComponent = ({
 						currentPosition.column !== startPosition.column)
 				) {
 					editor.setPosition(startPosition)
+					console.log('IME入力中: カーソル位置を固定')
 					return
 				}
 			}
@@ -471,9 +464,32 @@ export const EditorComponent = ({
 
 		// IMEイベントハンドラーを追加
 		const setupIMEHandlers = () => {
+			console.log('[IME] Setting up IME handlers...')
 			const textArea = containerRef.current?.querySelector('textarea')
 			if (textArea) {
+				console.log('[IME] Textarea found, adding event listeners')
+				// IME関連のイベントハンドラー
+				const handleBeforeInput = (e: Event) => {
+					// IME入力中はbeforeinputイベントを無効化
+					if (imeCompositionRef.current) {
+						e.preventDefault()
+						e.stopPropagation()
+						console.log('[IME] Blocking beforeinput during composition')
+						return false
+					}
+				}
+
+				const handleInput = (e: Event) => {
+					// IME入力中はinputイベントを無効化
+					if (imeCompositionRef.current) {
+						e.preventDefault()
+						e.stopPropagation()
+						console.log('IME入力中: inputイベントを抑制')
+						return false
+					}
+				}
 				const handleCompositionStart = () => {
+					console.log('[IME] Composition start triggered')
 					imeCompositionRef.current = true
 					imeCompositionTextRef.current = ''
 
@@ -482,153 +498,151 @@ export const EditorComponent = ({
 						imeStartValueRef.current = editorRef.current.getValue()
 						imeStartPositionRef.current = editorRef.current.getPosition()
 						imeStartSelectionRef.current = editorRef.current.getSelection()
+						console.log('[IME] Saved state:', {
+							value: imeStartValueRef.current,
+							position: imeStartPositionRef.current,
+							selection: imeStartSelectionRef.current,
+						})
 					}
 
 					// IME開始時にwordWrapを無効化
 					updateWordWrapColumn()
 					// IMEフロート要素を作成（常時表示）
 					createIMEFloat()
+					console.log('[IME] IME handlers setup completed')
 				}
 
 				const handleCompositionUpdate = (e: CompositionEvent) => {
 					if (imeCompositionRef.current && editorRef.current) {
 						imeCompositionTextRef.current = e.data || ''
 
-						// 常にエディタの内容を元の状態に強制復元
-						editorRef.current.setValue(imeStartValueRef.current)
+						// エディタの内容を元の状態に強制復元（IME入力中は反映させない）
+						const currentValue = editorRef.current.getValue()
+						if (currentValue !== imeStartValueRef.current) {
+							editorRef.current.setValue(imeStartValueRef.current)
+							console.log('[IME] Editor content restored to prevent IME input reflection')
+						}
+
+						// カーソル位置を固定
 						if (imeStartPositionRef.current) {
 							editorRef.current.setPosition(imeStartPositionRef.current)
-						}
-						if (imeStartSelectionRef.current) {
-							editorRef.current.setSelection(imeStartSelectionRef.current)
 						}
 
 						// IME入力中の文字をフロート内容更新
 						updateIMEFloatContent(imeCompositionTextRef.current)
+						console.log(
+							`IME更新: "${imeCompositionTextRef.current}" (フロート表示更新、エディタ内容保護)`
+						)
 					}
 				}
 
 				const handleCompositionEnd = (e: CompositionEvent) => {
 					const finalText = e.data || ''
 
-					// IME確定直後フラグを設定（カーソル移動を許可）
-					imeJustCompletedRef.current = true
-
 					// フロート表示を削除
 					removeIMEFloat()
 
-					if (editorRef.current && imeCompositionRef.current) {
-						// エディタ状態をIME開始時点に復元
+					if (editorRef.current && imeStartPositionRef.current) {
+						// エディタを元の状態に戻す
 						editorRef.current.setValue(imeStartValueRef.current)
-						if (imeStartPositionRef.current) {
-							editorRef.current.setPosition(imeStartPositionRef.current)
-						}
-						if (imeStartSelectionRef.current) {
-							editorRef.current.setSelection(imeStartSelectionRef.current)
-						}
+						editorRef.current.setPosition(imeStartPositionRef.current)
 
-						// 確定したテキストを挿入
+						// 確定文字を挿入
 						if (finalText) {
 							const position = imeStartPositionRef.current
-							if (position) {
-								// 確定文字数を正確に計算（サロゲートペア対応）
-								const textLength = Array.from(finalText).length
+							const model = editorRef.current.getModel()
 
-								// テキストを挿入
-								const range = new monaco.Range(
-									position.lineNumber,
-									position.column,
-									position.lineNumber,
-									position.column
-								)
+							if (model) {
+								// 現在の行内容を取得
+								const lineContent = model.getLineContent(position.lineNumber)
+								const beforeCursor = lineContent.substring(0, position.column - 1)
+								const afterCursor = lineContent.substring(position.column - 1)
 
-								// executeEditsを使用してテキスト挿入とカーソル位置を同時に処理
-								const edits = [
-									{
-										range,
-										text: finalText,
-									},
-								]
+								// 新しい行内容を作成（確定文字を挿入）
+								const newLineContent = beforeCursor + finalText + afterCursor
 
-								// テキスト挿入を実行
-								editorRef.current.executeEdits('ime-insert', edits)
-
-								// 挿入後の新しいカーソル位置を計算
-								const newPosition = {
-									lineNumber: position.lineNumber,
-									column: position.column + textLength,
+								// 行全体を置換
+								const range = {
+									startLineNumber: position.lineNumber,
+									startColumn: 1,
+									endLineNumber: position.lineNumber,
+									endColumn: lineContent.length + 1,
 								}
 
-								// 複数のタイミングでカーソル位置を設定（確実に反映されるように）
-								editorRef.current.setPosition(newPosition)
+								editorRef.current.executeEdits('ime-insert', [
+									{
+										range: range,
+										text: newLineContent,
+									},
+								])
 
-								// requestAnimationFrameを使用して次のフレームでもカーソル位置を設定
-								requestAnimationFrame(() => {
+								// キャレット位置を確定文字の後に設定
+								setTimeout(() => {
 									if (editorRef.current) {
+										const textLength = finalText.length
+										const newPosition = {
+											lineNumber: position.lineNumber,
+											column: position.column + textLength,
+										}
+
+										// 強制的にキャレット位置を設定
 										editorRef.current.setPosition(newPosition)
 										editorRef.current.revealPosition(newPosition)
+										editorRef.current.focus()
 
-										// さらに少し遅延してもう一度設定
+										// キャレット移動アニメーションを実行（波紋なし）
 										setTimeout(() => {
-											if (editorRef.current) {
-												editorRef.current.setPosition(newPosition)
-												editorRef.current.focus()
+											triggerCaretAnimation('pulse', false)
+										}, 100)
 
-												// キャレットアニメーションを実行
-												triggerCaretAnimation('pulse', false)
-
-												// IME確定直後フラグをリセット
-												imeJustCompletedRef.current = false
-
-												// IME確定後にonChangeを明示的に呼び出し（プレビュー更新のため）
-												const updatedValue = editorRef.current?.getValue()
-												if (updatedValue && updatedValue !== textData) {
-													handleChange(updatedValue)
-												}
-											}
-										}, 10)
+										console.log(
+											`IME確定: "${finalText}" (${textLength}文字) 挿入完了, キャレット移動: 列${position.column} → ${newPosition.column}`
+										)
 									}
-								})
+								}, 50)
 							}
 						}
 					}
 
-					// wordWrap設定を通常に戻す（カーソル位置設定の後で実行）
+					// IME状態をリセット
+					imeCompositionRef.current = false
+					imeCompositionTextRef.current = ''
+					imeStartValueRef.current = ''
+					imeStartPositionRef.current = null
+					imeStartSelectionRef.current = null
+
+					// IME入力完了後の処理
 					setTimeout(() => {
-						updateWordWrapColumn()
-
-						// IME状態をリセット（最後に実行）
-						imeCompositionRef.current = false
-						imeCompositionTextRef.current = ''
-						imeStartValueRef.current = ''
-						imeStartPositionRef.current = null
-						imeStartSelectionRef.current = null
-
-						// 念のためフラグもリセット
-						imeJustCompletedRef.current = false
-
-						// 最終的にonChangeを呼び出してプレビューを確実に更新
 						if (editorRef.current) {
-							const finalValue = editorRef.current.getValue()
-							if (finalValue !== textData) {
-								handleChange(finalValue)
+							// IME終了時にwordWrapを再有効化
+							updateWordWrapColumn()
+
+							console.log('IME入力完了: ソフトラップ再有効化')
+
+							// 状態更新
+							const currentValue = editorRef.current.getValue()
+							if (currentValue !== textData) {
+								handleChange(currentValue)
 							}
 						}
-					}, 50)
+					}, 100)
 				}
 
-				// イベントリスナーを追加
+				textArea.addEventListener('beforeinput', handleBeforeInput, true) // キャプチャフェーズで実行
 				textArea.addEventListener('compositionstart', handleCompositionStart)
 				textArea.addEventListener('compositionupdate', handleCompositionUpdate)
 				textArea.addEventListener('compositionend', handleCompositionEnd)
+				textArea.addEventListener('input', handleInput, true) // キャプチャフェーズで実行
 
-				// クリーンアップ関数を返す
 				return () => {
+					textArea.removeEventListener('beforeinput', handleBeforeInput, true)
 					textArea.removeEventListener('compositionstart', handleCompositionStart)
 					textArea.removeEventListener('compositionupdate', handleCompositionUpdate)
 					textArea.removeEventListener('compositionend', handleCompositionEnd)
+					textArea.removeEventListener('input', handleInput, true)
 				}
 			}
+			console.log('[IME] Textarea not found, IME handlers not set up')
 			return () => {}
 		}
 
@@ -912,32 +926,27 @@ export const EditorComponent = ({
 	// エディタwrapperのキーボードハンドラー
 	const handleWrapperKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
-			if (!isInnerFocusRef.current) {
-				// 外部フォーカス状態でのキー処理
-				if (e.key === ' ' || e.key === 'Enter') {
-					e.preventDefault()
-					focusIntoEditor()
-				}
-				// Tab キーは通常通り処理される（prevent しない）
-			} else {
-				// 内部フォーカス状態でのキー処理
-				if (e.key === 'Escape') {
-					e.preventDefault()
+			// シンプルなキーボード操作
+			if (e.key === 'Enter' && !isInnerFocusRef.current) {
+				// Enterキーでエディタにフォーカス
+				e.preventDefault()
+				focusIntoEditor()
+			} else if (e.key === 'Escape' && isInnerFocusRef.current) {
+				// Escapeキーでエディタからフォーカス解除
+				e.preventDefault()
+				focusOutOfEditor()
+			} else if (e.key === 'Tab' && (e.ctrlKey || e.metaKey)) {
+				// Ctrl+Tab または Cmd+Tab: フォーカス移動
+				e.preventDefault()
+				if (e.shiftKey) {
+					// Ctrl+Shift+Tab: 前の要素へ
 					focusOutOfEditor()
-				} else if (e.key === 'Tab' && (e.ctrlKey || e.metaKey)) {
-					// Ctrl+Tab または Cmd+Tab: フォーカス移動
-					e.preventDefault()
-					if (e.shiftKey) {
-						// Ctrl+Shift+Tab: 前の要素へ
-						focusOutOfEditor()
-						setTimeout(() => focusPrevElement(), 0)
-					} else {
-						// Ctrl+Tab: 次の要素へ
-						focusOutOfEditor()
-						setTimeout(() => focusNextElement(), 0)
-					}
+					setTimeout(() => focusPrevElement(), 0)
+				} else {
+					// Ctrl+Tab: 次の要素へ
+					focusOutOfEditor()
+					setTimeout(() => focusNextElement(), 0)
 				}
-				// 通常のTabキーは Monaco Editor に委ねる（文字挿入）
 			}
 		},
 		[focusIntoEditor, focusOutOfEditor, focusNextElement, focusPrevElement]
@@ -946,20 +955,21 @@ export const EditorComponent = ({
 	return (
 		<>
 			<main className={styles.editorBody} onFocus={handleFocusPane}>
+				<h2 className={styles.srOnly}>テキストエディタ</h2>
 				<div
 					ref={wrapperRef}
 					className={styles.editorWrapper}
 					tabIndex={0}
 					role="textbox"
-					aria-label="テキストエディタ - スペースキー、Enterキー、またはダブルクリックで編集モードに入ります。編集中はTabキーで文字挿入、Ctrl+Tabでフォーカス移動"
+					aria-label="テキストエディタ - Enterキーで編集開始、Escapeキーで編集終了"
 					aria-multiline="true"
 					aria-describedby="editor-instructions"
 					data-inner-focus="false"
 					onKeyDown={handleWrapperKeyDown}
 					onClick={() => {
-						// シングルクリックでは外部フォーカスのみ
-						if (wrapperRef.current && !isInnerFocusRef.current) {
-							wrapperRef.current.focus()
+						// シングルクリックでエディタにフォーカス
+						if (!isInnerFocusRef.current) {
+							focusIntoEditor()
 						}
 					}}
 					onDoubleClick={focusIntoEditor}
@@ -975,10 +985,7 @@ export const EditorComponent = ({
 						}}
 					/>
 					<div id="editor-instructions" className={styles.instructions}>
-						<p>
-							スペースキー・Enterキー・ダブルクリックで編集開始 • Tabキーで文字挿入 • Ctrl+Tabで次へ移動 •
-							Escapeキーで編集終了
-						</p>
+						<p>Enterキーで編集開始 • Escapeキーで編集終了 • Ctrl+Tabでフォーカス移動</p>
 					</div>
 				</div>
 			</main>

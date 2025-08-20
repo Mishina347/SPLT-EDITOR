@@ -100,6 +100,19 @@
 	transition: none !important;
 }
 
+/* スクリーンリーダー専用テキスト */
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
 /* スクロール時の描画最適化 */
 .editorBody .monaco-editor .monaco-scrollable-element {
 	/* スクロール中の再描画を最小化 */

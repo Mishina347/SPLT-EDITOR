@@ -3,3 +3,10 @@ dist
 build
 coverage
 *.lock
+target
+src-tauri/target
+vite.config.ts
+next.config.ts
+tauri.conf.json
+tsconfig.json
+.github/workflows/*.yml

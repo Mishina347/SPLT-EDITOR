@@ -6,6 +6,7 @@ export default defineConfig(({ command, mode }) => {
   const isProduction = command === 'build' || mode === 'production'
   
   return {
+    base:isProduction ? "/SPLT-EDITOR/" : "/",
     plugins: [
       react(),
       VitePWA({

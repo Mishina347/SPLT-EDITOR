@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import { DEFAULT_SETTING, Settings } from './domain/entities/defaultSetting'
 import { loadSettings } from './usecases/settingsUseCase'
-import './useMonacoWorker'
 
 function Root() {
 	const [settings, setSettings] = useState<Settings>(DEFAULT_SETTING)

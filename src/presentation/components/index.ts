@@ -24,5 +24,8 @@ export { LayoutContainer } from './layout/LayoutContainer'
 export { LayoutRenderer } from './layout/LayoutRenderer'
 
 // Icons
-export { LayerIcon } from './icons'
+export { LayerIcon } from './icons/LayerIcon'
 export { OverflowMenu } from './toolbar/OverflowMenu'
+
+// PWA components
+export { PWAInstallButton, PWAStatus, PWAOrientationControl } from './pwa'

@@ -1,0 +1,270 @@
+.pwaStatus {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+/* ステータスグリッド */
+.statusGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 12px;
+}
+
+.statusItem {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 12px;
+	background-color: #f8f9fa;
+	border-radius: 8px;
+	border: 1px solid #e9ecef;
+}
+
+.label {
+	font-weight: 500;
+	color: #495057;
+}
+
+.value {
+	font-weight: 600;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 14px;
+}
+
+/* ステータス値の色分け */
+.installed {
+	background-color: #d4edda;
+	color: #155724;
+	border: 1px solid #c3e6cb;
+}
+
+.notInstalled {
+	background-color: #f8d7da;
+	color: #721c24;
+	border: 1px solid #f5c6cb;
+}
+
+.available {
+	background-color: #d1ecf1;
+	color: #0c5460;
+	border: 1px solid #bee5eb;
+}
+
+.unavailable {
+	background-color: #fff3cd;
+	color: #856404;
+	border: 1px solid #ffeaa7;
+}
+
+.online {
+	background-color: #d4edda;
+	color: #155724;
+	border: 1px solid #c3e6cb;
+}
+
+.offline {
+	background-color: #f8d7da;
+	color: #721c24;
+	border: 1px solid #f5c6cb;
+}
+
+.updateAvailable {
+	background-color: #fff3cd;
+	color: #856404;
+	border: 1px solid #ffeaa7;
+}
+
+/* アクションボタン */
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.actionButton {
+	padding: 8px 16px;
+	border: none;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	white-space: nowrap;
+}
+
+.actionButton:focus {
+	outline: 2px solid var(--app-text-color, #005fcc);
+	outline-offset: 2px;
+}
+
+.actionButton:focus:not(:focus-visible) {
+	outline: none;
+}
+
+.actionButton:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.updateButton {
+	background-color: #28a745;
+	color: white;
+}
+
+.updateButton:hover {
+	background-color: #218838;
+}
+
+.cacheButton {
+	background-color: #6c757d;
+	color: white;
+}
+
+.cacheButton:hover {
+	background-color: #5a6268;
+}
+
+.notificationButton {
+	background-color: #17a2b8;
+	color: white;
+}
+
+.notificationButton:hover {
+	background-color: #138496;
+}
+
+.testNotificationButton {
+	background-color: #ffc107;
+	color: #212529;
+}
+
+.testNotificationButton:hover {
+	background-color: #e0a800;
+}
+
+/* ステータスバッジ（最小表示用） */
+.statusBadge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border-radius: 20px;
+	font-size: 14px;
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.badgeIcon {
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+}
+
+.offlineBadge {
+	background-color: #f8d7da;
+	color: #721c24;
+	border: 1px solid #f5c6cb;
+}
+
+.updateBadge {
+	background-color: #fff3cd;
+	color: #856404;
+	border: 1px solid #ffeaa7;
+}
+
+.installedBadge {
+	background-color: #d4edda;
+	color: #155724;
+	border: 1px solid #c3e6cb;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+	.statusGrid {
+		grid-template-columns: 1fr;
+	}
+
+	.actions {
+		flex-direction: column;
+	}
+
+	.actionButton {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+/* ダークテーマ対応 */
+@media (prefers-color-scheme: dark) {
+	.statusItem {
+		background-color: #2d3748;
+		border-color: #4a5568;
+	}
+
+	.label {
+		color: #e2e8f0;
+	}
+
+	.installed {
+		background-color: #22543d;
+		color: #9ae6b4;
+		border-color: #38a169;
+	}
+
+	.notInstalled {
+		background-color: #742a2a;
+		color: #feb2b2;
+		border-color: #e53e3e;
+	}
+
+	.available {
+		background-color: #1a365d;
+		color: #90cdf4;
+		border-color: #3182ce;
+	}
+
+	.unavailable {
+		background-color: #744210;
+		color: #faf089;
+		border-color: #d69e2e;
+	}
+
+	.online {
+		background-color: #22543d;
+		color: #9ae6b4;
+		border-color: #38a169;
+	}
+
+	.offline {
+		background-color: #742a2a;
+		color: #feb2b2;
+		border-color: #e53e3e;
+	}
+
+	.updateAvailable {
+		background-color: #744210;
+		color: #faf089;
+		border-color: #d69e2e;
+	}
+}
+
+/* 高コントラストモード対応 */
+@media (prefers-contrast: high) {
+	.statusItem {
+		border-width: 2px;
+	}
+
+	.value {
+		border-width: 2px;
+	}
+
+	.statusBadge {
+		border-width: 2px;
+	}
+
+	.actionButton {
+		border: 2px solid #000;
+	}
+}

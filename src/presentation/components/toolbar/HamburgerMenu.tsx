@@ -1,7 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useFullscreen } from '../../hooks'
+import { usePWA } from '../../hooks/usePWA'
+import { PWAInstallButton } from '../pwa/PWAInstallButton'
+import { PWAStatus } from '../pwa/PWAStatus'
 import styles from './HamburgerMenu.module.css'
+
+// PWAインストール用の型定義
+declare global {
+	interface Window {
+		deferredPrompt: any
+	}
+}
 
 interface HamburgerMenuProps {
 	onThemeEdit: () => void
@@ -16,12 +26,25 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 }) => {
 	const [isOpen, setIsOpen] = useState(false)
 	const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
+	const [showPWASection, setShowPWASection] = useState(false)
 	const menuRef = useRef<HTMLDivElement>(null)
 	const buttonRef = useRef<HTMLButtonElement>(null)
 	const firstMenuItemRef = useRef<HTMLButtonElement>(null)
 
 	// フルスクリーン機能
 	const { isFullscreen, toggleFullscreen } = useFullscreen()
+
+	// PWA機能
+	const {
+		isInstallable,
+		isInstalled,
+		isOffline,
+		isUpdateAvailable,
+		updateServiceWorker,
+		clearCache,
+		requestNotificationPermission,
+		sendNotification,
+	} = usePWA()
 
 	// メニュー外クリックで閉じる
 	useEffect(() => {
@@ -41,7 +64,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 	useEffect(() => {
 		if (isOpen && buttonRef.current) {
 			const buttonRect = buttonRef.current.getBoundingClientRect()
-			const menuWidth = 140 // メニューの幅
+			const menuWidth = showPWASection ? 280 : 140 // PWAセクション表示時は幅を広げる
 
 			let left = buttonRect.left
 			let top = buttonRect.bottom + 4 // ボタンの下に4px間隔で配置
@@ -57,14 +80,14 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 			}
 
 			// 下端が見切れる場合は上に表示
-			if (top + 200 > window.innerHeight) {
-				// 200はメニューの概算高さ
+			if (top + 300 > window.innerHeight) {
+				// PWAセクション表示時は高さを増加
 				top = buttonRect.top - 8 // ボタンの上に配置
 			}
 
 			setMenuPosition({ top, left })
 		}
-	}, [isOpen])
+	}, [isOpen, showPWASection])
 
 	// ウィンドウリサイズやスクロール時にメニュー位置を再計算
 	useEffect(() => {
@@ -73,7 +96,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 		const updatePosition = () => {
 			if (buttonRef.current) {
 				const buttonRect = buttonRef.current.getBoundingClientRect()
-				const menuWidth = 140
+				const menuWidth = showPWASection ? 280 : 140
 
 				let left = buttonRect.left
 				let top = buttonRect.bottom + 4
@@ -86,7 +109,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 					left = 8
 				}
 
-				if (top + 200 > window.innerHeight) {
+				if (top + 300 > window.innerHeight) {
 					top = buttonRect.top - 8
 				}
 
@@ -101,7 +124,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 			window.removeEventListener('resize', updatePosition)
 			window.removeEventListener('scroll', updatePosition, true)
 		}
-	}, [isOpen])
+	}, [isOpen, showPWASection])
 
 	// キーボードナビゲーション
 	useEffect(() => {
@@ -202,8 +225,51 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 		buttonRef.current?.focus()
 	}
 
+	const handlePWASectionToggle = () => {
+		setShowPWASection(!showPWASection)
+	}
+
+	const handleUpdateServiceWorker = async () => {
+		try {
+			await updateServiceWorker()
+		} catch (error) {
+			console.error('Service Workerの更新に失敗しました:', error)
+		}
+	}
+
+	const handleClearCache = async () => {
+		try {
+			await clearCache()
+			console.log('キャッシュがクリアされました')
+		} catch (error) {
+			console.error('キャッシュのクリアに失敗しました:', error)
+		}
+	}
+
+	const handleRequestNotificationPermission = async () => {
+		try {
+			const granted = await requestNotificationPermission()
+			if (granted) {
+				console.log('通知の許可が得られました')
+			}
+		} catch (error) {
+			console.error('通知の許可要求に失敗しました:', error)
+		}
+	}
+
+	const handleTestNotification = () => {
+		try {
+			sendNotification('テスト通知', { body: 'PWA通知が正常に動作しています' })
+		} catch (error) {
+			console.error('テスト通知の送信に失敗しました:', error)
+		}
+	}
+
 	const toggleMenu = () => {
 		setIsOpen(!isOpen)
+		if (!isOpen) {
+			setShowPWASection(false) // メニューを開く時にPWAセクションをリセット
+		}
 	}
 
 	return (
@@ -240,6 +306,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 							zIndex: 9999, // 最上位に表示
 						}}
 					>
+						{/* 基本メニュー項目 */}
 						<button
 							ref={firstMenuItemRef}
 							className={styles.menuItem}
@@ -278,6 +345,101 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 						>
 							{isFullscreen ? '通常表示' : 'フルスクリーン'}
 						</button>
+
+						{/* 区切り線 */}
+						<div className={styles.menuDivider}></div>
+
+						{/* PWAセクション */}
+						<div className={styles.pwaSection}>
+							<button
+								className={`${styles.menuItem} ${styles.pwaToggleButton}`}
+								onClick={handlePWASectionToggle}
+								role="menuitem"
+								aria-label="PWA機能の詳細を表示"
+								aria-expanded={showPWASection}
+							>
+								端末アプリ
+								<span className={`${styles.expandIcon} ${showPWASection ? styles.expanded : ''}`}>▼</span>
+							</button>
+
+							{showPWASection && (
+								<div className={styles.pwaSubmenu}>
+									{/* PWAインストールボタン - インストール可能でかつ未インストールの場合のみ表示 */}
+									{isInstallable && !isInstalled && (
+										<div className={styles.pwaInstallButtonContainer}>
+											<button
+												className={`${styles.menuItem} ${styles.pwaInstallButton}`}
+												onClick={() => {
+													// PWAインストール処理
+													if (window.deferredPrompt) {
+														window.deferredPrompt.prompt()
+														window.deferredPrompt.userChoice.then((choiceResult: any) => {
+															if (choiceResult.outcome === 'accepted') {
+																console.log('PWAインストールが承認されました')
+															} else {
+																console.log('PWAインストールが拒否されました')
+															}
+															window.deferredPrompt = null
+														})
+													}
+												}}
+												role="menuitem"
+												aria-label="SPLT EDITORをインストール"
+											>
+												<span>インストール</span>
+											</button>
+											{/* PWA状態表示 */}
+											<div className={styles.pwaStatusContainer}>
+												<PWAStatus detail="minimal" />
+											</div>
+										</div>
+									)}
+
+									{isInstalled && (
+										<>
+											{/* PWAアクションボタン */}
+											{isUpdateAvailable && (
+												<button
+													className={`${styles.menuItem} ${styles.pwaActionButton}`}
+													onClick={handleUpdateServiceWorker}
+													role="menuitem"
+													aria-label="アプリを更新"
+												>
+													更新を適用
+												</button>
+											)}
+
+											<button
+												className={`${styles.menuItem} ${styles.pwaActionButton}`}
+												onClick={handleClearCache}
+												role="menuitem"
+												aria-label="キャッシュをクリア"
+											>
+												キャッシュクリア
+											</button>
+
+											<button
+												className={`${styles.menuItem} ${styles.pwaActionButton}`}
+												onClick={handleRequestNotificationPermission}
+												role="menuitem"
+												aria-label="通知の許可を要求"
+											>
+												通知を有効化
+											</button>
+
+											<button
+												className={`${styles.menuItem} ${styles.pwaActionButton}`}
+												onClick={handleTestNotification}
+												role="menuitem"
+												aria-label="テスト通知を送信"
+											>
+												テスト通知
+											</button>
+										</>
+									)}
+								</div>
+							)}
+						</div>
 					</div>,
 					document.body
 				)}

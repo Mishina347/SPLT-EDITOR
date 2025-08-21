@@ -1,0 +1,141 @@
+.container {
+	display: relative;
+}
+
+/* スタイルバリエーション */
+.primary {
+	width: 100%;
+	margin: auto;
+	background-color: var(--app-bg-color, #005fcc);
+	color: var(--app-text-color, #fff);
+	box-shadow: 0 2px 4px rgba(0, 95, 204, 0.2);
+}
+
+.primary:hover:not(:disabled) {
+	background-color: transparent;
+	box-shadow: 0 4px 8px rgba(0, 95, 204, 0.3);
+	transform: translateY(-1px);
+}
+
+.primary:active:not(:disabled) {
+	transform: translateY(0);
+	box-shadow: 0 2px 4px rgba(0, 95, 204, 0.2);
+}
+
+.secondary {
+	background-color: #f5f5f5;
+	color: #333;
+	border: 1px solid #ddd;
+}
+
+.secondary:hover:not(:disabled) {
+	background-color: #e8e8e8;
+	border-color: #ccc;
+}
+
+.outline {
+	background-color: transparent;
+	color: var(--app-text-color, #005fcc);
+	border: 2px solid var(--app-text-color, #005fcc);
+}
+
+.outline:hover:not(:disabled) {
+	background-color: var(--app-text-color, #005fcc);
+	color: white;
+}
+
+/* アイコン */
+.icon {
+	width: 20px;
+	height: 20px;
+	flex-shrink: 0;
+}
+
+.small .icon {
+	width: 16px;
+	height: 16px;
+}
+
+.large .icon {
+	width: 24px;
+	height: 24px;
+}
+
+/* スピナー */
+.spinner {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border: 2px solid transparent;
+	border-top: 2px solid currentColor;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+}
+
+.small .spinner {
+	width: 14px;
+	height: 14px;
+	border-width: 1.5px;
+}
+
+.large .spinner {
+	width: 18px;
+	height: 18px;
+	border-width: 2px;
+}
+
+@keyframes spin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+/* エラーメッセージ */
+.error {
+	margin-top: 8px;
+	padding: 8px 12px;
+	background-color: #fee;
+	color: #c33;
+	border: 1px solid #fcc;
+	border-radius: 4px;
+	font-size: 14px;
+	max-width: 300px;
+	word-wrap: break-word;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+	.medium {
+		padding: 10px 16px;
+		font-size: 15px;
+		min-height: 40px;
+	}
+
+	.large {
+		padding: 14px 20px;
+		font-size: 16px;
+		min-height: 48px;
+	}
+}
+
+/* 高コントラストモード対応 */
+@media (prefers-contrast: high) {
+	.pwaInstallButton {
+		border-width: 2px;
+	}
+
+	.primary {
+		border: 2px solid #000;
+	}
+
+	.secondary {
+		border: 2px solid #000;
+	}
+
+	.outline {
+		border-width: 3px;
+	}
+}

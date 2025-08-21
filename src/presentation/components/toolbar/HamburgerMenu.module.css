@@ -147,3 +147,178 @@
 		transform: translateY(0);
 	}
 }
+
+/* 既存のスタイルはそのまま保持し、PWAセクション用のスタイルを追加 */
+
+/* 区切り線 */
+.menuDivider {
+	height: 1px;
+	background-color: #e9ecef;
+	margin: 8px 0;
+	border-radius: 1px;
+}
+
+/* PWAセクション */
+.pwaSection {
+	border-top: 1px solid #f1f3f4;
+}
+
+.pwaToggleButton {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	background: none;
+	border: none;
+	padding: 8px 12px;
+	color: var(--app-text-color, #333);
+	font-size: 14px;
+	cursor: pointer;
+	border-radius: 4px;
+	transition: background-color 0.2s ease;
+}
+
+.pwaToggleButton:hover {
+	outline: 2px solid #007acc;
+	outline-offset: 2px;
+	background-color: transparent;
+}
+
+.hamburgerButton:focus {
+	outline: 2px solid #007acc;
+	outline-offset: 2px;
+	background-color: transparent;
+}
+
+.pwaToggleButton:focus:not(:focus-visible) {
+	outline: none;
+}
+
+.expandIcon {
+	font-size: 12px;
+	transition: transform 0.2s ease;
+	color: #9aa0a6;
+}
+
+.expandIcon.expanded {
+	transform: rotate(180deg);
+}
+
+/* PWAサブメニュー */
+.pwaSubmenu {
+	border-left: 2px solid #e8eaed;
+}
+
+/* PWAインストールボタン */
+.pwaInstallButtonContainer {
+	margin: 8px;
+}
+
+.pwaInstallButton {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	border: none;
+	font-weight: 500;
+	border-radius: 8px;
+	transition: all 0.2s ease;
+	box-shadow: 0 1px 2px var(--app-text-color, rgba(0, 0, 0, 0.2));
+}
+
+.pwaInstallButton:hover {
+	transform: translateY(-1px);
+	color: black;
+	box-shadow: 0 4px 12px rgba(0, 95, 204, 0.3);
+}
+
+.pwaInstallButton:focus {
+	outline: 2px solid var(--app-accent-color, #007acc);
+	outline-offset: 2px;
+	background: var(--app-accent-color, #007acc);
+	color: white;
+}
+
+.pwaInstallButton:active {
+	transform: translateY(0);
+	box-shadow: 0 2px 6px rgba(0, 95, 204, 0.2);
+}
+
+/* PWAインストールコンテナ */
+.pwaInstallContainer {
+	padding: 4px 0;
+	background-color: transparent;
+	border-radius: 6px;
+	border: 1px solid var(--app-border-color);
+}
+
+/* PWA状態表示コンテナ */
+.pwaStatusContainer {
+	margin: 8px 0;
+	padding: 8px;
+	background-color: transparent;
+	border-radius: 8px;
+}
+
+/* PWAアクションボタン */
+.pwaActionButton {
+	background: #ffffff;
+	border: 1px solid var(--app-border-color, #dddddd);
+	transition: all 0.2s ease;
+}
+
+.pwaActionButton:hover {
+	background-color: #e9ecef;
+	border-color: #adb5bd;
+	color: red;
+}
+
+.pwaActionButton:focus {
+	outline: 2px solid var(--app-text-color, #005fcc);
+	outline-offset: 2px;
+}
+
+.pwaActionButton:focus:not(:focus-visible) {
+	outline: none;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+	.pwaSubmenu {
+		padding-left: 12px;
+	}
+
+	.pwaInstallContainer,
+	.pwaStatusContainer {
+		padding: 6px;
+	}
+}
+
+/* 高コントラストモード対応 */
+@media (prefers-contrast: high) {
+	.menuDivider {
+		height: 2px;
+		background-color: #000;
+	}
+
+	.pwaSection {
+		border-top-width: 2px;
+		border-top-color: #000;
+	}
+
+	.pwaSubmenu {
+		border-left-width: 3px;
+		border-left-color: #000;
+	}
+
+	.pwaInstallContainer,
+	.pwaStatusContainer {
+		border-width: 2px;
+		border-color: #000;
+	}
+
+	.pwaActionButton {
+		border-width: 2px;
+		border-color: #000;
+	}
+}

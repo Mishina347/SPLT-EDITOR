@@ -4,17 +4,17 @@ const DYNAMIC_CACHE_NAME = 'splt-editor-dynamic-v1.0.0'
 
 // キャッシュする静的ファイル
 const STATIC_FILES = [
-	'/SPLT-EDITOR/',
-	'/SPLT-EDITOR/index.html',
-	'/SPLT-EDITOR/manifest.json',
-	'/SPLT-EDITOR/images/icons/icon-72x72.png',
-	'/SPLT-EDITOR/images/icons/icon-96x96.png',
-	'/SPLT-EDITOR/images/icons/icon-128x128.png',
-	'/SPLT-EDITOR/images/icons/icon-144x144.png',
-	'/SPLT-EDITOR/images/icons/icon-152x152.png',
-	'/SPLT-EDITOR/images/icons/icon-192x192.png',
-	'/SPLT-EDITOR/images/icons/icon-384x384.png',
-	'/SPLT-EDITOR/images/icons/icon-512x512.png',
+	'/',
+	'/index.html',
+	'/manifest.json',
+	'/images/icons/icon-72x72.png',
+	'/images/icons/icon-96x96.png',
+	'/images/icons/icon-128x128.png',
+	'/images/icons/icon-144x144.png',
+	'/images/icons/icon-152x152.png',
+	'/images/icons/icon-192x192.png',
+	'/images/icons/icon-384x384.png',
+	'/images/icons/icon-512x512.png',
 ]
 
 // キャッシュしないファイル（API、外部リソースなど）
@@ -127,7 +127,7 @@ self.addEventListener('fetch', event => {
 						}
 						// フォールバックページ
 						if (request.destination === 'document') {
-							return caches.match('/SPLT-EDITOR/')
+							return caches.match('/')
 						}
 					})
 				})
@@ -161,49 +161,10 @@ self.addEventListener('sync', event => {
 	if (event.tag === 'background-sync') {
 		event.waitUntil(
 			// オフライン時のデータを同期
-			syncOfflineData()
+			syncOfflineData().then(() => {
+				console.log('[SW] Background sync completed')
+			})
 		)
-	}
-})
-
-// プッシュ通知の処理
-self.addEventListener('push', event => {
-	console.log('[SW] Push notification received')
-
-	const options = {
-		body: event.data ? event.data.text() : '新しい通知があります',
-		icon: '/SPLT-EDITOR/images/icons/icon-192x192.png',
-		badge: '/SPLT-EDITOR/images/icons/icon-72x72.png',
-		vibrate: [100, 50, 100],
-		data: {
-			dateOfArrival: Date.now(),
-			primaryKey: 1,
-		},
-		actions: [
-			{
-				action: 'explore',
-				title: '開く',
-				icon: '/SPLT-EDITOR/images/icons/icon-96x96.png',
-			},
-			{
-				action: 'close',
-				title: '閉じる',
-				icon: '/SPLT-EDITOR/images/icons/icon-96x96.png',
-			},
-		],
-	}
-
-	event.waitUntil(self.registration.showNotification('SPLT EDITOR', options))
-})
-
-// 通知クリック時の処理
-self.addEventListener('notificationclick', event => {
-	console.log('[SW] Notification clicked:', event.action)
-
-	event.notification.close()
-
-	if (event.action === 'explore') {
-		event.waitUntil(clients.openWindow('/SPLT-EDITOR/'))
 	}
 })
 

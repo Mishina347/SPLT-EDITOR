@@ -35,7 +35,6 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	onMaximize,
 	onFocusPane,
 	onRestoreHistory,
-
 	onPageInfoChange,
 }) => {
 	const [mode, setMode] = useState<PreviewMode>(PreviewMode.VERTICAL)

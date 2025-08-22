@@ -1095,20 +1095,20 @@ export const EditorComponent = ({
 				/>
 			</main>
 			<button
-				className={`${buttonStyles.maximizeBtn} ${styles.maximizeBtnPosition} 
-			${isMaximized ? buttonStyles.buttonActive : buttonStyles.buttonSecondary}
-		`}
+				className={`${buttonStyles.maximizeBtn} ${styles.maximizeBtnPosition}
+					${isMaximized ? buttonStyles.buttonActive : buttonStyles.buttonSecondary}
+				`}
 				aria-pressed={isMaximized ? 'true' : 'false'}
 				onClick={e => {
 					e.preventDefault()
 					e.stopPropagation() // 長押しリサイズとの競合を防ぐ
-					handleMaximize()
+					onMaximize()
 				}}
 				onTouchEnd={e => {
-					console.log('Editor maximize button touch end')
+					console.log('RightPane maximize button touch end')
 					e.preventDefault()
 					e.stopPropagation() // 長押しリサイズとの競合を防ぐ
-					handleMaximize()
+					onMaximize()
 				}}
 				style={{
 					touchAction: 'manipulation',

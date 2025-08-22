@@ -36,12 +36,63 @@ interface EditorPageProps {
 export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	const [editorSettings, setEditorSettings] = useState<EditorSettings>(initSettings.editor)
 	const [previewSettings, setPreviewSettings] = useState<LayoutConfig>(initSettings.preview)
+	// 最大化状態の詳細管理
 	const [viewMode, setViewMode] = useState<DISPLAY_MODE>(DISPLAY_MODE.BOTH)
 	const [focusedPane, setFocusedPane] = useState<DISPLAY_MODE>(DISPLAY_MODE.BOTH)
 
-	const handleMaximize = useCallback((target: DISPLAY_MODE) => {
-		setViewMode(prevViewMode => (prevViewMode === target ? DISPLAY_MODE.BOTH : target))
+	// 各コンポーネントの最大化状態を個別に管理
+	const [isEditorMaximized, setIsEditorMaximized] = useState(false)
+	const [isPreviewMaximized, setIsPreviewMaximized] = useState(false)
+
+	// 最大化状態の詳細管理
+	const handleMaximize = useCallback(
+		(target: DISPLAY_MODE) => {
+			if (target === DISPLAY_MODE.EDITOR) {
+				if (isEditorMaximized) {
+					// エディタの最大化を解除
+					setIsEditorMaximized(false)
+					setViewMode(DISPLAY_MODE.BOTH)
+				} else {
+					// エディタを最大化
+					setIsEditorMaximized(true)
+					setIsPreviewMaximized(false)
+					setViewMode(DISPLAY_MODE.EDITOR)
+				}
+			} else if (target === DISPLAY_MODE.PREVIEW) {
+				if (isPreviewMaximized) {
+					// プレビューの最大化を解除
+					setIsPreviewMaximized(false)
+					setViewMode(DISPLAY_MODE.BOTH)
+				} else {
+					// プレビューを最大化
+					setIsPreviewMaximized(true)
+					setIsEditorMaximized(false)
+					setViewMode(DISPLAY_MODE.PREVIEW)
+				}
+			}
+		},
+		[isEditorMaximized, isPreviewMaximized]
+	)
+
+	// 最大化状態のリセット
+	const resetMaximizedState = useCallback(() => {
+		setIsEditorMaximized(false)
+		setIsPreviewMaximized(false)
+		setViewMode(DISPLAY_MODE.BOTH)
 	}, [])
+
+	// 現在の最大化状態を取得
+	const getMaximizedState = useCallback(
+		(target: DISPLAY_MODE) => {
+			if (target === DISPLAY_MODE.EDITOR) {
+				return isEditorMaximized
+			} else if (target === DISPLAY_MODE.PREVIEW) {
+				return isPreviewMaximized
+			}
+			return false
+		},
+		[isEditorMaximized, isPreviewMaximized]
+	)
 
 	const [uiState, setUIState] = useState<EditorUIState>({
 		showToolbar: true,
@@ -95,7 +146,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	const [toolbarDisplayMode, setToolbarDisplayMode] = useState<DISPLAY_MODE>(DISPLAY_MODE.BOTH)
 
 	// エディターサイズの初期化
-	const [currentEditorSize, setCurrentEditorSize] = useState(50)
+	const [currentEditorSize, setCurrentEditorSize] = useState(75)
 
 	const onChangeToolbarDisplayMode = useCallback(
 		(displayMode: DISPLAY_MODE) => {
@@ -413,7 +464,11 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 				{/* ドラッグ可能モード切替ボタン */}
 				<button
 					className={styles.layoutToggle}
-					onClick={() => setIsDraggableMode(!isDraggableMode)}
+					onClick={() => {
+						setIsDraggableMode(!isDraggableMode)
+						// レイアウトモード切り替え時に最大化状態をリセット
+						resetMaximizedState()
+					}}
 					aria-label={isDraggableMode ? '固定レイアウトに切り替え' : 'ドラッグ可能レイアウトに切り替え'}
 				>
 					<LayerIcon isDraggable={isDraggableMode} />
@@ -437,6 +492,9 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						currentEditorSize={currentEditorSize}
 						isDragging={isDragging}
 						onPageInfoChange={handlePageInfoChange}
+						// 最大化状態を明示的に渡す
+						editorMaximized={isEditorMaximized}
+						previewMaximized={isPreviewMaximized}
 						{...(layoutType === 'fixed'
 							? {
 									showPreview: uiState.showPreview,
@@ -487,6 +545,9 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						currentEditorSize={currentEditorSize}
 						isDragging={isDragging}
 						onPageInfoChange={handlePageInfoChange}
+						// 最大化状態を明示的に渡す
+						editorMaximized={isEditorMaximized}
+						previewMaximized={isPreviewMaximized}
 						{...(layoutType === 'fixed'
 							? {
 									showPreview: false,
@@ -523,6 +584,9 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						currentEditorSize={currentEditorSize}
 						isDragging={isDragging}
 						onPageInfoChange={handlePageInfoChange}
+						// 最大化状態を明示的に渡す
+						editorMaximized={isEditorMaximized}
+						previewMaximized={isPreviewMaximized}
 						{...(layoutType === 'fixed'
 							? {
 									showEditor: false,

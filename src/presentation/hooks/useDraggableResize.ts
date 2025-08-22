@@ -118,10 +118,11 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 			// 位置を記録
 			dragStartPos.current = { x: clientX, y: clientY }
 
-			// 現在の要素の実際の位置を取得（モバイル対応）
+			// 現在の要素の実際の位置を取得（倍率変更対応）
 			if (elementRef.current) {
 				const rect = elementRef.current.getBoundingClientRect()
 				const parent = elementRef.current.parentElement
+				const elementStyle = window.getComputedStyle(elementRef.current)
 
 				if (parent) {
 					const parentRect = parent.getBoundingClientRect()
@@ -144,14 +145,41 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						}
 					}
 
+					// 要素自体のCSS transformを取得（倍率変更対応）
+					const elementTransform = elementStyle.transform
+					let elementTransformMatrix = null
+					if (elementTransform && elementTransform !== 'none') {
+						try {
+							elementTransformMatrix = new DOMMatrix(elementTransform)
+						} catch (error) {
+							console.warn('[DraggableResize] Failed to parse element transform:', error)
+						}
+					}
+
+					// 要素のzoom/scaleを取得
+					const elementZoom = parseFloat(elementStyle.zoom) || 1
+					const elementScale = elementTransformMatrix
+						? Math.sqrt(
+								elementTransformMatrix.a * elementTransformMatrix.a +
+									elementTransformMatrix.b * elementTransformMatrix.b
+							)
+						: 1
+
+					// 総合的な倍率を計算
+					const totalScale = elementZoom * elementScale
+
 					// モバイルでの座標補正
 					const viewport = elementRef.current.ownerDocument?.defaultView
 					if (viewport && 'touches' in e) {
-						const scale = viewport.visualViewport?.scale || 1
+						const viewportScale = viewport.visualViewport?.scale || 1
 
 						// スケールとパディング/ボーダーを考慮した相対位置を計算
 						let relativeX = rect.left - parentRect.left - parentPaddingLeft - parentBorderLeft
 						let relativeY = rect.top - parentRect.top - parentPaddingTop - parentBorderTop
+
+						// 要素の倍率を考慮した位置調整
+						relativeX = relativeX / totalScale
+						relativeY = relativeY / totalScale
 
 						// CSS transformを考慮した位置調整
 						if (parentTransformMatrix) {
@@ -163,13 +191,17 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						}
 
 						dragStartElementPos.current = {
-							x: relativeX / scale,
-							y: relativeY / scale,
+							x: relativeX / viewportScale,
+							y: relativeY / viewportScale,
 						}
 					} else {
-						// 通常の相対位置計算（パディング/ボーダーを考慮）
+						// 通常の相対位置計算（倍率とパディング/ボーダーを考慮）
 						let relativeX = rect.left - parentRect.left - parentPaddingLeft - parentBorderLeft
 						let relativeY = rect.top - parentRect.top - parentPaddingTop - parentBorderTop
+
+						// 要素の倍率を考慮した位置調整
+						relativeX = relativeX / totalScale
+						relativeY = relativeY / totalScale
 
 						// CSS transformを考慮した位置調整
 						if (parentTransformMatrix) {
@@ -185,14 +217,18 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						}
 					}
 
-					console.log('[DraggableResize] Position calculation:', {
+					console.log('[DraggableResize] Position calculation with scale:', {
 						rect: { left: rect.left, top: rect.top },
 						parentRect: { left: parentRect.left, top: parentRect.top },
 						padding: { left: parentPaddingLeft, top: parentPaddingTop },
 						border: { left: parentBorderLeft, top: parentBorderTop },
-						transform: parentTransform,
+						parentTransform,
+						elementTransform,
+						elementZoom,
+						elementScale,
+						totalScale,
 						relativePos: dragStartElementPos.current,
-						scale: viewport?.visualViewport?.scale || 1,
+						viewportScale: viewport?.visualViewport?.scale || 1,
 					})
 				} else {
 					// 親要素がない場合は現在のstate.positionを使用
@@ -334,28 +370,74 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 
 				const newPosition = { x: newX, y: newY }
 
-				// モバイルでの座標補正の最終確認
+				// モバイルでの座標補正の最終確認（倍率変更対応）
 				if (elementRef.current && 'touches' in e) {
 					const viewport = elementRef.current.ownerDocument?.defaultView
 					if (viewport) {
-						const scale = viewport.visualViewport?.scale || 1
+						const viewportScale = viewport.visualViewport?.scale || 1
+						const elementStyle = window.getComputedStyle(elementRef.current)
 
-						// スケールを考慮した最終位置を計算
-						newPosition.x = newPosition.x * scale
-						newPosition.y = newPosition.y * scale
+						// 要素のzoom/scaleを取得
+						const elementZoom = parseFloat(elementStyle.zoom) || 1
+						const elementTransform = elementStyle.transform
+						let elementScale = 1
+
+						if (elementTransform && elementTransform !== 'none') {
+							try {
+								const elementTransformMatrix = new DOMMatrix(elementTransform)
+								elementScale = Math.sqrt(
+									elementTransformMatrix.a * elementTransformMatrix.a +
+										elementTransformMatrix.b * elementTransformMatrix.b
+								)
+							} catch (error) {
+								console.warn(
+									'[DraggableResize] Failed to parse element transform for final position:',
+									error
+								)
+							}
+						}
+
+						// 総合的な倍率を計算
+						const totalScale = elementZoom * elementScale
+
+						// 倍率を考慮した最終位置を計算
+						newPosition.x = newPosition.x * viewportScale * totalScale
+						newPosition.y = newPosition.y * viewportScale * totalScale
 					}
 				}
 
-				// デバッグ用：座標計算の詳細を記録
-				console.log('[DraggableResize] Drag position update:', {
-					delta: { x: clientX - dragStartPos.current.x, y: clientY - dragStartPos.current.y },
-					startElementPos: dragStartElementPos.current,
-					calculatedPos: { x: newX, y: newY },
-					finalPos: newPosition,
-					isTouch: 'touches' in e,
-					scale: elementRef.current?.ownerDocument?.defaultView?.visualViewport?.scale || 1,
-					constrained: constrainToParent,
-				})
+				// デバッグ用：座標計算の詳細を記録（倍率情報付き）
+				if (elementRef.current) {
+					const elementStyle = window.getComputedStyle(elementRef.current)
+					const elementZoom = parseFloat(elementStyle.zoom) || 1
+					const elementTransform = elementStyle.transform
+					let elementScale = 1
+
+					if (elementTransform && elementTransform !== 'none') {
+						try {
+							const elementTransformMatrix = new DOMMatrix(elementTransform)
+							elementScale = Math.sqrt(
+								elementTransformMatrix.a * elementTransformMatrix.a +
+									elementTransformMatrix.b * elementTransformMatrix.b
+							)
+						} catch (error) {
+							// エラーは無視
+						}
+					}
+
+					console.log('[DraggableResize] Drag position update with scale:', {
+						delta: { x: clientX - dragStartPos.current.x, y: clientY - dragStartPos.current.y },
+						startElementPos: dragStartElementPos.current,
+						calculatedPos: { x: newX, y: newY },
+						finalPos: newPosition,
+						isTouch: 'touches' in e,
+						viewportScale: elementRef.current?.ownerDocument?.defaultView?.visualViewport?.scale || 1,
+						elementZoom,
+						elementScale,
+						totalScale: elementZoom * elementScale,
+						constrained: constrainToParent,
+					})
+				}
 
 				setState(prev => ({ ...prev, position: newPosition }))
 				onDrag?.(newPosition)

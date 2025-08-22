@@ -149,53 +149,28 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 					// 倍率計算ユーティリティを使用
 					const scaleInfo = calculateScaleWithViewport(elementRef.current)
 
-					// モバイルでの座標補正
-					const viewport = elementRef.current.ownerDocument?.defaultView
-					if (viewport && 'touches' in e) {
-						const viewportScale = viewport.visualViewport?.scale || 1
+					// スケールとパディング/ボーダーを考慮した相対位置を計算
+					let relativeX = rect.left - parentRect.left - parentPaddingLeft - parentBorderLeft
+					let relativeY = rect.top - parentRect.top - parentPaddingTop - parentBorderTop
 
-						// スケールとパディング/ボーダーを考慮した相対位置を計算
-						let relativeX = rect.left - parentRect.left - parentPaddingLeft - parentBorderLeft
-						let relativeY = rect.top - parentRect.top - parentPaddingTop - parentBorderTop
+					// CSS transformを考慮した位置調整（親要素のtransform）
+					if (parentTransformMatrix) {
+						// transformの逆行列を適用
+						const inverseMatrix = parentTransformMatrix.inverse()
+						const adjustedPoint = inverseMatrix.transformPoint({ x: relativeX, y: relativeY })
+						relativeX = adjustedPoint.x
+						relativeY = adjustedPoint.y
+					}
 
-						// 要素の倍率を考慮した位置調整
-						relativeX = relativeX / scaleInfo.totalScale
-						relativeY = relativeY / scaleInfo.totalScale
+					// 要素の倍率を考慮した位置調整（正規化）
+					// 実際の表示座標を倍率で割って、論理座標に変換
+					relativeX = relativeX / scaleInfo.totalScale
+					relativeY = relativeY / scaleInfo.totalScale
 
-						// CSS transformを考慮した位置調整
-						if (parentTransformMatrix) {
-							// transformの逆行列を適用
-							const inverseMatrix = parentTransformMatrix.inverse()
-							const adjustedPoint = inverseMatrix.transformPoint({ x: relativeX, y: relativeY })
-							relativeX = adjustedPoint.x
-							relativeY = adjustedPoint.y
-						}
-
-						dragStartElementPos.current = {
-							x: relativeX / scaleInfo.viewportScale,
-							y: relativeY / scaleInfo.viewportScale,
-						}
-					} else {
-						// 通常の相対位置計算（倍率とパディング/ボーダーを考慮）
-						let relativeX = rect.left - parentRect.left - parentPaddingLeft - parentBorderLeft
-						let relativeY = rect.top - parentRect.top - parentPaddingTop - parentBorderTop
-
-						// 要素の倍率を考慮した位置調整
-						relativeX = relativeX / scaleInfo.totalScale
-						relativeY = relativeY / scaleInfo.totalScale
-
-						// CSS transformを考慮した位置調整
-						if (parentTransformMatrix) {
-							const inverseMatrix = parentTransformMatrix.inverse()
-							const adjustedPoint = inverseMatrix.transformPoint({ x: relativeX, y: relativeY })
-							relativeX = adjustedPoint.x
-							relativeY = adjustedPoint.y
-						}
-
-						dragStartElementPos.current = {
-							x: relativeX,
-							y: relativeY,
-						}
+					// 最終的な位置を保存
+					dragStartElementPos.current = {
+						x: relativeX,
+						y: relativeY,
 					}
 
 					console.log('[DraggableResize] Position calculation with scale:', {
@@ -347,60 +322,18 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 
 				const newPosition = { x: newX, y: newY }
 
-				// モバイルでの座標補正の最終確認（倍率変更対応）
-				if (elementRef.current && 'touches' in e) {
-					const viewport = elementRef.current.ownerDocument?.defaultView
-					if (viewport) {
-						const viewportScale = viewport.visualViewport?.scale || 1
-						const elementStyle = window.getComputedStyle(elementRef.current)
+				// 倍率を考慮した最終位置の計算
+				if (elementRef.current) {
+					const scaleInfo = calculateScaleWithViewport(elementRef.current)
 
-						// 要素のzoom/scaleを取得
-						const elementZoom = parseFloat(elementStyle.zoom) || 1
-						const elementTransform = elementStyle.transform
-						let elementScale = 1
-
-						if (elementTransform && elementTransform !== 'none') {
-							try {
-								const elementTransformMatrix = new DOMMatrix(elementTransform)
-								elementScale = Math.sqrt(
-									elementTransformMatrix.a * elementTransformMatrix.a +
-										elementTransformMatrix.b * elementTransformMatrix.b
-								)
-							} catch (error) {
-								console.warn(
-									'[DraggableResize] Failed to parse element transform for final position:',
-									error
-								)
-							}
-						}
-
-						// 総合的な倍率を計算
-						const totalScale = elementZoom * elementScale
-
-						// 倍率を考慮した最終位置を計算
-						newPosition.x = newPosition.x * viewportScale * totalScale
-						newPosition.y = newPosition.y * viewportScale * totalScale
-					}
+					// 正規化された座標を倍率で復元して実際の表示座標に変換
+					newPosition.x = newPosition.x * scaleInfo.totalScale
+					newPosition.y = newPosition.y * scaleInfo.totalScale
 				}
 
 				// デバッグ用：座標計算の詳細を記録（倍率情報付き）
 				if (elementRef.current) {
-					const elementStyle = window.getComputedStyle(elementRef.current)
-					const elementZoom = parseFloat(elementStyle.zoom) || 1
-					const elementTransform = elementStyle.transform
-					let elementScale = 1
-
-					if (elementTransform && elementTransform !== 'none') {
-						try {
-							const elementTransformMatrix = new DOMMatrix(elementTransform)
-							elementScale = Math.sqrt(
-								elementTransformMatrix.a * elementTransformMatrix.a +
-									elementTransformMatrix.b * elementTransformMatrix.b
-							)
-						} catch (error) {
-							// エラーは無視
-						}
-					}
+					const scaleInfo = calculateScaleWithViewport(elementRef.current)
 
 					console.log('[DraggableResize] Drag position update with scale:', {
 						delta: { x: clientX - dragStartPos.current.x, y: clientY - dragStartPos.current.y },
@@ -408,10 +341,7 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						calculatedPos: { x: newX, y: newY },
 						finalPos: newPosition,
 						isTouch: 'touches' in e,
-						viewportScale: elementRef.current?.ownerDocument?.defaultView?.visualViewport?.scale || 1,
-						elementZoom,
-						elementScale,
-						totalScale: elementZoom * elementScale,
+						scaleInfo,
 						constrained: constrainToParent,
 					})
 				}

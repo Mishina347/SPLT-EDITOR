@@ -9,13 +9,8 @@ export function checkServiceWorkerStatus(): void {
 		return
 	}
 
-	console.log('✅ Service Worker API is available')
-
 	navigator.serviceWorker.getRegistrations().then(registrations => {
-		console.log(`📋 Found ${registrations.length} Service Worker registration(s)`)
-
 		if (registrations.length === 0) {
-			console.log('⚠️ No Service Worker registrations found')
 			return
 		}
 

@@ -9,6 +9,8 @@ interface ResizerProps {
 	size: number
 	onMouseDown: (e: React.MouseEvent) => void
 	onTouchStart: (e: React.TouchEvent) => void
+	onTouchMove?: (e: React.TouchEvent) => void
+	onTouchEnd?: (e: React.TouchEvent) => void
 	onKeyDown: (e: React.KeyboardEvent) => void
 	onFocus: () => void
 	onBlur: () => void
@@ -22,6 +24,8 @@ export const Resizer: React.FC<ResizerProps> = ({
 	size,
 	onMouseDown,
 	onTouchStart,
+	onTouchMove,
+	onTouchEnd,
 	onKeyDown,
 	onFocus,
 	onBlur,
@@ -45,10 +49,9 @@ export const Resizer: React.FC<ResizerProps> = ({
 		const element = resizerRef.current
 		if (!element) return
 
-		const handleNativeTouchStart = (e: TouchEvent) => {
-			e.preventDefault() // ネイティブイベントなので確実にpreventDefaultが動作
-			// React合成イベントに変換してコールバックを呼び出し
-			const syntheticEvent = {
+		// タッチイベントをReact合成イベントに変換するヘルパー関数
+		const createSyntheticEvent = (e: TouchEvent, type: string) =>
+			({
 				currentTarget: element,
 				target: element,
 				touches: e.touches,
@@ -71,27 +74,55 @@ export const Resizer: React.FC<ResizerProps> = ({
 				eventPhase: e.eventPhase,
 				isTrusted: e.isTrusted,
 				timeStamp: e.timeStamp,
-				type: e.type,
-			} as unknown as React.TouchEvent
+				type: type,
+			}) as unknown as React.TouchEvent
+
+		const handleNativeTouchStart = (e: TouchEvent) => {
+			e.preventDefault() // ネイティブイベントなので確実にpreventDefaultが動作
+			const syntheticEvent = createSyntheticEvent(e, 'touchstart')
 			onTouchStart(syntheticEvent)
+		}
+
+		const handleNativeTouchMove = (e: TouchEvent) => {
+			if (onTouchMove) {
+				e.preventDefault()
+				const syntheticEvent = createSyntheticEvent(e, 'touchmove')
+				onTouchMove(syntheticEvent)
+			}
+		}
+
+		const handleNativeTouchEnd = (e: TouchEvent) => {
+			if (onTouchEnd) {
+				e.preventDefault()
+				const syntheticEvent = createSyntheticEvent(e, 'touchend')
+				onTouchEnd(syntheticEvent)
+			}
 		}
 
 		// メインのリサイザー要素とタッチエリアの両方にイベントリスナーを追加
 		element.addEventListener('touchstart', handleNativeTouchStart, { passive: false })
+		element.addEventListener('touchmove', handleNativeTouchMove, { passive: false })
+		element.addEventListener('touchend', handleNativeTouchEnd, { passive: false })
 
 		// タッチエリア要素も取得
 		const touchArea = element.querySelector(`.${styles.touchArea}`) as HTMLElement
 		if (touchArea) {
 			touchArea.addEventListener('touchstart', handleNativeTouchStart, { passive: false })
+			touchArea.addEventListener('touchmove', handleNativeTouchMove, { passive: false })
+			touchArea.addEventListener('touchend', handleNativeTouchEnd, { passive: false })
 		}
 
 		return () => {
 			element.removeEventListener('touchstart', handleNativeTouchStart)
+			element.removeEventListener('touchmove', handleNativeTouchMove)
+			element.removeEventListener('touchend', handleNativeTouchEnd)
 			if (touchArea) {
 				touchArea.removeEventListener('touchstart', handleNativeTouchStart)
+				touchArea.removeEventListener('touchmove', handleNativeTouchMove)
+				touchArea.removeEventListener('touchend', handleNativeTouchEnd)
 			}
 		}
-	}, [onTouchStart])
+	}, [onTouchStart, onTouchMove, onTouchEnd])
 
 	return (
 		<>

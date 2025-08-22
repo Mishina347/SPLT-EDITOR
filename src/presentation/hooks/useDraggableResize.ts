@@ -83,23 +83,65 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 			}
 			e.stopPropagation()
 
-			// マウス/タッチ位置を取得
-			const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-			const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+			// マウス/タッチ位置を取得（モバイル対応）
+			let clientX: number
+			let clientY: number
+
+			if ('touches' in e) {
+				// タッチイベントの場合
+				const touch = e.touches[0]
+				clientX = touch.clientX
+				clientY = touch.clientY
+
+				// モバイルでの座標補正
+				if (elementRef.current) {
+					const rect = elementRef.current.getBoundingClientRect()
+					const viewport = elementRef.current.ownerDocument?.defaultView
+
+					if (viewport) {
+						// ビューポートのスケールとスクロール位置を考慮
+						const scale = viewport.visualViewport?.scale || 1
+						const scrollX = viewport.scrollX || 0
+						const scrollY = viewport.scrollY || 0
+
+						// 座標を補正
+						clientX = (clientX + scrollX) / scale
+						clientY = (clientY + scrollY) / scale
+					}
+				}
+			} else {
+				// マウスイベントの場合
+				clientX = e.clientX
+				clientY = e.clientY
+			}
 
 			// 位置を記録
 			dragStartPos.current = { x: clientX, y: clientY }
 
-			// 現在の要素の実際の位置を取得
+			// 現在の要素の実際の位置を取得（モバイル対応）
 			if (elementRef.current) {
 				const rect = elementRef.current.getBoundingClientRect()
 				const parent = elementRef.current.parentElement
+
 				if (parent) {
 					const parentRect = parent.getBoundingClientRect()
-					// 親要素からの相対位置を計算
-					dragStartElementPos.current = {
-						x: rect.left - parentRect.left,
-						y: rect.top - parentRect.top,
+
+					// モバイルでの座標補正
+					const viewport = elementRef.current.ownerDocument?.defaultView
+					if (viewport && 'touches' in e) {
+						const scale = viewport.visualViewport?.scale || 1
+
+						// スケールを考慮した相対位置を計算
+						dragStartElementPos.current = {
+							x: (rect.left - parentRect.left) / scale,
+							y: (rect.top - parentRect.top) / scale,
+						}
+					} else {
+						// 通常の相対位置計算
+						dragStartElementPos.current = {
+							x: rect.left - parentRect.left,
+							y: rect.top - parentRect.top,
+						}
 					}
 				} else {
 					// 親要素がない場合は現在のstate.positionを使用
@@ -142,9 +184,34 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 	// マウス/タッチ移動処理
 	const handleMouseMove = useCallback(
 		(e: MouseEvent | TouchEvent) => {
-			// マウス/タッチ位置を取得
-			const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-			const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+			// マウス/タッチ位置を取得（モバイル対応）
+			let clientX: number
+			let clientY: number
+
+			if ('touches' in e) {
+				// タッチイベントの場合
+				const touch = e.touches[0]
+				clientX = touch.clientX
+				clientY = touch.clientY
+
+				// モバイルでの座標補正
+				if (elementRef.current) {
+					const viewport = elementRef.current.ownerDocument?.defaultView
+					if (viewport) {
+						const scale = viewport.visualViewport?.scale || 1
+						const scrollX = viewport.scrollX || 0
+						const scrollY = viewport.scrollY || 0
+
+						// 座標を補正
+						clientX = (clientX + scrollX) / scale
+						clientY = (clientY + scrollY) / scale
+					}
+				}
+			} else {
+				// マウスイベントの場合
+				clientX = e.clientX
+				clientY = e.clientY
+			}
 
 			if (state.isDragging) {
 				const deltaX = clientX - dragStartPos.current.x
@@ -179,6 +246,17 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 
 				const newPosition = { x: newX, y: newY }
 
+				// モバイルでの座標補正の最終確認
+				if (elementRef.current && 'touches' in e) {
+					const viewport = elementRef.current.ownerDocument?.defaultView
+					if (viewport) {
+						const scale = viewport.visualViewport?.scale || 1
+
+						// スケールを考慮した最終位置を計算
+						newPosition.x = newPosition.x * scale
+						newPosition.y = newPosition.y * scale
+					}
+				}
 				setState(prev => ({ ...prev, position: newPosition }))
 				onDrag?.(newPosition)
 			}

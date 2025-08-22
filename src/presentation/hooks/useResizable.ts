@@ -173,6 +173,25 @@ export const useResizable = (options: UseResizableOptions = {}) => {
 		setAnnounceText('ドラッグモード開始')
 	}, [])
 
+	const handleTouchMove = useCallback(
+		(e: React.TouchEvent) => {
+			if (isDragging && e.touches[0]) {
+				startResize(e.touches[0].clientX)
+			}
+		},
+		[isDragging, startResize]
+	)
+
+	const handleTouchEnd = useCallback(
+		(e: React.TouchEvent) => {
+			if (isDragging) {
+				setIsDragging(false)
+				setAnnounceText('ドラッグモード終了')
+			}
+		},
+		[isDragging]
+	)
+
 	// フォーカスイベント
 	const handleFocus = useCallback(() => {
 		setAnnounceText(`${label} リサイザー: 矢印キーまたはエンターキーで操作`)
@@ -237,6 +256,8 @@ export const useResizable = (options: UseResizableOptions = {}) => {
 		resizerProps: {
 			onMouseDown: handleMouseDown,
 			onTouchStart: handleTouchStart,
+			onTouchMove: handleTouchMove,
+			onTouchEnd: handleTouchEnd,
 			onKeyDown: handleKeyDown,
 			onFocus: handleFocus,
 			onBlur: handleBlur,

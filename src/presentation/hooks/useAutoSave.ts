@@ -18,28 +18,19 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 	// auto save を実行する関数
 	const performAutoSave = useCallback(
 		async (textContent: string, isManualSave: boolean = false) => {
-			console.log(
-				`[DEBUG] performAutoSave called - isManualSave: ${isManualSave}, isSaving: ${isSavingRef.current}, contentLength: ${textContent.length}`
-			)
-
 			// 保存中かどうかをチェック
 			if (isSavingRef.current) {
-				console.log(`[DEBUG] Skipping save - already saving`)
 				return
 			}
 
 			// 内容が変更されていない場合はスキップ（ただし空文字の場合は保存を許可）
 			if (textContent === lastSavedContentRef.current) {
-				console.log(
-					`[DEBUG] Skipping save - content unchanged: "${textContent}" === "${lastSavedContentRef.current}"`
-				)
 				return
 			}
 
 			try {
 				isSavingRef.current = true
 				setIsSaving(true)
-				console.log(`[DEBUG] Starting ${isManualSave ? 'manual' : 'auto'} save`)
 
 				await saveText(fileName, textContent)
 				lastSavedContentRef.current = textContent
@@ -47,13 +38,9 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 				// 手動保存の場合はonSaveコールバックを呼び出さない
 				// （呼び出し元で個別にスナップショットを作成するため）
 				if (!isManualSave) {
-					console.log(`[DEBUG] Calling onSave callback for auto save`)
 					onSave?.(textContent)
 				} else {
-					console.log(`[DEBUG] Skipping onSave callback for manual save`)
 				}
-
-				console.log(`[DEBUG] ${isManualSave ? 'Manual' : 'Auto'} save completed`)
 			} catch (error) {
 				console.error(isManualSave ? 'Manual save failed:' : 'Auto save failed:', error)
 			} finally {

@@ -6,6 +6,13 @@
 	overflow: hidden;
 	transition: box-shadow 0.2s ease;
 	user-select: none;
+	/* モバイルでのタッチ操作を最適化 */
+	touch-action: none;
+	-webkit-tap-highlight-color: transparent;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-webkit-transform: translateZ(0);
+	transform: translateZ(0);
 }
 
 .draggableContainer:hover {
@@ -28,6 +35,11 @@
 	cursor: grab;
 	user-select: none;
 	transition: background-color 0.2s ease;
+	/* モバイルでのタッチ操作を最適化 */
+	touch-action: none;
+	-webkit-tap-highlight-color: transparent;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
 }
 
 .dragHandle:hover {

@@ -295,8 +295,6 @@ export const EditorComponent = ({
 			caretSpan.style.opacity = '1'
 			caretSpan.style.transformOrigin = 'center'
 			imeFloatRef.current.appendChild(caretSpan)
-
-			console.log(`IMEフロート更新: "${text}" + 擬似キャレット`)
 		},
 		[fontSize, textColor]
 	)
@@ -764,10 +762,6 @@ export const EditorComponent = ({
 										setTimeout(() => {
 											triggerCaretAnimation('pulse', false)
 										}, 100)
-
-										console.log(
-											`IME確定: "${finalText}" (${textLength}文字) 挿入完了, キャレット移動: 列${position.column} → ${newPosition.column}`
-										)
 									}
 								}, 50)
 							}
@@ -931,7 +925,6 @@ export const EditorComponent = ({
 
 		// IME入力中は設定変更を抑制（IME完了後に自動適用される）
 		if (imeCompositionRef.current) {
-			console.log('IME入力中のため折り返し設定変更を保留')
 			return
 		}
 

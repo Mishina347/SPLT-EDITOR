@@ -39,6 +39,12 @@
 	background: transparent;
 	cursor: col-resize;
 	z-index: 11; /* リサイザー本体より上に配置 */
+	/* モバイルでのタッチ操作を最適化 */
+	touch-action: none;
+	-webkit-tap-highlight-color: transparent;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	user-select: none;
 }
 
 .resizer:focus {

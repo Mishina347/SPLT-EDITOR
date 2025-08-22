@@ -260,35 +260,22 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		const handleKeyDown = async (e: KeyboardEvent) => {
 			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
 				e.preventDefault()
-				console.log(`[DEBUG] Manual save triggered - isSaving: ${isSaving}`)
 
 				// 既に保存処理中の場合は何もしない
 				if (isSaving) {
-					console.log(`[DEBUG] Skipping manual save - already saving`)
 					return
 				}
 
 				try {
-					console.log(
-						`[DEBUG] Starting manual save process - content: "${currentNotSavedText}" (length: ${currentNotSavedText.length})`
-					)
-
 					// forceSaveを使用してauto saveタイマーをリセット＆即座に保存
 					await forceSave()
-
-					console.log(`[DEBUG] Manual save completed, updating state`)
 
 					// 手動保存成功時に状態を更新（空文字でも更新）
 					setLastSavedText(currentNotSavedText)
 					setCurrentSavedText(currentNotSavedText)
 
 					// 手動保存時のスナップショットを追加（空文字でも記録）
-					console.log(`[DEBUG] Creating manual save snapshot for content: "${currentNotSavedText}"`)
 					saveSnapshot(currentNotSavedText, `手動保存 - ${new Date().toLocaleString('ja-JP')}`)
-
-					console.log(
-						`[DEBUG] Manual save state updated - currentSavedText: "${currentNotSavedText}", lastSavedText: "${currentNotSavedText}"`
-					)
 				} catch (error) {
 					console.error('Manual save failed:', error)
 				}

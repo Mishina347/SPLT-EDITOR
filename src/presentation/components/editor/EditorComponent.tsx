@@ -422,7 +422,6 @@ export const EditorComponent = ({
 
 			// IME入力中は状態更新を抑制
 			if (imeCompositionRef.current) {
-				console.log('IME入力中: エディタ状態更新を抑制')
 				return
 			}
 
@@ -454,7 +453,6 @@ export const EditorComponent = ({
 						currentPosition.column !== startPosition.column)
 				) {
 					editor.setPosition(startPosition)
-					console.log('IME入力中: カーソル位置を固定')
 					return
 				}
 			}
@@ -465,17 +463,14 @@ export const EditorComponent = ({
 
 		// IMEイベントハンドラーを追加
 		const setupIMEHandlers = () => {
-			console.log('[IME] Setting up IME handlers...')
 			const textArea = containerRef.current?.querySelector('textarea')
 			if (textArea) {
-				console.log('[IME] Textarea found, adding event listeners')
 				// IME関連のイベントハンドラー
 				const handleBeforeInput = (e: Event) => {
 					// IME入力中はbeforeinputイベントを無効化
 					if (imeCompositionRef.current) {
 						e.preventDefault()
 						e.stopPropagation()
-						console.log('[IME] Blocking beforeinput during composition')
 						return false
 					}
 				}
@@ -485,12 +480,10 @@ export const EditorComponent = ({
 					if (imeCompositionRef.current) {
 						e.preventDefault()
 						e.stopPropagation()
-						console.log('IME入力中: inputイベントを抑制')
 						return false
 					}
 				}
 				const handleCompositionStart = () => {
-					console.log('[IME] Composition start triggered')
 					imeCompositionRef.current = true
 					imeCompositionTextRef.current = ''
 
@@ -499,18 +492,12 @@ export const EditorComponent = ({
 						imeStartValueRef.current = editorRef.current.getValue()
 						imeStartPositionRef.current = editorRef.current.getPosition()
 						imeStartSelectionRef.current = editorRef.current.getSelection()
-						console.log('[IME] Saved state:', {
-							value: imeStartValueRef.current,
-							position: imeStartPositionRef.current,
-							selection: imeStartSelectionRef.current,
-						})
 					}
 
 					// IME開始時にwordWrapを無効化
 					updateWordWrapColumn()
 					// IMEフロート要素を作成（常時表示）
 					createIMEFloat()
-					console.log('[IME] IME handlers setup completed')
 				}
 
 				const handleCompositionUpdate = (e: CompositionEvent) => {
@@ -521,7 +508,6 @@ export const EditorComponent = ({
 						const currentValue = editorRef.current.getValue()
 						if (currentValue !== imeStartValueRef.current) {
 							editorRef.current.setValue(imeStartValueRef.current)
-							console.log('[IME] Editor content restored to prevent IME input reflection')
 						}
 
 						// カーソル位置を固定
@@ -531,9 +517,6 @@ export const EditorComponent = ({
 
 						// IME入力中の文字をフロート内容更新
 						updateIMEFloatContent(imeCompositionTextRef.current)
-						console.log(
-							`IME更新: "${imeCompositionTextRef.current}" (フロート表示更新、エディタ内容保護)`
-						)
 					}
 				}
 
@@ -596,9 +579,6 @@ export const EditorComponent = ({
 											triggerCaretAnimation('pulse', false)
 										}, 100)
 
-										console.log(
-											`IME確定: "${finalText}" (${textLength}文字) 挿入完了, キャレット移動: 列${position.column} → ${newPosition.column}`
-										)
 									}
 								}, 50)
 							}
@@ -617,9 +597,6 @@ export const EditorComponent = ({
 						if (editorRef.current) {
 							// IME終了時にwordWrapを再有効化
 							updateWordWrapColumn()
-
-							console.log('IME入力完了: ソフトラップ再有効化')
-
 							// 状態更新
 							const currentValue = editorRef.current.getValue()
 							if (currentValue !== textData) {
@@ -643,7 +620,6 @@ export const EditorComponent = ({
 					textArea.removeEventListener('input', handleInput, true)
 				}
 			}
-			console.log('[IME] Textarea not found, IME handlers not set up')
 			return () => {}
 		}
 
@@ -1005,7 +981,6 @@ export const EditorComponent = ({
 					onMaximize()
 				}}
 				onTouchEnd={e => {
-					console.log('RightPane maximize button touch end')
 					e.preventDefault()
 					e.stopPropagation() // 長押しリサイズとの競合を防ぐ
 					onMaximize()

@@ -7,6 +7,7 @@ import styles from './EditorComponent.module.css'
 import buttonStyles from '../../shared/Button/Button.module.css'
 
 import { useCaretAnimation, useIMEFloat, useLineDecorations } from './components'
+import { Counter } from './components/Counter/Counter'
 
 type Props = {
 	textData: string
@@ -984,26 +985,30 @@ export const EditorComponent = ({
 							WebkitUserSelect: 'text', // Webkit系ブラウザ対応
 						}}
 					/>
+
 					<div id="editor-instructions" className={styles.instructions}>
 						<p>Enterキーで編集開始 • Escapeキーで編集終了 • Ctrl+Tabでフォーカス移動</p>
 					</div>
 				</div>
+				<div className={styles.counterInfoBar} role="status" aria-live="polite">
+					<Counter text={textData} />
+				</div>
 			</main>
 			<button
-				className={`${buttonStyles.maximizeBtn} ${styles.maximizeBtnPosition} 
-			${isMaximized ? buttonStyles.buttonActive : buttonStyles.buttonSecondary}
-		`}
+				className={`${buttonStyles.maximizeBtn} ${styles.maximizeBtnPosition}
+					${isMaximized ? buttonStyles.buttonActive : buttonStyles.buttonSecondary}
+				`}
 				aria-pressed={isMaximized ? 'true' : 'false'}
 				onClick={e => {
 					e.preventDefault()
 					e.stopPropagation() // 長押しリサイズとの競合を防ぐ
-					handleMaximize()
+					onMaximize()
 				}}
 				onTouchEnd={e => {
-					console.log('Editor maximize button touch end')
+					console.log('RightPane maximize button touch end')
 					e.preventDefault()
 					e.stopPropagation() // 長押しリサイズとの競合を防ぐ
-					handleMaximize()
+					onMaximize()
 				}}
 				style={{
 					touchAction: 'manipulation',

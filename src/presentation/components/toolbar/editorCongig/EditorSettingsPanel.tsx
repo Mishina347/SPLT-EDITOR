@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 import { EditorSettings, DISPLAY_MODE, EDITOR_CONSTANTS, FontFamily } from '../../../../domain'
 import styles from './editorSettingsPanel.module.css'
-import { Counter } from './Counter'
+import { Counter } from '../../editor/components/Counter/Counter'
 import { NumberStepper, FontSelector } from '../../'
 
 type Props = {
@@ -148,8 +148,6 @@ export const EditorSettingsPanel = React.memo<Props>(
 						)}
 					</fieldset>
 				*/}
-
-				<Counter text={text} />
 			</div>
 		)
 	}

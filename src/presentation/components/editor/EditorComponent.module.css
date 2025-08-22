@@ -1,6 +1,6 @@
 .editorBody {
 	position: relative;
-	height: 100%;
+	height: 98%;
 	display: flex;
 	background-color: var(--app-bg-color, #ffffff);
 	flex-direction: column;
@@ -39,7 +39,7 @@
 .editorWrapper {
 	position: relative;
 	width: 100%;
-	height: 100%;
+	height: 98%;
 	outline: none;
 	border-radius: 4px;
 	transition: all 0.2s ease;
@@ -73,6 +73,22 @@
 	opacity: 0;
 	transition: opacity 0.3s ease;
 	z-index: 1000;
+}
+
+/* ページ番号バーのスタイル */
+.counterInfoBar {
+	position: relative;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background: var(--app-bg-color, #f9f9f9);
+	margin-top: 1rem; /* コンテンツの下に配置 */
+	opacity: 0.3;
+}
+
+.counterInfoBar:hover {
+	opacity: 1;
 }
 
 /* 外部フォーカス時に指示テキストを表示 */

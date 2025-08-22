@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import styles from './Counter.module.css'
-import { wordCounter, formatNumber } from '../../../../utils'
-import { useDebounce } from '../../../hooks/useDebounce'
+import { wordCounter, formatNumber } from '../../../../../utils'
+import { useDebounce } from '../../../../hooks/useDebounce'
 
 type CounterProps = {
 	text: string

@@ -27,6 +27,10 @@ interface CommonProps {
 
 	// ページ情報関連
 	onPageInfoChange?: (currentPage: number, totalPages: number) => void
+
+	// 最大化状態管理
+	editorMaximized?: boolean
+	previewMaximized?: boolean
 }
 
 interface FixedLayoutProps extends CommonProps {
@@ -64,6 +68,8 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 		currentEditorSize,
 		isDragging,
 		onPageInfoChange,
+		editorMaximized = false,
+		previewMaximized = false,
 	} = props
 
 	// エディターコンポーネントの共通props
@@ -74,6 +80,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 		onMaximize: onMaximizeEditor,
 		onFocusPane: onFocusEditor,
 		isDragging: layoutType === 'fixed' ? isDragging : false,
+		isMaximized: editorMaximized,
 	}
 
 	// プレビューコンポーネントの共通props
@@ -103,7 +110,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 							flexShrink: 0,
 						}}
 					>
-						<EditorComponent {...editorProps} extended={!showPreview} isMaximized={false} />
+						<EditorComponent {...editorProps} extended={!showPreview} isMaximized={editorMaximized} />
 					</LayoutContainer>
 				)}
 
@@ -117,7 +124,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 							flexShrink: 0,
 						}}
 					>
-						<RightPane {...previewProps} isMaximized={!showEditor} />
+						<RightPane {...previewProps} isMaximized={previewMaximized} />
 					</LayoutContainer>
 				)}
 			</section>

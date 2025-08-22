@@ -1,12 +1,18 @@
 html {
 	background-color: var(--app-bg-color);
+	/* Safariでのserifフォント表示を防ぐ */
+	font-family:
+		-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, 'Noto Sans',
+		sans-serif;
 }
 body,
 #root {
 	max-width: 100%;
 	height: 100%;
 	margin: 0;
-	font-family: system-ui, sans-serif;
+	font-family:
+		-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, 'Noto Sans',
+		sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 	overflow-x: hidden;
 }
 .app {
@@ -66,6 +72,17 @@ dialog:not(.-open) {
 	border: none;
 	background: transparent !important; /* 背景なし */
 	color: inherit !important; /* 文字色は元テーマのまま */
+}
+
+/* Monaco Editorのフォント設定（Safari対応） */
+.monaco-editor {
+	font-family:
+		'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
+}
+
+.monaco-editor .view-line span {
+	font-family:
+		'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
 }
 
 /* スクリーンリーダー専用テキスト（グローバル） */

@@ -1,9 +1,14 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react'
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { html as diff2html, parse as diffParse } from 'diff2html'
 import 'diff2html/bundles/css/diff2html.min.css'
 import { PreviewMode, LayoutConfig, TextSnapshot } from '../../../domain'
 import { Diff2HtmlAdapter } from '../../../infra'
 import { useFocusTrap } from '../../hooks'
+import {
+	calculateElementScale,
+	calculateScaleWithViewport,
+	ScaleInfo,
+} from '../../../utils/scaleCalculator'
 
 import { TabPanel, TabItem } from '../'
 import { Preview, TextHistoryTimeline, HistoryDetailDialog } from './'
@@ -43,6 +48,28 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	const [isFocusMode, setIsFocusMode] = useState(false)
 	const [currentPageInfo, setCurrentPageInfo] = useState({ currentPage: 1, totalPages: 1 })
 
+	// 倍率計算の状態
+	const [scaleInfo, setScaleInfo] = useState<ScaleInfo>({
+		zoom: 1,
+		transformScale: 1,
+		totalScale: 1,
+		viewportScale: 1,
+	})
+	const containerRef = useRef<HTMLDivElement>(null)
+
+	// 倍率計算のロジック
+	const updateScaleInfo = useCallback(() => {
+		if (containerRef.current) {
+			const newScaleInfo = calculateScaleWithViewport(containerRef.current)
+			setScaleInfo(newScaleInfo)
+
+			console.log('[RightPane] Scale info updated:', {
+				element: 'RightPane',
+				...newScaleInfo,
+			})
+		}
+	}, [])
+
 	// フォーカスモードハンドラー
 	const handleFocusMode = useCallback((focused: boolean) => {
 		setIsFocusMode(focused)
@@ -63,6 +90,25 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 
 	// 差分計算を最適化（DIFFモードが選択された時のみ計算）
 	const diffService = useMemo(() => new Diff2HtmlAdapter(), [])
+
+	// 倍率計算の初期化と監視
+	useEffect(() => {
+		// 初期倍率を計算
+		updateScaleInfo()
+
+		// ResizeObserverでサイズ変更を監視
+		if (containerRef.current) {
+			const resizeObserver = new ResizeObserver(() => {
+				updateScaleInfo()
+			})
+
+			resizeObserver.observe(containerRef.current)
+
+			return () => {
+				resizeObserver.disconnect()
+			}
+		}
+	}, [updateScaleInfo])
 
 	// 差分計算を遅延実行（DIFFモードが選択された時のみ）
 	const [diffHtml, setDiffHtml] = useState('')
@@ -227,6 +273,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 
 	return (
 		<div
+			ref={containerRef}
 			className={styles.rightPaneContent}
 			tabIndex={0}
 			onFocus={onFocusPane}

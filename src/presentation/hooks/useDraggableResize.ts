@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from 'react'
+import { calculateElementScale, calculateScaleWithViewport } from '../../utils/scaleCalculator'
 
 export interface DraggableResizeState {
 	position: { x: number; y: number }
@@ -145,28 +146,8 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						}
 					}
 
-					// 要素自体のCSS transformを取得（倍率変更対応）
-					const elementTransform = elementStyle.transform
-					let elementTransformMatrix = null
-					if (elementTransform && elementTransform !== 'none') {
-						try {
-							elementTransformMatrix = new DOMMatrix(elementTransform)
-						} catch (error) {
-							console.warn('[DraggableResize] Failed to parse element transform:', error)
-						}
-					}
-
-					// 要素のzoom/scaleを取得
-					const elementZoom = parseFloat(elementStyle.zoom) || 1
-					const elementScale = elementTransformMatrix
-						? Math.sqrt(
-								elementTransformMatrix.a * elementTransformMatrix.a +
-									elementTransformMatrix.b * elementTransformMatrix.b
-							)
-						: 1
-
-					// 総合的な倍率を計算
-					const totalScale = elementZoom * elementScale
+					// 倍率計算ユーティリティを使用
+					const scaleInfo = calculateScaleWithViewport(elementRef.current)
 
 					// モバイルでの座標補正
 					const viewport = elementRef.current.ownerDocument?.defaultView
@@ -178,8 +159,8 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						let relativeY = rect.top - parentRect.top - parentPaddingTop - parentBorderTop
 
 						// 要素の倍率を考慮した位置調整
-						relativeX = relativeX / totalScale
-						relativeY = relativeY / totalScale
+						relativeX = relativeX / scaleInfo.totalScale
+						relativeY = relativeY / scaleInfo.totalScale
 
 						// CSS transformを考慮した位置調整
 						if (parentTransformMatrix) {
@@ -191,8 +172,8 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						}
 
 						dragStartElementPos.current = {
-							x: relativeX / viewportScale,
-							y: relativeY / viewportScale,
+							x: relativeX / scaleInfo.viewportScale,
+							y: relativeY / scaleInfo.viewportScale,
 						}
 					} else {
 						// 通常の相対位置計算（倍率とパディング/ボーダーを考慮）
@@ -200,8 +181,8 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						let relativeY = rect.top - parentRect.top - parentPaddingTop - parentBorderTop
 
 						// 要素の倍率を考慮した位置調整
-						relativeX = relativeX / totalScale
-						relativeY = relativeY / totalScale
+						relativeX = relativeX / scaleInfo.totalScale
+						relativeY = relativeY / scaleInfo.totalScale
 
 						// CSS transformを考慮した位置調整
 						if (parentTransformMatrix) {
@@ -223,12 +204,8 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						padding: { left: parentPaddingLeft, top: parentPaddingTop },
 						border: { left: parentBorderLeft, top: parentBorderTop },
 						parentTransform,
-						elementTransform,
-						elementZoom,
-						elementScale,
-						totalScale,
+						scaleInfo,
 						relativePos: dragStartElementPos.current,
-						viewportScale: viewport?.visualViewport?.scale || 1,
 					})
 				} else {
 					// 親要素がない場合は現在のstate.positionを使用

@@ -125,24 +125,75 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 
 				if (parent) {
 					const parentRect = parent.getBoundingClientRect()
+					const parentStyle = window.getComputedStyle(parent)
+
+					// 親要素のパディングとボーダーを取得
+					const parentPaddingLeft = parseInt(parentStyle.paddingLeft, 10) || 0
+					const parentPaddingTop = parseInt(parentStyle.paddingTop, 10) || 0
+					const parentBorderLeft = parseInt(parentStyle.borderLeftWidth, 10) || 0
+					const parentBorderTop = parseInt(parentStyle.borderTopWidth, 10) || 0
+
+					// 親要素のCSS transformを取得
+					const parentTransform = parentStyle.transform
+					let parentTransformMatrix = null
+					if (parentTransform && parentTransform !== 'none') {
+						try {
+							parentTransformMatrix = new DOMMatrix(parentTransform)
+						} catch (error) {
+							console.warn('[DraggableResize] Failed to parse parent transform:', error)
+						}
+					}
 
 					// モバイルでの座標補正
 					const viewport = elementRef.current.ownerDocument?.defaultView
 					if (viewport && 'touches' in e) {
 						const scale = viewport.visualViewport?.scale || 1
 
-						// スケールを考慮した相対位置を計算
+						// スケールとパディング/ボーダーを考慮した相対位置を計算
+						let relativeX = rect.left - parentRect.left - parentPaddingLeft - parentBorderLeft
+						let relativeY = rect.top - parentRect.top - parentPaddingTop - parentBorderTop
+
+						// CSS transformを考慮した位置調整
+						if (parentTransformMatrix) {
+							// transformの逆行列を適用
+							const inverseMatrix = parentTransformMatrix.inverse()
+							const adjustedPoint = inverseMatrix.transformPoint({ x: relativeX, y: relativeY })
+							relativeX = adjustedPoint.x
+							relativeY = adjustedPoint.y
+						}
+
 						dragStartElementPos.current = {
-							x: (rect.left - parentRect.left) / scale,
-							y: (rect.top - parentRect.top) / scale,
+							x: relativeX / scale,
+							y: relativeY / scale,
 						}
 					} else {
-						// 通常の相対位置計算
+						// 通常の相対位置計算（パディング/ボーダーを考慮）
+						let relativeX = rect.left - parentRect.left - parentPaddingLeft - parentBorderLeft
+						let relativeY = rect.top - parentRect.top - parentPaddingTop - parentBorderTop
+
+						// CSS transformを考慮した位置調整
+						if (parentTransformMatrix) {
+							const inverseMatrix = parentTransformMatrix.inverse()
+							const adjustedPoint = inverseMatrix.transformPoint({ x: relativeX, y: relativeY })
+							relativeX = adjustedPoint.x
+							relativeY = adjustedPoint.y
+						}
+
 						dragStartElementPos.current = {
-							x: rect.left - parentRect.left,
-							y: rect.top - parentRect.top,
+							x: relativeX,
+							y: relativeY,
 						}
 					}
+
+					console.log('[DraggableResize] Position calculation:', {
+						rect: { left: rect.left, top: rect.top },
+						parentRect: { left: parentRect.left, top: parentRect.top },
+						padding: { left: parentPaddingLeft, top: parentPaddingTop },
+						border: { left: parentBorderLeft, top: parentBorderTop },
+						transform: parentTransform,
+						relativePos: dragStartElementPos.current,
+						scale: viewport?.visualViewport?.scale || 1,
+					})
 				} else {
 					// 親要素がない場合は現在のstate.positionを使用
 					dragStartElementPos.current = { ...state.position }
@@ -225,14 +276,28 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 					const parent = elementRef.current.parentElement
 					const parentRect = parent.getBoundingClientRect()
 					const elementRect = elementRef.current.getBoundingClientRect()
-
-					// 親要素のクライアント領域を取得（スクロールバーやパディングを考慮）
 					const parentStyle = window.getComputedStyle(parent)
+
+					// 親要素のパディングとボーダーを取得
 					const parentPaddingLeft = parseInt(parentStyle.paddingLeft, 10) || 0
 					const parentPaddingTop = parseInt(parentStyle.paddingTop, 10) || 0
 					const parentPaddingRight = parseInt(parentStyle.paddingRight, 10) || 0
 					const parentPaddingBottom = parseInt(parentStyle.paddingBottom, 10) || 0
+					const parentBorderLeft = parseInt(parentStyle.borderLeftWidth, 10) || 0
+					const parentBorderTop = parseInt(parentStyle.borderTopWidth, 10) || 0
 
+					// 親要素のCSS transformを取得
+					const parentTransform = parentStyle.transform
+					let parentTransformMatrix = null
+					if (parentTransform && parentTransform !== 'none') {
+						try {
+							parentTransformMatrix = new DOMMatrix(parentTransform)
+						} catch (error) {
+							console.warn('[DraggableResize] Failed to parse parent transform for constraints:', error)
+						}
+					}
+
+					// 利用可能な領域を計算（パディングとボーダーを考慮）
 					const availableWidth = parent.clientWidth - parentPaddingLeft - parentPaddingRight
 					const availableHeight = parent.clientHeight - parentPaddingTop - parentPaddingBottom
 
@@ -240,8 +305,31 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 					const maxX = Math.max(0, availableWidth - state.size.width)
 					const maxY = Math.max(0, availableHeight - state.size.height)
 
-					newX = Math.max(parentPaddingLeft, Math.min(newX, maxX))
-					newY = Math.max(parentPaddingTop, Math.min(newY, maxY))
+					// パディングとボーダーを考慮した境界制限
+					let constrainedX = Math.max(
+						parentPaddingLeft + parentBorderLeft,
+						Math.min(newX, maxX + parentPaddingLeft + parentBorderLeft)
+					)
+					let constrainedY = Math.max(
+						parentPaddingTop + parentBorderTop,
+						Math.min(newY, maxY + parentPaddingTop + parentBorderTop)
+					)
+
+					// CSS transformを考慮した位置調整
+					if (parentTransformMatrix) {
+						try {
+							// transformの逆行列を適用して位置を調整
+							const inverseMatrix = parentTransformMatrix.inverse()
+							const adjustedPoint = inverseMatrix.transformPoint({ x: constrainedX, y: constrainedY })
+							constrainedX = adjustedPoint.x
+							constrainedY = adjustedPoint.y
+						} catch (error) {
+							console.warn('[DraggableResize] Failed to apply transform inverse for constraints:', error)
+						}
+					}
+
+					newX = constrainedX
+					newY = constrainedY
 				}
 
 				const newPosition = { x: newX, y: newY }
@@ -257,6 +345,18 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						newPosition.y = newPosition.y * scale
 					}
 				}
+
+				// デバッグ用：座標計算の詳細を記録
+				console.log('[DraggableResize] Drag position update:', {
+					delta: { x: clientX - dragStartPos.current.x, y: clientY - dragStartPos.current.y },
+					startElementPos: dragStartElementPos.current,
+					calculatedPos: { x: newX, y: newY },
+					finalPos: newPosition,
+					isTouch: 'touches' in e,
+					scale: elementRef.current?.ownerDocument?.defaultView?.visualViewport?.scale || 1,
+					constrained: constrainToParent,
+				})
+
 				setState(prev => ({ ...prev, position: newPosition }))
 				onDrag?.(newPosition)
 			}

@@ -13,6 +13,15 @@
 	-webkit-user-select: none;
 	-webkit-transform: translateZ(0);
 	transform: translateZ(0);
+	/* 位置計算の一貫性を保つ */
+	transform-origin: 0 0;
+	-webkit-transform-origin: 0 0;
+	/* レイアウトの安定性を向上 */
+	contain: layout style;
+	/* 横向きでの座標計算を安定化 */
+	will-change: transform;
+	backface-visibility: hidden;
+	-webkit-backface-visibility: hidden;
 }
 
 .draggableContainer:hover {

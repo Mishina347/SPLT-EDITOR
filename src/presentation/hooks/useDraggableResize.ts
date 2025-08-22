@@ -93,7 +93,7 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 				clientX = touch.clientX
 				clientY = touch.clientY
 
-				// モバイルでの座標補正（横向き対応）
+				// モバイルでの座標補正
 				if (elementRef.current) {
 					const rect = elementRef.current.getBoundingClientRect()
 					const viewport = elementRef.current.ownerDocument?.defaultView
@@ -104,54 +104,9 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						const scrollX = viewport.scrollX || 0
 						const scrollY = viewport.scrollY || 0
 
-						// 画面の向きを取得
-						const orientation = window.screen.orientation || window.orientation
-						const isLandscape =
-							orientation?.type?.includes('landscape') ||
-							(typeof orientation === 'number' && Math.abs(orientation) === 90)
-
-						// 横向きの場合の座標補正
-						if (isLandscape) {
-							// 横向きでは画面の幅と高さが入れ替わる
-							const screenWidth = window.screen.width
-							const screenHeight = window.screen.height
-							const viewportWidth = viewport.innerWidth
-							const viewportHeight = viewport.innerHeight
-
-							// 画面の向きに応じて座標を調整
-							if (
-								orientation?.type === 'landscape-primary' ||
-								(typeof orientation === 'number' && orientation === 90)
-							) {
-								// 右に90度回転
-								const adjustedX = clientY
-								const adjustedY = screenWidth - clientX
-								clientX = adjustedX
-								clientY = adjustedY
-							} else if (
-								orientation?.type === 'landscape-secondary' ||
-								(typeof orientation === 'number' && orientation === -90)
-							) {
-								// 左に90度回転
-								const adjustedX = screenHeight - clientY
-								const adjustedY = clientX
-								clientX = adjustedX
-								clientY = adjustedY
-							}
-						}
-
-						// スケールとスクロールを考慮した最終座標補正
+						// 座標を補正
 						clientX = (clientX + scrollX) / scale
 						clientY = (clientY + scrollY) / scale
-
-						console.log('[DraggableResize] Touch coordinate correction:', {
-							original: { x: touch.clientX, y: touch.clientY },
-							orientation: orientation?.type || orientation,
-							isLandscape,
-							adjusted: { x: clientX, y: clientY },
-							scale,
-							scroll: { x: scrollX, y: scrollY },
-						})
 					}
 				}
 			} else {
@@ -290,7 +245,7 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 				clientX = touch.clientX
 				clientY = touch.clientY
 
-				// モバイルでの座標補正（横向き対応）
+				// モバイルでの座標補正
 				if (elementRef.current) {
 					const viewport = elementRef.current.ownerDocument?.defaultView
 					if (viewport) {
@@ -298,57 +253,7 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						const scrollX = viewport.scrollX || 0
 						const scrollY = viewport.scrollY || 0
 
-						// 画面の向きを取得
-						const orientation = window.screen.orientation || window.orientation
-						const isLandscape =
-							orientation?.type?.includes('landscape') ||
-							(typeof orientation === 'number' && Math.abs(orientation) === 90)
-
-						// 横向きの場合の座標補正
-						if (isLandscape) {
-							const screenWidth = window.screen.width
-							const screenHeight = window.screen.height
-							const viewportWidth = viewport.innerWidth
-							const viewportHeight = viewport.innerHeight
-
-							// デバイスの向きとビューポートの向きの関係を考慮
-							const deviceOrientation =
-								orientation?.type || (typeof orientation === 'number' ? orientation : null)
-
-							if (
-								deviceOrientation === 'landscape-primary' ||
-								(typeof deviceOrientation === 'number' && deviceOrientation === 90)
-							) {
-								// 右に90度回転（デバイスが右に傾いている）
-								// タッチ座標を画面の向きに合わせて調整
-								const adjustedX = clientY
-								const adjustedY = viewportWidth - clientX
-
-								// ビューポートのスケールとスクロールを考慮
-								clientX = adjustedX
-								clientY = adjustedY
-							} else if (
-								deviceOrientation === 'landscape-secondary' ||
-								(typeof deviceOrientation === 'number' && deviceOrientation === -90)
-							) {
-								// 左に90度回転（デバイスが左に傾いている）
-								const adjustedX = viewportHeight - clientY
-								const adjustedY = clientX
-
-								clientX = adjustedX
-								clientY = adjustedY
-							}
-
-							console.log('[DraggableResize] Landscape coordinate adjustment:', {
-								deviceOrientation,
-								viewport: { width: viewportWidth, height: viewportHeight },
-								screen: { width: screenWidth, height: screenHeight },
-								original: { x: touch.clientX, y: touch.clientY },
-								adjusted: { x: clientX, y: clientY },
-							})
-						}
-
-						// スケールとスクロールを考慮した最終座標補正
+						// 座標を補正
 						clientX = (clientX + scrollX) / scale
 						clientY = (clientY + scrollY) / scale
 					}

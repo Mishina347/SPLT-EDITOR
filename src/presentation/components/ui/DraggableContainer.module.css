@@ -18,10 +18,6 @@
 	-webkit-transform-origin: 0 0;
 	/* レイアウトの安定性を向上 */
 	contain: layout style;
-	/* 横向きでの座標計算を安定化 */
-	will-change: transform;
-	backface-visibility: hidden;
-	-webkit-backface-visibility: hidden;
 }
 
 .draggableContainer:hover {

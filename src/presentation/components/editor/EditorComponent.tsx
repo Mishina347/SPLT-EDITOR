@@ -1,7 +1,12 @@
 import * as monaco from 'monaco-editor'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_SETTING, EditorSettings } from '../../../domain'
 import { getOptimizedEditorOptions } from '../../../utils/editorOptimization'
+import {
+	calculateElementScale,
+	calculateScaleWithViewport,
+	ScaleInfo,
+} from '../../../utils/scaleCalculator'
 
 import styles from './EditorComponent.module.css'
 import buttonStyles from '../../shared/Button/Button.module.css'
@@ -41,6 +46,14 @@ export const EditorComponent = ({
 	const imeStartValueRef = useRef<string>('')
 	const imeStartPositionRef = useRef<monaco.IPosition | null>(null)
 	const imeStartSelectionRef = useRef<monaco.ISelection | null>(null)
+
+	// 倍率計算の状態
+	const [scaleInfo, setScaleInfo] = useState<ScaleInfo>({
+		zoom: 1,
+		transformScale: 1,
+		totalScale: 1,
+		viewportScale: 1,
+	})
 
 	// 設定値をメモ化
 	const { fontSize, wordWrapColumn, backgroundColor, textColor, fontFamily } = useMemo(
@@ -87,6 +100,19 @@ export const EditorComponent = ({
 		enabled: true,
 	})
 
+	// 倍率計算のロジック
+	const updateScaleInfo = useCallback(() => {
+		if (containerRef.current) {
+			const newScaleInfo = calculateScaleWithViewport(containerRef.current)
+			setScaleInfo(newScaleInfo)
+
+			console.log('[EditorComponent] Scale info updated:', {
+				element: 'Editor',
+				...newScaleInfo,
+			})
+		}
+	}, [])
+
 	// 通常のonChange関数
 	const handleChange = useCallback(
 		(newValue: string) => {
@@ -94,6 +120,25 @@ export const EditorComponent = ({
 		},
 		[onChange]
 	)
+
+	// 倍率計算の初期化と監視
+	useEffect(() => {
+		// 初期倍率を計算
+		updateScaleInfo()
+
+		// ResizeObserverでサイズ変更を監視
+		if (containerRef.current) {
+			const resizeObserver = new ResizeObserver(() => {
+				updateScaleInfo()
+			})
+
+			resizeObserver.observe(containerRef.current)
+
+			return () => {
+				resizeObserver.disconnect()
+			}
+		}
+	}, [updateScaleInfo])
 
 	// エディタ内部にフォーカスを移す関数
 	const focusIntoEditor = useCallback(() => {
@@ -578,7 +623,6 @@ export const EditorComponent = ({
 										setTimeout(() => {
 											triggerCaretAnimation('pulse', false)
 										}, 100)
-
 									}
 								}, 50)
 							}

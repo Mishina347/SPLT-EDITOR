@@ -25,15 +25,9 @@
 
 /* フォーカス時のスタイル */
 .previewContainer:focus {
-	outline: 2px solid var(--app-text-color, #005fcc);
+	outline: 1px solid #005fcc;
 	outline-offset: 2px;
 	box-shadow: 0 0 0 3px rgba(0, 95, 204, 0.2);
-}
-
-.previewContainer:focus-visible {
-	outline: 3px solid var(--app-text-color, #005fcc);
-	outline-offset: 2px;
-	box-shadow: 0 0 0 3px rgba(0, 95, 204, 0.3);
 }
 
 /* スワイプ中のスタイル */

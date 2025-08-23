@@ -69,8 +69,8 @@ export const UI_CONSTANTS = {
 	DRAGGABLE_CONTAINER: {
 		DEFAULT_POSITION: { x: 20, y: 20 },
 		DEFAULT_SIZE: { width: 400, height: 300 },
-		MIN_SIZE: { width: 200, height: 150 },
-		MAX_SIZE: { width: 800, height: 600 },
+		MIN_SIZE: { width: 120, height: 90 },
+		MAX_SIZE: { width: 1600, height: 1200 },
 	},
 } as const
 

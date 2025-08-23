@@ -171,7 +171,7 @@
 	background: none;
 	border: none;
 	padding: 8px 12px;
-	color: var(--app-text-color, #333);
+	color: #333;
 	font-size: 14px;
 	cursor: pointer;
 	border-radius: 4px;
@@ -217,6 +217,7 @@
 .pwaInstallButton {
 	display: flex;
 	align-items: center;
+	color: black;
 	justify-content: center;
 	gap: 8px;
 	border: none;
@@ -228,14 +229,15 @@
 
 .pwaInstallButton:hover {
 	transform: translateY(-1px);
-	color: black;
+	background: #007acc;
+	color: white;
 	box-shadow: 0 4px 12px rgba(0, 95, 204, 0.3);
 }
 
 .pwaInstallButton:focus {
 	outline: 2px solid var(--app-accent-color, #007acc);
 	outline-offset: 2px;
-	background: var(--app-accent-color, #007acc);
+	background: #007acc;
 	color: white;
 }
 

@@ -150,6 +150,8 @@ export const DraggableContainer: React.FC<DraggableContainerProps> = ({
 
 	const handleNativeTouchMove = useCallback(
 		(e: Event) => {
+			e.preventDefault()
+			e.stopPropagation()
 			const touchEvent = e as TouchEvent
 			if (enablePinchZoom && touchEvent.touches.length === 2) {
 				touchEvent.preventDefault() // ピンチ時のスクロール防止

@@ -3,4 +3,3 @@
  */
 export { EDITOR_CONSTANTS, type EditorConstants } from './EditorConstants'
 export { PREVIEW_CONSTANTS, type PreviewConstants } from './PreviewConstants'
-export { LAYOUT_CONSTANTS, type LayoutConstants } from './LayoutConstants'

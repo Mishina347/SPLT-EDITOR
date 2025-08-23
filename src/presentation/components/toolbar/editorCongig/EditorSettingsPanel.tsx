@@ -37,25 +37,25 @@ export const EditorSettingsPanel = React.memo<Props>(
 			[settings, onChange]
 		)
 
-		const handleAutoSaveEnabledChange = useCallback(
-			(enabled: boolean) => {
-				onChange({
-					...settings,
-					autoSave: { ...settings.autoSave, enabled },
-				})
-			},
-			[settings, onChange]
-		)
+		// const handleAutoSaveEnabledChange = useCallback(
+		// 	(enabled: boolean) => {
+		// 		onChange({
+		// 			...settings,
+		// 			autoSave: { ...settings.autoSave, enabled },
+		// 		})
+		// 	},
+		// 	[settings, onChange]
+		// )
 
-		const handleAutoSaveDelayChange = useCallback(
-			(delay: number) => {
-				onChange({
-					...settings,
-					autoSave: { ...settings.autoSave, delay },
-				})
-			},
-			[settings, onChange]
-		)
+		// const handleAutoSaveDelayChange = useCallback(
+		// 	(delay: number) => {
+		// 		onChange({
+		// 			...settings,
+		// 			autoSave: { ...settings.autoSave, delay },
+		// 		})
+		// 	},
+		// 	[settings, onChange]
+		// )
 
 		const handleFocus = useCallback(() => {
 			onToolbarFocusChange(DISPLAY_MODE.EDITOR)

@@ -12,8 +12,10 @@ type Props = {
 }
 
 export function Preview({ text, config, isMaximized, onFocusMode, onPageInfoChange }: Props) {
-	// ページネーション処理を最適化（テキストの変更が少ない場合のみ再実行）
+	// ページネーション処理を最適化（テキスト、レイアウト設定、フォント設定の変更時に再実行）
 	const pages = useMemo(() => {
+		console.log('[Preview] Recalculating pages with config:', config)
+
 		// 空のテキストの場合は早期リターン
 		if (!text || text.trim() === '') {
 			return [['']]
@@ -21,7 +23,50 @@ export function Preview({ text, config, isMaximized, onFocusMode, onPageInfoChan
 
 		// 設定が変更された場合のみページネーションを実行
 		return PaginationService.paginate(text, config)
-	}, [text, config.charsPerLine, config.linesPerPage])
+	}, [text, config])
+
+	// フォント設定変更時のキャッシュクリアと強制再描画
+	useEffect(() => {
+		console.log('[Preview] Font settings changed:', {
+			fontSize: config.fontSize,
+			fontFamily: config.fontFamily,
+		})
+
+		// フォント設定が変更されたらページネーションキャッシュをクリア
+		PaginationService.clearCacheForFontChange()
+
+		// CSSカスタムプロパティを更新
+		if (containerRef.current) {
+			const container = containerRef.current
+			container.style.setProperty('--preview-font-size', `${config.fontSize || 16}px`)
+			container.style.setProperty('--preview-font-family', config.fontFamily || 'sans-serif')
+		}
+
+		// 強制再描画をトリガー
+		if (containerRef.current) {
+			// DOM要素を強制的に再描画
+			const container = containerRef.current
+			container.style.display = 'none'
+			// 強制的にリフローを発生させる
+			container.offsetHeight
+			container.style.display = ''
+		}
+	}, [config.fontSize, config.fontFamily])
+
+	// 設定オブジェクト全体の変更を監視（フォールバック）
+	useEffect(() => {
+		console.log('[Preview] Config object changed:', config)
+		
+		// 設定が変更されたらページネーションキャッシュをクリア
+		PaginationService.clearCacheForFontChange()
+		
+		// CSSカスタムプロパティを更新
+		if (containerRef.current) {
+			const container = containerRef.current
+			container.style.setProperty('--preview-font-size', `${config.fontSize || 16}px`)
+			container.style.setProperty('--preview-font-family', config.fontFamily || 'sans-serif')
+		}
+	}, [config])
 
 	const [pageIndex, setPageIndex] = useState(0)
 	const [mousePosition, setMousePosition] = useState<'left' | 'right' | null>(null)
@@ -53,6 +98,8 @@ export function Preview({ text, config, isMaximized, onFocusMode, onPageInfoChan
 	useEffect(() => {
 		onPageInfoChange?.(pageIndex + 1, pages.length) // 1ベースでページ番号を渡す
 	}, [pageIndex, pages.length])
+
+	// フォント設定が変更されたら強制再描画
 
 	// グローバルクリックイベントでフォーカスモード解除
 	useEffect(() => {
@@ -302,6 +349,10 @@ export function Preview({ text, config, isMaximized, onFocusMode, onPageInfoChan
 				onTouchMove={handleTouchMove}
 				onTouchEnd={handleTouchEnd}
 				onKeyDown={handleKeyDown}
+				style={{
+					fontSize: `${config.fontSize}px`,
+					fontFamily: config.fontFamily,
+				}}
 			>
 				{/* 左側のページめくりエフェクト */}
 				<div

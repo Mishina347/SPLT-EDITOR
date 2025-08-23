@@ -33,7 +33,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 	editorSettings,
 	previewSettings,
 	currentText,
-	currentSavedText,
 	onEditorSettingChange,
 	onPreviewSettingChange,
 	onToolbarFocusChange,

@@ -47,14 +47,14 @@
 
 /* 外部フォーカス状態 */
 .editorWrapper[data-inner-focus='false']:focus {
-	outline: 3px solid var(--app-text-color, #005fcc);
+	outline: 1px solid var(--app-text-color, #005fcc);
 	outline-offset: 2px;
 	background: var(--app-bg-color, rgba(0, 95, 204, 0.05));
 }
 
 /* 内部フォーカス状態 */
 .editorWrapper[data-inner-focus='true'] {
-	outline: 2px solid var(--app-text-color, #007acc);
+	outline: 1px solid var(--app-text-color, #007acc);
 	outline-offset: 1px;
 }
 

@@ -38,6 +38,10 @@
 	background: var(--app-bg-color, #f9f9f9);
 	border-top: 1px solid var(--app-border-color, #e0e0e0);
 	margin-top: auto; /* コンテンツの下に配置 */
+	opacity: 0.3;
+}
+.pageNumberBar:hover {
+	opacity: 1;
 }
 
 .pageNumber {

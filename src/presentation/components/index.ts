@@ -28,4 +28,4 @@ export { LayerIcon } from './icons/LayerIcon'
 export { OverflowMenu } from './toolbar/OverflowMenu'
 
 // PWA components
-export { PWAInstallButton, PWAStatus, PWAOrientationControl } from './pwa'
+export { PWAInstallButton, PWAStatus } from './pwa'

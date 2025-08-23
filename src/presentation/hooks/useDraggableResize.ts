@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, useEffect } from 'react'
 import { calculateElementScale, calculateScaleWithViewport } from '../../utils/scaleCalculator'
+import { UI_CONSTANTS } from '@/utils'
 
 export interface DraggableResizeState {
 	position: { x: number; y: number }
@@ -11,15 +12,16 @@ export interface DraggableResizeState {
 export interface DraggableResizeHandlers {
 	onMouseDown: (e: React.MouseEvent | React.TouchEvent) => void
 	onResizeMouseDown: (e: React.MouseEvent | React.TouchEvent, direction: ResizeDirection) => void
+	updatePositionForScaleChange: () => void // 倍率変更時の座標更新を外部から呼び出し可能
 }
 
 export type ResizeDirection = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
 
 interface UseDraggableResizeOptions {
-	initialPosition?: { x: number; y: number }
-	initialSize?: { width: number; height: number }
-	minSize?: { width: number; height: number }
-	maxSize?: { width: number; height: number }
+	initialPosition: { x: number; y: number }
+	initialSize: { width: number; height: number }
+	minSize: { width: number; height: number }
+	maxSize: { width: number; height: number }
 	constrainToParent?: boolean
 	allowOutsideViewport?: boolean
 	onDrag?: (position: { x: number; y: number }) => void
@@ -30,12 +32,12 @@ interface UseDraggableResizeOptions {
 	onResizeEnd?: () => void
 }
 
-export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
+export const useDraggableResize = (options: UseDraggableResizeOptions) => {
 	const {
-		initialPosition = { x: 0, y: 0 },
-		initialSize = { width: 300, height: 200 },
-		minSize = { width: 100, height: 100 },
-		maxSize = { width: 1200, height: 1000 },
+		initialPosition,
+		initialSize,
+		minSize,
+		maxSize,
 		constrainToParent = false, // デフォルトを false に変更
 		allowOutsideViewport = true, // ビューポート外も許可
 		onDrag,
@@ -47,7 +49,7 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 	} = options
 
 	const [state, setState] = useState<DraggableResizeState>({
-		position: initialPosition,
+		position: initialPosition ?? { x: 100, y: 100 },
 		size: initialSize,
 		isDragging: false,
 		isResizing: false,
@@ -75,16 +77,197 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 	const resizeDirection = useRef<ResizeDirection>('se')
 	const elementRef = useRef<HTMLDivElement>(null)
 
+	// タッチIDの追跡（UNKNOWN touch警告の防止）
+	const activeTouchId = useRef<number | null>(null)
+	const isTouchActive = useRef<boolean>(false)
+	const touchStartTime = useRef<number>(0)
+	const lastScaleInfo = useRef<{ totalScale: number; viewportScale: number }>({
+		totalScale: 1,
+		viewportScale: 1,
+	})
+	const initialScaleInfo = useRef<{ totalScale: number; viewportScale: number }>({
+		totalScale: 1,
+		viewportScale: 1,
+	})
+
+	// PC・モバイル共通の座標補正処理
+	const applyCoordinateCorrection = useCallback(
+		(rawX: number, rawY: number, element: HTMLElement) => {
+			const viewport = element.ownerDocument?.defaultView
+			if (!viewport) return { x: rawX, y: rawY }
+
+			// ビューポートのスケールとスクロール位置を取得
+			const scale = viewport.visualViewport?.scale || 1
+			const scrollX = viewport.scrollX || 0
+			const scrollY = viewport.scrollY || 0
+
+			// 座標を補正（PC・モバイル共通）
+			const correctedX = (rawX + scrollX) / scale
+			const correctedY = (rawY + scrollY) / scale
+
+			return { x: correctedX, y: correctedY }
+		},
+		[]
+	)
+
+	// 倍率変更時の座標更新処理
+	const updatePositionForScaleChange = useCallback(() => {
+		if (!elementRef.current) return
+
+		const currentScaleInfo = calculateScaleWithViewport(elementRef.current)
+		const lastScale = lastScaleInfo.current.totalScale * lastScaleInfo.current.viewportScale
+		const currentScale = currentScaleInfo.totalScale * currentScaleInfo.viewportScale
+
+		// 倍率が変更された場合のみ座標を更新
+		if (Math.abs(currentScale - lastScale) > 0.01) {
+			// 倍率変更に応じて座標を調整
+			const scaleRatio = currentScale / lastScale
+			const newPosition = {
+				x: state.position.x * scaleRatio,
+				y: state.position.y * scaleRatio,
+			}
+
+			setState(prev => ({
+				...prev,
+				position: newPosition,
+			}))
+
+			// 新しい倍率情報を保存
+			lastScaleInfo.current = {
+				totalScale: currentScaleInfo.totalScale,
+				viewportScale: currentScaleInfo.viewportScale,
+			}
+		}
+	}, [state.position, applyCoordinateCorrection])
+
+	// ピンチ完了後に縮尺無しの現在位置を取得
+	const getCurrentPositionWithoutScale = useCallback(() => {
+		if (!elementRef.current) return null
+
+		const currentScaleInfo = calculateScaleWithViewport(elementRef.current)
+		const totalScale = currentScaleInfo.totalScale * currentScaleInfo.viewportScale
+
+		// 現在の表示位置を縮尺で割って、縮尺無しの位置を取得
+		const positionWithoutScale = {
+			x: state.position.x / totalScale,
+			y: state.position.y / totalScale,
+		}
+
+		return positionWithoutScale
+	}, [state.position])
+
+	// ピンチ完了時の位置更新処理
+	const updatePositionAfterPinch = useCallback(() => {
+		if (!elementRef.current) return
+
+		const currentScaleInfo = calculateScaleWithViewport(elementRef.current)
+		const totalScale = currentScaleInfo.totalScale * currentScaleInfo.viewportScale
+
+		// 現在の表示位置を縮尺で割って、縮尺無しの位置を取得
+		const positionWithoutScale = {
+			x: state.position.x / totalScale,
+			y: state.position.y / totalScale,
+		}
+
+		// 縮尺無しの位置で状態を更新
+		setState(prev => ({
+			...prev,
+			position: positionWithoutScale,
+		}))
+
+		// 倍率情報を更新
+		lastScaleInfo.current = {
+			totalScale: currentScaleInfo.totalScale,
+			viewportScale: currentScaleInfo.viewportScale,
+		}
+
+		return positionWithoutScale
+	}, [state.position])
+
+	// 最初の縮尺を基準とした座標計算
+	const getPositionWithInitialScale = useCallback(() => {
+		if (!elementRef.current) return null
+
+		const currentScaleInfo = calculateScaleWithViewport(elementRef.current)
+		const currentTotalScale = currentScaleInfo.totalScale * currentScaleInfo.viewportScale
+		const initialTotalScale =
+			initialScaleInfo.current.totalScale * initialScaleInfo.current.viewportScale
+
+		// 現在の位置を最初の縮尺で正規化
+		const normalizedPosition = {
+			x: state.position.x * (initialTotalScale / currentTotalScale),
+			y: state.position.y * (initialTotalScale / currentTotalScale),
+		}
+
+		return normalizedPosition
+	}, [state.position])
+
+	// 最初の縮尺を基準としたタッチ座標計算
+	const applyCoordinateCorrectionWithInitialScale = useCallback(
+		(rawX: number, rawY: number, element: HTMLElement) => {
+			const viewport = element.ownerDocument?.defaultView
+			if (!viewport) return { x: rawX, y: rawY }
+
+			// ビューポートのスケールとスクロール位置を取得
+			const currentScale = viewport.visualViewport?.scale || 1
+			const scrollX = viewport.scrollX || 0
+			const scrollY = viewport.scrollY || 0
+
+			// 最初の縮尺を基準とした座標補正
+			const initialTotalScale =
+				initialScaleInfo.current.totalScale * initialScaleInfo.current.viewportScale
+			const scaleRatio = initialTotalScale / currentScale
+
+			// 座標を補正（最初の縮尺基準）
+			const correctedX = (rawX + scrollX) * scaleRatio
+			const correctedY = (rawY + scrollY) * scaleRatio
+
+			return { x: correctedX, y: correctedY }
+		},
+		[]
+	)
+
+	// 倍率変更の監視
+	useEffect(() => {
+		if (!elementRef.current) return
+
+		const element = elementRef.current
+		const resizeObserver = new ResizeObserver(() => {
+			// リサイズ後に倍率変更をチェック
+			setTimeout(updatePositionForScaleChange, 0)
+		})
+
+		// 初期倍率を記録
+		const scaleInfo = calculateScaleWithViewport(element)
+		initialScaleInfo.current = {
+			totalScale: scaleInfo.totalScale,
+			viewportScale: scaleInfo.viewportScale,
+		}
+		lastScaleInfo.current = {
+			totalScale: scaleInfo.totalScale,
+			viewportScale: scaleInfo.viewportScale,
+		}
+
+		resizeObserver.observe(element)
+
+		return () => {
+			resizeObserver.disconnect()
+		}
+	}, [updatePositionForScaleChange])
+
 	// ドラッグ開始（マウス・タッチ共通）
 	const handleDragStart = useCallback(
 		(e: React.MouseEvent | React.TouchEvent) => {
+			// ドラッグ開始前に倍率変更をチェックして座標を更新
+			updatePositionForScaleChange()
+
 			// マウスイベントの場合のみpreventDefaultを実行
 			if ('button' in e) {
 				e.preventDefault()
 			}
 			e.stopPropagation()
 
-			// マウス/タッチ位置を取得（モバイル対応）
+			// マウス/タッチ位置を取得（PC・モバイル共通の座標補正）
 			let clientX: number
 			let clientY: number
 
@@ -94,26 +277,30 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 				clientX = touch.clientX
 				clientY = touch.clientY
 
-				// モバイルでの座標補正
-				if (elementRef.current) {
-					const rect = elementRef.current.getBoundingClientRect()
-					const viewport = elementRef.current.ownerDocument?.defaultView
-
-					if (viewport) {
-						// ビューポートのスケールとスクロール位置を考慮
-						const scale = viewport.visualViewport?.scale || 1
-						const scrollX = viewport.scrollX || 0
-						const scrollY = viewport.scrollY || 0
-
-						// 座標を補正
-						clientX = (clientX + scrollX) / scale
-						clientY = (clientY + scrollY) / scale
-					}
-				}
+				// タッチ状態を記録（UNKNOWN touch警告の防止）
+				activeTouchId.current = touch.identifier
+				isTouchActive.current = true
+				touchStartTime.current = Date.now()
 			} else {
 				// マウスイベントの場合
 				clientX = e.clientX
 				clientY = e.clientY
+
+				// マウスイベントの場合はタッチ状態をクリア
+				activeTouchId.current = null
+				isTouchActive.current = false
+				touchStartTime.current = 0
+			}
+
+			// 最初の縮尺を基準とした座標補正（ピンチ操作後のタッチ座標を正規化）
+			if (elementRef.current) {
+				const corrected = applyCoordinateCorrectionWithInitialScale(
+					clientX,
+					clientY,
+					elementRef.current
+				)
+				clientX = corrected.x
+				clientY = corrected.y
 			}
 
 			// 位置を記録
@@ -172,16 +359,6 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						x: relativeX,
 						y: relativeY,
 					}
-
-					console.log('[DraggableResize] Position calculation with scale:', {
-						rect: { left: rect.left, top: rect.top },
-						parentRect: { left: parentRect.left, top: parentRect.top },
-						padding: { left: parentPaddingLeft, top: parentPaddingTop },
-						border: { left: parentBorderLeft, top: parentBorderTop },
-						parentTransform,
-						scaleInfo,
-						relativePos: dragStartElementPos.current,
-					})
 				} else {
 					// 親要素がない場合は現在のstate.positionを使用
 					dragStartElementPos.current = { ...state.position }
@@ -200,15 +377,50 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 	// リサイズ開始（マウス・タッチ共通）
 	const handleResizeStart = useCallback(
 		(e: React.MouseEvent | React.TouchEvent, direction: ResizeDirection) => {
+			// リサイズ開始前に倍率変更をチェックして座標を更新
+			updatePositionForScaleChange()
+
 			// マウスイベントの場合のみpreventDefaultを実行
 			if ('button' in e) {
 				e.preventDefault()
 			}
 			e.stopPropagation()
 
-			// マウス/タッチ位置を取得
-			const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-			const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+			// マウス/タッチ位置を取得（PC・モバイル共通の座標補正）
+			let clientX: number
+			let clientY: number
+
+			if ('touches' in e) {
+				// タッチイベントの場合
+				const touch = e.touches[0]
+				clientX = touch.clientX
+				clientY = touch.clientY
+
+				// タッチ状態を記録（UNKNOWN touch警告の防止）
+				activeTouchId.current = touch.identifier
+				isTouchActive.current = true
+				touchStartTime.current = Date.now()
+			} else {
+				// マウスイベントの場合
+				clientX = e.clientX
+				clientY = e.clientY
+
+				// マウスイベントの場合はタッチ状態をクリア
+				activeTouchId.current = null
+				isTouchActive.current = false
+				touchStartTime.current = 0
+			}
+
+			// 最初の縮尺を基準とした座標補正（ピンチ操作後のタッチ座標を正規化）
+			if (elementRef.current) {
+				const corrected = applyCoordinateCorrectionWithInitialScale(
+					clientX,
+					clientY,
+					elementRef.current
+				)
+				clientX = corrected.x
+				clientY = corrected.y
+			}
 
 			resizeStartPos.current = { x: clientX, y: clientY }
 			resizeStartSize.current = { ...state.size }
@@ -223,33 +435,49 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 	// マウス/タッチ移動処理
 	const handleMouseMove = useCallback(
 		(e: MouseEvent | TouchEvent) => {
-			// マウス/タッチ位置を取得（モバイル対応）
+			// マウス/タッチ位置を取得（PC・モバイル共通の座標補正）
 			let clientX: number
 			let clientY: number
 
 			if ('touches' in e) {
 				// タッチイベントの場合
 				const touch = e.touches[0]
+
+				// タッチ状態の厳密なチェック（UNKNOWN touch警告の防止）
+				if (!isTouchActive.current || activeTouchId.current === null) {
+					// タッチが開始されていない場合は無視
+					return
+				}
+
+				if (touch.identifier !== activeTouchId.current) {
+					// 異なるタッチIDの場合は無視
+					return
+				}
+
+				// タッチ開始から一定時間経過しているかチェック
+				const touchDuration = Date.now() - touchStartTime.current
+				if (touchDuration < 50) {
+					// タッチ開始直後は無視（誤動作防止）
+					return
+				}
+
 				clientX = touch.clientX
 				clientY = touch.clientY
-
-				// モバイルでの座標補正
-				if (elementRef.current) {
-					const viewport = elementRef.current.ownerDocument?.defaultView
-					if (viewport) {
-						const scale = viewport.visualViewport?.scale || 1
-						const scrollX = viewport.scrollX || 0
-						const scrollY = viewport.scrollY || 0
-
-						// 座標を補正
-						clientX = (clientX + scrollX) / scale
-						clientY = (clientY + scrollY) / scale
-					}
-				}
 			} else {
 				// マウスイベントの場合
 				clientX = e.clientX
 				clientY = e.clientY
+			}
+
+			// 最初の縮尺を基準とした座標補正（ピンチ操作後のタッチ座標を正規化）
+			if (elementRef.current) {
+				const corrected = applyCoordinateCorrectionWithInitialScale(
+					clientX,
+					clientY,
+					elementRef.current
+				)
+				clientX = corrected.x
+				clientY = corrected.y
 			}
 
 			if (state.isDragging) {
@@ -302,6 +530,8 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 						parentPaddingTop + parentBorderTop,
 						Math.min(newY, maxY + parentPaddingTop + parentBorderTop)
 					)
+					console.log('adjustedPoint.x : ', constrainedX)
+					console.log('adjustedPoint.y : ', constrainedY)
 
 					// CSS transformを考慮した位置調整
 					if (parentTransformMatrix) {
@@ -311,6 +541,8 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 							const adjustedPoint = inverseMatrix.transformPoint({ x: constrainedX, y: constrainedY })
 							constrainedX = adjustedPoint.x
 							constrainedY = adjustedPoint.y
+							console.log('adjustedPoint.x : ', adjustedPoint.x)
+							console.log('adjustedPoint.y : ', adjustedPoint.y)
 						} catch (error) {
 							console.warn('[DraggableResize] Failed to apply transform inverse for constraints:', error)
 						}
@@ -331,20 +563,7 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 					newPosition.y = newPosition.y * scaleInfo.totalScale
 				}
 
-				// デバッグ用：座標計算の詳細を記録（倍率情報付き）
-				if (elementRef.current) {
-					const scaleInfo = calculateScaleWithViewport(elementRef.current)
-
-					console.log('[DraggableResize] Drag position update with scale:', {
-						delta: { x: clientX - dragStartPos.current.x, y: clientY - dragStartPos.current.y },
-						startElementPos: dragStartElementPos.current,
-						calculatedPos: { x: newX, y: newY },
-						finalPos: newPosition,
-						isTouch: 'touches' in e,
-						scaleInfo,
-						constrained: constrainToParent,
-					})
-				}
+				// 座標計算完了（倍率情報付き）
 
 				setState(prev => ({ ...prev, position: newPosition }))
 				onDrag?.(newPosition)
@@ -388,29 +607,48 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 			setState(prev => ({ ...prev, isResizing: false }))
 			onResizeEnd?.()
 		}
+
+		// タッチ状態をクリア（UNKNOWN touch警告の防止）
+		activeTouchId.current = null
+		isTouchActive.current = false
+		touchStartTime.current = 0
 	}, [state.isDragging, state.isResizing, onDragEnd, onResizeEnd])
 
-	// イベントリスナーの設定（マウス・タッチ対応）
+	// イベントリスナーの設定（PC・モバイル共通）
 	useEffect(() => {
 		if (state.isDragging || state.isResizing) {
-			// マウスイベント
+			// PC・モバイル共通のイベントリスナー設定
 			document.addEventListener('mousemove', handleMouseMove)
 			document.addEventListener('mouseup', handleMouseUp)
-			// タッチイベント
-			document.addEventListener('touchmove', handleMouseMove, { passive: false })
-			document.addEventListener('touchend', handleMouseUp)
 
+			// タッチイベントの設定（モバイルドラッグの安定性向上）
+			document.addEventListener('touchmove', handleMouseMove, {
+				passive: false, // preventDefaultを許可
+				capture: true, // キャプチャフェーズで処理
+			})
+			document.addEventListener('touchend', handleMouseUp, {
+				passive: false,
+				capture: true,
+			})
+			// タッチキャンセルイベントも処理
+			document.addEventListener('touchcancel', handleMouseUp, {
+				passive: false,
+				capture: true,
+			})
+
+			// ユーザー体験の改善
 			document.body.style.userSelect = 'none'
 			document.body.style.cursor = state.isDragging ? 'grabbing' : 'default'
 
 			return () => {
-				// マウスイベント
+				// イベントリスナーのクリーンアップ
 				document.removeEventListener('mousemove', handleMouseMove)
 				document.removeEventListener('mouseup', handleMouseUp)
-				// タッチイベント
-				document.removeEventListener('touchmove', handleMouseMove)
-				document.removeEventListener('touchend', handleMouseUp)
+				document.removeEventListener('touchmove', handleMouseMove, { capture: true })
+				document.removeEventListener('touchend', handleMouseUp, { capture: true })
+				document.removeEventListener('touchcancel', handleMouseUp, { capture: true })
 
+				// スタイルの復元
 				document.body.style.userSelect = ''
 				document.body.style.cursor = ''
 			}
@@ -488,6 +726,7 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 	const handlers: DraggableResizeHandlers = {
 		onMouseDown: handleDragStart,
 		onResizeMouseDown: handleResizeStart,
+		updatePositionForScaleChange,
 	}
 
 	return {
@@ -496,5 +735,9 @@ export const useDraggableResize = (options: UseDraggableResizeOptions = {}) => {
 		elementRef,
 		handleKeyDown,
 		setState,
+		getCurrentPositionWithoutScale,
+		updatePositionAfterPinch,
+		getPositionWithInitialScale,
+		applyCoordinateCorrectionWithInitialScale,
 	}
 }

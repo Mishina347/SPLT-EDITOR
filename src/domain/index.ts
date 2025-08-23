@@ -22,8 +22,6 @@ export { convertTextToManuscript } from './text/convertTextToManuscript'
 export {
 	EDITOR_CONSTANTS,
 	PREVIEW_CONSTANTS,
-	LAYOUT_CONSTANTS,
 	type EditorConstants,
 	type PreviewConstants,
-	type LayoutConstants,
 } from './constants'

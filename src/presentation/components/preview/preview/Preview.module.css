@@ -16,11 +16,16 @@
 	border-radius: 8px;
 	transition:
 		box-shadow 0.2s ease,
-		border 0.2s ease;
+		border 0.2s ease,
+		all 0.3s ease; /* レスポンシブ対応のトランジション追加 */
 	/* Safariでのserifフォント表示を防ぐ */
 	font-family:
 		-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, 'Noto Sans',
 		sans-serif;
+
+	/* レスポンシブ対応 */
+	align-items: center;
+	justify-content: center;
 }
 
 /* フォーカス時のスタイル */
@@ -44,6 +49,8 @@
 .pageBase {
 	position: relative;
 	width: 100%;
+	min-width: 280px; /* 最小幅を設定 */
+	max-width: 100%;
 	padding: 2rem;
 	background: transparent;
 	border: 1px solid #ddd;
@@ -58,6 +65,9 @@
 	font-family:
 		-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, 'Noto Sans',
 		sans-serif;
+
+	/* レスポンシブ対応 */
+	transition: all 0.3s ease;
 }
 
 .verticalLine {
@@ -114,6 +124,10 @@
 	border-radius: 4px;
 	box-shadow: 0 2px 4px var(--app-text-color, rgba(0, 0, 0, 0.2));
 	color: var(--app-text-color);
+
+	/* レスポンシブ対応 */
+	transition: all 0.3s ease;
+	white-space: nowrap;
 }
 
 .clickZoneRight {
@@ -268,5 +282,83 @@
 	/* スワイプ中はタッチフィードバックを無効化 */
 	.previewContainer.swipping .pageBase:active {
 		background-color: transparent;
+	}
+}
+
+/* レスポンシブ対応 - 小画面 */
+@media (max-width: 768px) {
+	.pageBase {
+		padding: 1rem;
+		min-width: 240px;
+		font-size: 0.9rem;
+	}
+
+	.previewContainer {
+		padding: 2px;
+		margin-top: 0.5rem;
+	}
+}
+
+/* レスポンシブ対応 - 中画面 */
+@media (min-width: 769px) and (max-width: 1024px) {
+	.pageBase {
+		padding: 1.5rem;
+		min-width: 260px;
+	}
+}
+
+/* レスポンシブ対応 - 大画面 */
+@media (min-width: 1025px) {
+	.pageBase {
+		padding: 2rem;
+		min-width: 300px;
+	}
+}
+
+/* レスポンシブ対応 - 超高解像度 */
+@media (min-width: 1440px) {
+	.pageBase {
+		padding: 2.5rem;
+		min-width: 350px;
+	}
+}
+
+/* レスポンシブ対応 - 縦長画面 */
+@media (max-height: 600px) {
+	.pageBase {
+		padding: 1rem;
+	}
+
+	.previewContainer {
+		margin-top: 0.5rem;
+	}
+}
+
+/* レスポンシブ対応 - 横長画面 */
+@media (min-height: 800px) {
+	.pageBase {
+		padding: 2.5rem;
+	}
+}
+
+/* ページ番号のレスポンシブ対応 */
+@media (max-width: 480px) {
+	.pageNumber {
+		font-size: 12px;
+		padding: 0.3rem 0.8rem;
+	}
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+	.pageNumber {
+		font-size: 13px;
+		padding: 0.4rem 0.9rem;
+	}
+}
+
+@media (min-width: 769px) {
+	.pageNumber {
+		font-size: 14px;
+		padding: 0.5rem 1rem;
 	}
 }

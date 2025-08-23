@@ -101,7 +101,17 @@
 
 .verticalChar {
 	/* カスタムプロパティを使用（JavaScriptで動的に更新） */
-	font-family: var(--preview-font-family, 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Hiragino Mincho Pro', 'HGSMinchoE', 'MS Mincho', serif);
+	font-family: var(
+		--preview-font-family,
+		'Noto Serif JP',
+		'Hiragino Mincho ProN',
+		'Yu Mincho',
+		'YuMincho',
+		'Hiragino Mincho Pro',
+		'HGSMinchoE',
+		'MS Mincho',
+		serif
+	);
 	font-size: inherit; /* 親要素のフォントサイズを継承 */
 	font-feature-settings: 'fwid';
 	text-spacing-trim: both; /* 両端の余白を詰める（対応ブラウザのみ） */

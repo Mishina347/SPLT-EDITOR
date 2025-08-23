@@ -56,10 +56,10 @@ export function Preview({ text, config, isMaximized, onFocusMode, onPageInfoChan
 	// 設定オブジェクト全体の変更を監視（フォールバック）
 	useEffect(() => {
 		console.log('[Preview] Config object changed:', config)
-		
+
 		// 設定が変更されたらページネーションキャッシュをクリア
 		PaginationService.clearCacheForFontChange()
-		
+
 		// CSSカスタムプロパティを更新
 		if (containerRef.current) {
 			const container = containerRef.current

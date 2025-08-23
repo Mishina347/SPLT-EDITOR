@@ -69,15 +69,14 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
 			>
 				{isInstalling ? (
 					<>
-						<span className={styles.spinner}></span>
-						インストール中...
+						<p className={styles.spinner}>インストール中...</p>
 					</>
 				) : (
 					<>
-						<svg className={styles.icon} viewBox="0 0 24 24" fill="black" aria-hidden="true">
+						<svg className={styles.icon} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 							<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
 						</svg>
-						インストール
+						<p>インストール</p>
 					</>
 				)}
 			</button>

@@ -6,8 +6,10 @@ export class PaginationService {
 	private static readonly CACHE_SIZE_LIMIT = 100 // キャッシュサイズの制限
 
 	static paginate(text: string, config: LayoutConfig): string[][] {
-		// キャッシュキーの生成
-		const cacheKey = `${text.length}_${config.charsPerLine}_${config.linesPerPage}`
+		// キャッシュキーの生成（フォント設定も含める）
+		const fontSize = config.fontSize || 16
+		const fontFamily = config.fontFamily || 'default'
+		const cacheKey = `${text.length}_${config.charsPerLine}_${config.linesPerPage}_${fontSize}_${fontFamily}`
 
 		// キャッシュから取得を試行
 		if (this.cache.has(cacheKey)) {
@@ -39,6 +41,12 @@ export class PaginationService {
 
 	// キャッシュをクリアするメソッド（必要に応じて使用）
 	static clearCache(): void {
+		this.cache.clear()
+	}
+
+	// フォント設定変更時のキャッシュクリア
+	static clearCacheForFontChange(): void {
+		console.log('[PaginationService] Clearing cache for font change')
 		this.cache.clear()
 	}
 }

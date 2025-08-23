@@ -5,6 +5,8 @@ export type TextContent = {
 export type LayoutConfig = {
 	charsPerLine: number
 	linesPerPage: number
+	fontSize: number
+	fontFamily: import('../../editor/EditorSetting').FontFamily
 }
 
 // 禁則文字をSetに変換して高速検索を実現

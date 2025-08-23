@@ -1,15 +1,10 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { html as diff2html, parse as diffParse } from 'diff2html'
 import 'diff2html/bundles/css/diff2html.min.css'
-import { PreviewMode, LayoutConfig, TextSnapshot } from '../../../domain'
+import { PreviewMode, LayoutConfig, TextSnapshot, FontFamily } from '../../../domain'
 import { Diff2HtmlAdapter } from '../../../infra'
 import { useFocusTrap } from '../../hooks'
-import {
-	calculateElementScale,
-	calculateScaleWithViewport,
-	ScaleInfo,
-} from '../../../utils/scaleCalculator'
-
+import { calculateScaleWithViewport, ScaleInfo } from '../../../utils/scaleCalculator'
 import { TabPanel, TabItem } from '../'
 import { Preview, TextHistoryTimeline, HistoryDetailDialog } from './'
 import styles from './RightPane.module.css'
@@ -189,6 +184,14 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		return previewSetting.linesPerPage
 	}, [previewSetting])
 
+	const fontFamily = useMemo(() => {
+		return previewSetting.fontFamily as FontFamily
+	}, [previewSetting])
+
+	const fontSize = useMemo(() => {
+		return previewSetting.fontSize
+	}, [previewSetting])
+
 	// タブ設定
 	const tabs: TabItem[] = useMemo(
 		() => [
@@ -252,7 +255,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 				<Preview
 					text={currentSavedText || ''}
 					isMaximized={isMaximized}
-					config={{ charsPerLine, linesPerPage }}
+					config={{ charsPerLine, linesPerPage, fontSize, fontFamily }}
 					onFocusMode={handleFocusMode}
 					onPageInfoChange={handleInternalPageInfoChange}
 				/>
@@ -265,6 +268,8 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		textHistory,
 		selectedSnapshotId,
 		isMaximized,
+		fontFamily,
+		fontSize,
 		charsPerLine,
 		linesPerPage,
 		handleFocusMode,

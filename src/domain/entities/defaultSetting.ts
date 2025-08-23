@@ -1,4 +1,4 @@
-import { EditorSettings } from '../editor/EditorSetting'
+import { EditorSettings, FONT_FAMILIES } from '../editor/EditorSetting'
 import { LayoutConfig } from '../preview/pdf/TextContent'
 
 export type Settings = {
@@ -28,6 +28,8 @@ export const DEFAULT_SETTING: Settings = {
 	preview: {
 		charsPerLine: 20,
 		linesPerPage: 20,
+		fontSize: 16,
+		fontFamily: FONT_FAMILIES.UD_DIGITAL,
 	},
 }
 

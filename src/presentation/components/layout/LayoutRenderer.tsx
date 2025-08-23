@@ -90,6 +90,8 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 		lastSavedText,
 		previewSetting: previewSettings,
 		textHistory,
+		fontSize: previewSettings.fontSize || editorSettings.fontSize,
+		fontFamily: previewSettings.fontFamily || editorSettings.fontFamily,
 		onMaximize: onMaximizePreview,
 		onFocusPane: onFocusPreview,
 		onRestoreHistory,

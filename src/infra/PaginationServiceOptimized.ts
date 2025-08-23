@@ -14,7 +14,10 @@ export class PaginationServiceOptimized {
 	 * テキストのハッシュを生成（キャッシュキー用）
 	 */
 	private static generateTextHash(text: string, config: LayoutConfig): string {
-		const configStr = `${config.charsPerLine}_${config.linesPerPage}`
+		// フォント設定も含めてキャッシュキーを生成
+		const fontSize = config.fontSize || 16
+		const fontFamily = config.fontFamily || 'default'
+		const configStr = `${config.charsPerLine}_${config.linesPerPage}_${fontSize}_${fontFamily}`
 		const textKey = `${text.length}_${text.slice(0, 100)}_${text.slice(-100)}`
 		return `${textKey}_${configStr}`
 	}
@@ -28,6 +31,15 @@ export class PaginationServiceOptimized {
 		return this.cache.compute(cacheKey, { text, config }, ({ text, config }) =>
 			this.paginateInternal(text, config)
 		)
+	}
+
+	/**
+	 * フォント設定変更時のキャッシュクリア
+	 */
+	static clearCacheForFontChange(): void {
+		console.log('[PaginationServiceOptimized] Clearing cache for font change')
+		this.cache.clear()
+		this.textHashCache.clear()
 	}
 
 	/**

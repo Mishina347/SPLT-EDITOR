@@ -81,6 +81,10 @@ export const useDraggableResize = (options: UseDraggableResizeOptions) => {
 	const activeTouchId = useRef<number | null>(null)
 	const isTouchActive = useRef<boolean>(false)
 	const touchStartTime = useRef<number>(0)
+
+	// タッチ開始時の正確な座標を記録（onDrag開始時のずれ防止）
+	const touchStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+	const touchStartElementPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
 	const lastScaleInfo = useRef<{ totalScale: number; viewportScale: number }>({
 		totalScale: 1,
 		viewportScale: 1,
@@ -281,6 +285,9 @@ export const useDraggableResize = (options: UseDraggableResizeOptions) => {
 				activeTouchId.current = touch.identifier
 				isTouchActive.current = true
 				touchStartTime.current = Date.now()
+
+				// タッチ開始時の正確な座標を記録（onDrag開始時のずれ防止）
+				touchStartPos.current = { x: clientX, y: clientY }
 			} else {
 				// マウスイベントの場合
 				clientX = e.clientX
@@ -303,8 +310,14 @@ export const useDraggableResize = (options: UseDraggableResizeOptions) => {
 				clientY = corrected.y
 			}
 
-			// 位置を記録
-			dragStartPos.current = { x: clientX, y: clientY }
+			// 位置を記録（タッチ開始時の座標を使用）
+			if ('touches' in e) {
+				// タッチイベントの場合は、タッチ開始時の座標を使用
+				dragStartPos.current = { x: touchStartPos.current.x, y: touchStartPos.current.y }
+			} else {
+				// マウスイベントの場合は、補正後の座標を使用
+				dragStartPos.current = { x: clientX, y: clientY }
+			}
 
 			// 現在の要素の実際の位置を取得（倍率変更対応）
 			if (elementRef.current) {
@@ -359,13 +372,31 @@ export const useDraggableResize = (options: UseDraggableResizeOptions) => {
 						x: relativeX,
 						y: relativeY,
 					}
+
+					// タッチイベントの場合は、タッチ開始時の要素位置も記録
+					if ('touches' in e) {
+						touchStartElementPos.current = {
+							x: relativeX,
+							y: relativeY,
+						}
+					}
 				} else {
 					// 親要素がない場合は現在のstate.positionを使用
 					dragStartElementPos.current = { ...state.position }
+
+					// タッチイベントの場合は、タッチ開始時の要素位置も記録
+					if ('touches' in e) {
+						touchStartElementPos.current = { ...state.position }
+					}
 				}
 			} else {
 				// 要素の参照がない場合は現在のstate.positionを使用
 				dragStartElementPos.current = { ...state.position }
+
+				// タッチイベントの場合は、タッチ開始時の要素位置も記録
+				if ('touches' in e) {
+					touchStartElementPos.current = { ...state.position }
+				}
 			}
 
 			setState(prev => ({ ...prev, isDragging: true }))
@@ -481,11 +512,31 @@ export const useDraggableResize = (options: UseDraggableResizeOptions) => {
 			}
 
 			if (state.isDragging) {
-				const deltaX = clientX - dragStartPos.current.x
-				const deltaY = clientY - dragStartPos.current.y
+				// タッチイベントの場合は、タッチ開始時の座標を基準に計算
+				let deltaX: number
+				let deltaY: number
 
-				let newX = dragStartElementPos.current.x + deltaX
-				let newY = dragStartElementPos.current.y + deltaY
+				if ('touches' in e) {
+					// タッチイベントの場合
+					deltaX = clientX - touchStartPos.current.x
+					deltaY = clientY - touchStartPos.current.y
+				} else {
+					// マウスイベントの場合
+					deltaX = clientX - dragStartPos.current.x
+					deltaY = clientY - dragStartPos.current.y
+				}
+
+				// タッチイベントの場合は、タッチ開始時の要素位置を使用
+				let newX: number
+				let newY: number
+
+				if ('touches' in e) {
+					newX = touchStartElementPos.current.x + deltaX
+					newY = touchStartElementPos.current.y + deltaY
+				} else {
+					newX = dragStartElementPos.current.x + deltaX
+					newY = dragStartElementPos.current.y + deltaY
+				}
 
 				// 親要素の境界内に制限
 				if (constrainToParent && elementRef.current?.parentElement) {

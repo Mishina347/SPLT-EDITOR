@@ -13,6 +13,7 @@ import buttonStyles from '../../shared/Button/Button.module.css'
 interface PreviewPaneProps {
 	currentSavedText: string // 現在保存されているテキスト
 	currentNotSavedText: string // 現在編集中のテキスト（リアルタイム）
+	initialText: string
 	lastSavedText: string // 最後に保存されたテキスト
 	previewSetting: LayoutConfig
 	textHistory: TextSnapshot[]
@@ -28,6 +29,7 @@ interface PreviewPaneProps {
 export const RightPane: React.FC<PreviewPaneProps> = ({
 	currentSavedText,
 	currentNotSavedText,
+	initialText,
 	lastSavedText,
 	previewSetting,
 	textHistory,
@@ -113,19 +115,19 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		if (mode === PreviewMode.DIFF) {
 			try {
 				// 初回起動時やファイルが存在しない場合
-				if (!lastSavedText && !currentNotSavedText) {
+				if (!initialText && !currentNotSavedText) {
 					setDiffHtml('<p class="no-diff">まだテキストが入力されていません</p>')
 					return
 				}
 
 				// 保存済みテキストがない場合（初回起動時）
-				if (!lastSavedText && currentNotSavedText) {
+				if (!initialText && currentNotSavedText) {
 					setDiffHtml('<p class="no-diff">まだ保存されていません。Ctrl+S (⌘+S) で保存してください</p>')
 					return
 				}
 
 				// 同じ内容の場合は差分なしのメッセージを表示
-				if (lastSavedText === currentNotSavedText) {
+				if (initialText === currentNotSavedText) {
 					setDiffHtml('<p class="no-diff">変更はありません</p>')
 					return
 				}
@@ -133,7 +135,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 				const unifiedDiff = diffService.generateUnifiedDiff(
 					'保存済み',
 					'編集中',
-					lastSavedText,
+					initialText,
 					currentNotSavedText
 				)
 
@@ -174,7 +176,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 			// DIFFモードでない場合は空文字を設定
 			setDiffHtml('')
 		}
-	}, [mode, diffService, lastSavedText, currentNotSavedText])
+	}, [mode, diffService, initialText, currentNotSavedText])
 
 	const charsPerLine = useMemo(() => {
 		return previewSetting.charsPerLine

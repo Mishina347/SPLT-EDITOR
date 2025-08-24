@@ -33,6 +33,32 @@ export const DEFAULT_SETTING: Settings = {
 	},
 }
 
+// デフォルトのテキスト
+export const DEFAULT_TEXT = `縦書きエディタへようこそ
+
+このアプリケーションは、日本語の縦書きテキストを編集・プレビューできるツールです。
+
+主な機能：
+• 縦書きテキストの編集
+• リアルタイムプレビュー
+• フォント設定のカスタマイズ
+• 自動保存機能
+• レスポンシブデザイン
+
+使い方：
+1. 左側のエディタでテキストを入力
+2. 右側のプレビューで縦書き表示を確認
+3. ツールバーでフォントやレイアウトを調整
+4. 設定は自動的に保存されます
+
+縦書きの特徴：
+• 右から左へ文字が並びます
+• 改行は上から下へ進みます
+• 日本語の禁則処理に対応
+• ページネーション機能付き
+
+お楽しみください！`
+
 export interface SettingsRepository {
 	loadSettings(): Promise<Settings>
 	saveSettings(settings: Settings): Promise<void>

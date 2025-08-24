@@ -44,6 +44,9 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	const [isEditorMaximized, setIsEditorMaximized] = useState(false)
 	const [isPreviewMaximized, setIsPreviewMaximized] = useState(false)
 
+	// 初期化状態の管理
+	const [isInitialized, setIsInitialized] = useState(false)
+
 	// 最大化状態の詳細管理
 	const handleMaximize = useCallback(
 		(target: DISPLAY_MODE) => {
@@ -157,6 +160,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	)
 
 	const [currentSavedText, setCurrentSavedText] = useState('')
+	const [initialText, setInitialText] = useState('')
 	const [lastSavedText, setLastSavedText] = useState('')
 	const { currentNotSavedText, charCount, updateText } = useCharCount()
 	const { history, saveSnapshot, getLatestSnapshot, getPreviousSnapshot } = useTextHistory(20)
@@ -195,8 +199,10 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	// ファイル読み込み機能
 	const handleFileLoad = useCallback(
 		(content: string, fileName: string) => {
+			// 読み込んだテキストを初期状態として保存
 			setCurrentSavedText(content)
 			setLastSavedText(content)
+			// エディタの内容も更新
 			updateText(content)
 			// 履歴にファイル読み込みを記録
 			saveSnapshot(content, `ファイル読み込み - ${fileName}`)
@@ -236,8 +242,14 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 			// 初回起動時の状態設定
 			if (initialText) {
 				// ファイルが存在する場合
+				setInitialText(initialText)
 				setCurrentSavedText(initialText)
 				setLastSavedText(initialText)
+				// エディタの初期化完了を待ってからテキストを設定
+				setTimeout(() => {
+					updateText(initialText)
+					setIsInitialized(true)
+				}, 100)
 			} else {
 				// 初回起動時（ファイルが存在しない場合）
 				setCurrentSavedText('')
@@ -466,6 +478,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						layoutType={layoutType as any}
 						editorSettings={editorSettings}
 						currentNotSavedText={currentNotSavedText}
+						initialText={initialText}
 						onChangeText={onChangeText}
 						onFocusEditor={handleFocusEditor}
 						onMaximizeEditor={handleMaximizeEditor}
@@ -519,6 +532,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						layoutType={layoutType as any}
 						editorSettings={editorSettings}
 						currentNotSavedText={currentNotSavedText}
+						initialText={initialText}
 						onChangeText={onChangeText}
 						onFocusEditor={handleFocusEditor}
 						onMaximizeEditor={handleMaximizeEditor}
@@ -558,6 +572,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						layoutType={layoutType as any}
 						editorSettings={editorSettings}
 						currentNotSavedText={currentNotSavedText}
+						initialText={initialText}
 						onChangeText={onChangeText}
 						onFocusEditor={handleFocusEditor}
 						onMaximizeEditor={handleMaximizeEditor}

@@ -144,25 +144,61 @@
 	right: 1rem;
 }
 
-/* 差分表示のフォーカス制御 */
+/* 差分表示のスタイル */
 .diffContainer {
-	background-color: #ffffff;
-	margin: 1rem;
-	max-height: 70vh;
-	overflow: hidden;
 	display: flex;
 	flex-direction: column;
-	border-radius: 8px;
-	color: #000;
+	height: 100%;
+	overflow: hidden;
+}
+
+.diffHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1rem;
+	background: #f8f9fa;
+	border-bottom: 1px solid #ddd;
+	flex-shrink: 0;
+}
+
+.diffInfo {
+	flex: 1;
+}
+
+.diffTitle {
+	margin: 0 0 0.5rem 0;
+	font-size: 1.1rem;
+	font-weight: 600;
+	color: #333;
+}
+
+.diffMeta {
+	display: flex;
+	gap: 1rem;
+	font-size: 0.9rem;
+	color: #666;
+}
+
+.beforeText {
+	font-weight: 500;
+	color: #dc3545;
+}
+
+.afterText {
+	font-weight: 500;
+	color: #28a745;
+}
+
+.changeCount {
+	font-weight: 500;
+	color: #007bff;
 }
 
 .diffViewer {
-	position: relative;
-	overflow: auto;
-	outline: none;
 	flex: 1;
-	border-radius: 8px;
-	max-height: 100%;
+	overflow-y: auto;
+	padding: 1rem;
 }
 
 .diffViewer:focus {

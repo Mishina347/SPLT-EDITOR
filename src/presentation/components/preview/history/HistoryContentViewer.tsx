@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { TextSnapshot } from '../../../../domain/entities/TextHistory'
 import styles from './HistoryContentViewer.module.css'
 import buttonStyles from '../../../shared/Button/Button.module.css'
+import { formatNumber } from '@/utils'
 
 interface HistoryContentViewerProps {
 	snapshot: TextSnapshot
@@ -43,7 +44,7 @@ export const HistoryContentViewer: React.FC<HistoryContentViewerProps> = ({
 					<div className={styles.snapshotMeta}>
 						<span className={styles.timestamp}>{formatTimestamp(snapshot.timestamp)}</span>
 						<span className={styles.description}>{snapshot.description}</span>
-						<span className={styles.charCount}>{snapshot.content.length}文字</span>
+						<span className={styles.charCount}>{formatNumber(snapshot.content.length)}文字</span>
 					</div>
 				</div>
 				<button

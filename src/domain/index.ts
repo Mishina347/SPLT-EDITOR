@@ -1,5 +1,10 @@
 // Entities
-export { DISPLAY_MODE, type Settings, DEFAULT_SETTING } from './entities/defaultSetting'
+export {
+	DISPLAY_MODE,
+	type Settings,
+	DEFAULT_SETTING,
+	DEFAULT_TEXT,
+} from './entities/defaultSetting'
 export { type TextSnapshot } from './entities/TextHistory'
 export {
 	type EditorSettings,

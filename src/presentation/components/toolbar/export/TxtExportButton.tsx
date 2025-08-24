@@ -1,3 +1,4 @@
+import { FontFamily } from '@/domain'
 import { ExportTxtUseCase } from '../../../../application/preview/usePagination'
 import { TxtWriter } from '../../../../infra/plainText/TxtWriter'
 import buttonStyles from '../../../shared/Button/Button.module.css'
@@ -6,13 +7,22 @@ type Props = {
 	text: string
 	charsPerLine: number
 	linesPerPage: number
+	fontSize: number
+	fontFamily: FontFamily
 	onExport?: () => void
 }
 
-export function TxtExportButton({ text, charsPerLine, linesPerPage, onExport }: Props) {
+export function TxtExportButton({
+	text,
+	charsPerLine,
+	linesPerPage,
+	fontSize,
+	fontFamily,
+	onExport,
+}: Props) {
 	const handleExport = async () => {
 		const usecase = new ExportTxtUseCase(new TxtWriter())
-		await usecase.execute(text, { charsPerLine, linesPerPage }).then(() => {})
+		await usecase.execute(text, { charsPerLine, linesPerPage, fontSize, fontFamily }).then(() => {})
 		onExport?.()
 	}
 

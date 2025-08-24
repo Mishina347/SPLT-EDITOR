@@ -8,10 +8,10 @@ interface CommonProps {
 	editorSettings: EditorSettings
 	currentNotSavedText: string
 	initialText: string
+	setInitialText: (text: string) => void
 	onChangeText: (text: string) => void
 	onFocusEditor: () => void
 	onMaximizeEditor: () => void
-
 	// プレビュー関連
 	currentSavedText: string
 	lastSavedText: string
@@ -57,6 +57,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 		editorSettings,
 		currentNotSavedText,
 		initialText,
+		setInitialText,
 		onChangeText,
 		onFocusEditor,
 		onMaximizeEditor,
@@ -91,6 +92,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 		currentNotSavedText,
 		lastSavedText,
 		initialText,
+		setInitialText,
 		previewSetting: previewSettings,
 		textHistory,
 		fontSize: previewSettings.fontSize || editorSettings.fontSize,

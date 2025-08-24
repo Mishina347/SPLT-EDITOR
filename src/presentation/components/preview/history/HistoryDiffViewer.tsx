@@ -4,7 +4,7 @@ import 'diff2html/bundles/css/diff2html.min.css'
 import { TextSnapshot } from '../../../../domain'
 import { Diff2HtmlAdapter } from '../../../../infra'
 import styles from './HistoryDiffViewer.module.css'
-import { formatTimestamp } from '../../../../utils'
+import { formatNumber, formatTimestamp } from '../../../../utils'
 
 interface HistoryDiffViewerProps {
 	oldSnapshot: TextSnapshot
@@ -64,11 +64,11 @@ export const HistoryDiffViewer: React.FC<HistoryDiffViewerProps> = ({
 					<div className={styles.snapshotInfo}>
 						<span className={styles.label}>比較対象:</span>
 						<span className={styles.oldSnapshot}>
-							{formatTimestamp(oldSnapshot.timestamp)} ({oldSnapshot.content.length}文字)
+							{formatTimestamp(oldSnapshot.timestamp)} ({formatNumber(oldSnapshot.content.length)}文字)
 						</span>
 						<span className={styles.arrow}>→</span>
 						<span className={styles.newSnapshot}>
-							{formatTimestamp(newSnapshot.timestamp)} ({newSnapshot.content.length}文字)
+							{formatTimestamp(newSnapshot.timestamp)} ({formatNumber(newSnapshot.content.length)}文字)
 						</span>
 					</div>
 				</div>

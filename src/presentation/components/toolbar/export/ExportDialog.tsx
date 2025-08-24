@@ -38,6 +38,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 							text={currentSavedText}
 							charsPerLine={previewSettings.charsPerLine}
 							linesPerPage={previewSettings.linesPerPage}
+							fontSize={previewSettings.fontSize}
+							fontFamily={previewSettings.fontFamily}
 							onExport={onClose}
 						/>
 					</div>

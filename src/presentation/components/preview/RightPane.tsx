@@ -1,10 +1,15 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { html as diff2html, parse as diffParse } from 'diff2html'
 import 'diff2html/bundles/css/diff2html.min.css'
-import { PreviewMode, LayoutConfig, TextSnapshot, FontFamily } from '../../../domain'
+import { PreviewMode, LayoutConfig, TextSnapshot } from '../../../domain'
 import { Diff2HtmlAdapter } from '../../../infra'
 import { useFocusTrap } from '../../hooks'
-import { calculateScaleWithViewport, ScaleInfo } from '../../../utils/scaleCalculator'
+import { formatNumber, wordCounter } from '@/utils'
+import {
+	calculateElementScale,
+	calculateScaleWithViewport,
+	ScaleInfo,
+} from '../../../utils/scaleCalculator'
 import { TabPanel, TabItem } from '../'
 import { Preview, TextHistoryTimeline, HistoryDetailDialog } from './'
 import styles from './RightPane.module.css'
@@ -14,6 +19,7 @@ interface PreviewPaneProps {
 	currentSavedText: string // 現在保存されているテキスト
 	currentNotSavedText: string // 現在編集中のテキスト（リアルタイム）
 	initialText: string
+	setInitialText: (text: string) => void
 	lastSavedText: string // 最後に保存されたテキスト
 	previewSetting: LayoutConfig
 	textHistory: TextSnapshot[]
@@ -22,7 +28,6 @@ interface PreviewPaneProps {
 	onMaximize: () => void
 	onFocusPane: () => void
 	onRestoreHistory?: (snapshot: TextSnapshot) => void
-
 	onPageInfoChange?: (currentPage: number, totalPages: number) => void
 }
 
@@ -30,7 +35,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	currentSavedText,
 	currentNotSavedText,
 	initialText,
-	lastSavedText,
+	setInitialText,
 	previewSetting,
 	textHistory,
 	isMaximized,
@@ -128,7 +133,13 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 
 				// 同じ内容の場合は差分なしのメッセージを表示
 				if (initialText === currentNotSavedText) {
-					setDiffHtml('<p class="no-diff">変更はありません</p>')
+					const currentStats = wordCounter(currentNotSavedText || '')
+					setDiffHtml(`
+						<div class="no-diff">
+							<p>変更はありません。</p>
+							<p>現在の文字数: ${formatNumber(currentStats.characterCount)}文字</p>
+						</div>
+					`)
 					return
 				}
 
@@ -187,7 +198,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	}, [previewSetting])
 
 	const fontFamily = useMemo(() => {
-		return previewSetting.fontFamily as FontFamily
+		return previewSetting.fontFamily
 	}, [previewSetting])
 
 	const fontSize = useMemo(() => {
@@ -230,8 +241,41 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	// タブコンテンツのレンダリング
 	const renderTabContent = useCallback(() => {
 		if (mode === PreviewMode.DIFF) {
+			// 修正前後のテキスト情報を計算
+			const beforeStats = wordCounter(initialText || '')
+			const afterStats = wordCounter(currentNotSavedText || '')
+
 			return (
 				<div className={styles.diffContainer}>
+					{/* 差分情報ヘッダー */}
+					<div className={styles.diffHeader}>
+						<div className={styles.diffInfo}>
+							<h3 className={styles.diffTitle}>差分表示</h3>
+							<div className={styles.diffMeta}>
+								<span className={styles.beforeText}>
+									修正前: {formatNumber(beforeStats.characterCount)}文字
+								</span>
+								<span className={styles.afterText}>
+									修正後: {formatNumber(afterStats.characterCount)}文字
+								</span>
+								<span className={styles.changeCount}>
+									変更: {formatNumber(Math.abs(afterStats.characterCount - beforeStats.characterCount))}文字
+								</span>
+							</div>
+						</div>
+						{/* 差分基準更新ボタン */}
+						<button
+							className={`${buttonStyles.button} ${buttonStyles.buttonSecondary}`}
+							onClick={() => setInitialText(currentNotSavedText)}
+							disabled={initialText === currentNotSavedText}
+							aria-label="差分基準を更新するボタン"
+							aria-pressed={initialText === currentNotSavedText ? 'true' : 'false'}
+							title={initialText === currentNotSavedText ? '差分基準は更新済み' : '現在の文章を基準にする'}
+						>
+							{initialText === currentNotSavedText ? '差分基準は更新済み' : '現在の文章を基準にする'}
+						</button>
+					</div>
+					{/* 差分表示エリア */}
 					<div
 						ref={diffFocusTrapRef}
 						className={styles.diffViewer}
@@ -276,6 +320,9 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		linesPerPage,
 		handleFocusMode,
 		handleInternalPageInfoChange,
+		initialText,
+		currentNotSavedText,
+		setInitialText,
 	])
 
 	return (

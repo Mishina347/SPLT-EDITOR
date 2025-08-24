@@ -195,6 +195,13 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		},
 		[saveSnapshot, updateText]
 	)
+	// テーマ編集ダイアログを閉じる
+	const handleSetInitialText = useCallback(
+		(text: string) => {
+			setInitialText(text)
+		},
+		[setInitialText]
+	)
 
 	// ファイル読み込み機能
 	const handleFileLoad = useCallback(
@@ -479,6 +486,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						editorSettings={editorSettings}
 						currentNotSavedText={currentNotSavedText}
 						initialText={initialText}
+						setInitialText={handleSetInitialText}
 						onChangeText={onChangeText}
 						onFocusEditor={handleFocusEditor}
 						onMaximizeEditor={handleMaximizeEditor}
@@ -533,6 +541,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						editorSettings={editorSettings}
 						currentNotSavedText={currentNotSavedText}
 						initialText={initialText}
+						setInitialText={handleSetInitialText}
 						onChangeText={onChangeText}
 						onFocusEditor={handleFocusEditor}
 						onMaximizeEditor={handleMaximizeEditor}
@@ -573,6 +582,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						editorSettings={editorSettings}
 						currentNotSavedText={currentNotSavedText}
 						initialText={initialText}
+						setInitialText={handleSetInitialText}
 						onChangeText={onChangeText}
 						onFocusEditor={handleFocusEditor}
 						onMaximizeEditor={handleMaximizeEditor}

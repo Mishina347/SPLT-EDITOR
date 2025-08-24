@@ -65,8 +65,8 @@ export const useDraggableLayout = (
 			height: viewportHeight, // ツールバーとマージンを考慮
 		}
 		const maximizedInitialSize = {
-			width: Math.max(UI_CONSTANTS.DRAGGABLE_CONTAINER.MIN_SIZE.width, viewportWidth),
-			height: Math.max(UI_CONSTANTS.DRAGGABLE_CONTAINER.MIN_SIZE.height, viewportHeight),
+			width: Math.max(800, viewportWidth - 200),
+			height: Math.max(600, viewportHeight - 100),
 		}
 
 		return {

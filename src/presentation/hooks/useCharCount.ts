@@ -19,12 +19,8 @@ export function useCharCount() {
 			clearTimeout(charCountTimeoutRef.current)
 		}
 
-		return new Promise<number>(resolve => {
-			charCountTimeoutRef.current = setTimeout(() => {
-				const result = calculateCharCount(currentNotSavedText).characterCount
-				resolve(result)
-			}, 100) // 100msのデバウンス
-		})
+		// 即座に計算結果を返す（非同期処理なし）
+		return calculateCharCount(currentNotSavedText).characterCount
 	}, [currentNotSavedText])
 
 	// クリーンアップ

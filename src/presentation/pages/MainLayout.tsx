@@ -366,17 +366,25 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	})
 
 	// リサイザーを初期化
-	const { isDragging, isKeyboardMode, announceText, containerRef, resizerRef, resizerProps } =
-		useResizable({
-			initialSize: 50, // 50%で開始
-			minSize: 20, // 最小20%
-			maxSize: 80, // 最大80%
-			step: 5, // キーボード操作時のステップ
-			label: 'エディタとプレビューのサイズ調整',
-			onResize: newSize => {
-				setCurrentEditorSize(newSize)
-			},
-		})
+	const {
+		isDragging,
+
+		isKeyboardMode,
+		announceText,
+		containerRef,
+		resizerRef,
+		resizerProps,
+		setSize,
+	} = useResizable({
+		initialSize: 50, // 50%で開始
+		minSize: 20, // 最小20%
+		maxSize: 80, // 最大80%
+		step: 5, // キーボード操作時のステップ
+		label: 'エディタとプレビューのサイズ調整',
+		onResize: newSize => {
+			setCurrentEditorSize(newSize)
+		},
+	})
 
 	// ドラッグ可能レイアウトの設定
 	const { layoutType, getEditorContainerConfig, getPreviewContainerConfig } = useDraggableLayout(
@@ -390,7 +398,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 			setPreviewPosition,
 			setPreviewSize,
 		},
-		{ isDraggableMode, viewMode, pageInfo }
+		{ isDraggableMode, viewMode, charCount, pageInfo }
 	)
 
 	// 共通のハンドラー関数

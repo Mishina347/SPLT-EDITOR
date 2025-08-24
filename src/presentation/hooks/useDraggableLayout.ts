@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react'
-import { DISPLAY_MODE } from '../../domain'
+import { DISPLAY_MODE, PREVIEW_CONSTANTS } from '../../domain'
 import { useViewportSize } from './useViewportSize'
-import { formatNumber } from '../../utils'
+import { formatNumber, UI_CONSTANTS } from '../../utils'
 
 interface DraggableLayoutConfig {
 	editorPosition: { x: number; y: number }
@@ -33,7 +33,7 @@ interface ContainerConfig {
 interface UseDraggableLayoutOptions {
 	isDraggableMode: boolean
 	viewMode: DISPLAY_MODE
-	charCount?: number
+	charCount: number
 	pageInfo?: { currentPage: number; totalPages: number }
 }
 
@@ -48,25 +48,25 @@ export const useDraggableLayout = (
 		setPreviewPosition,
 		setPreviewSize,
 	}: DraggableLayoutConfig,
-	{ isDraggableMode, viewMode, charCount, pageInfo }: UseDraggableLayoutOptions
+	{ isDraggableMode, viewMode, pageInfo, charCount }: UseDraggableLayoutOptions
 ) => {
 	const { width: viewportWidth, height: viewportHeight } = useViewportSize()
 
 	// 共通のサイズ設定を計算
 	const commonSizes = useMemo(() => {
-		const standardMinSize = { width: 300, height: 200 }
+		const standardMinSize = UI_CONSTANTS.DRAGGABLE_CONTAINER.MIN_SIZE
 		const standardMaxSize = {
-			width: viewportWidth - 40,
-			height: viewportHeight - 140, // ツールバーとマージンを考慮
+			width: viewportWidth,
+			height: viewportHeight, // ツールバーとマージンを考慮
 		}
-		const maximizedMinSize = { width: 400, height: 300 }
+		const maximizedMinSize = UI_CONSTANTS.DRAGGABLE_CONTAINER.MAX_SIZE
 		const maximizedMaxSize = {
-			width: viewportWidth - 40,
-			height: viewportHeight - 140, // ツールバーとマージンを考慮
+			width: viewportWidth,
+			height: viewportHeight, // ツールバーとマージンを考慮
 		}
 		const maximizedInitialSize = {
-			width: Math.max(800, viewportWidth - 100),
-			height: Math.max(600, viewportHeight - 200),
+			width: Math.max(UI_CONSTANTS.DRAGGABLE_CONTAINER.MIN_SIZE.width, viewportWidth),
+			height: Math.max(UI_CONSTANTS.DRAGGABLE_CONTAINER.MIN_SIZE.height, viewportHeight),
 		}
 
 		return {
@@ -87,7 +87,6 @@ export const useDraggableLayout = (
 		(isMaximized = false, zIndex?: number, onFocus?: () => void): ContainerConfig => {
 			const isMaximizedMode = isMaximized || viewMode === DISPLAY_MODE.EDITOR
 			const sizes = isMaximizedMode ? commonSizes.maximized : commonSizes.standard
-
 			const baseTitle = isMaximizedMode ? 'エディター (最大化)' : 'エディター'
 			const titleWithCharCount =
 				charCount !== undefined ? `${baseTitle} - ${formatNumber(charCount)}文字` : baseTitle

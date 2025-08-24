@@ -46,7 +46,6 @@ export class PaginationService {
 
 	// フォント設定変更時のキャッシュクリア
 	static clearCacheForFontChange(): void {
-		console.log('[PaginationService] Clearing cache for font change')
 		this.cache.clear()
 	}
 }

@@ -305,12 +305,28 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		return () => window.removeEventListener('keydown', handleKeyDown)
 	}, [currentNotSavedText, saveSnapshot, forceSave, isSaving])
 
+	// テキスト変更時の処理
 	const onChangeText = useCallback(
 		(v: string) => {
 			updateText(v)
 		},
 		[updateText]
 	)
+
+	// mobileでのみ最新の書き込みをcurrentSaveTextに常に保存
+	// PCでは通常の自動保存機能を使用し、mobileではリアルタイムでcurrentSaveTextを更新
+	useEffect(() => {
+		if (isMobile() && currentNotSavedText !== '') {
+			// mobileの場合、テキストが変更されるたびにcurrentSaveTextを更新
+			// デバウンス処理でパフォーマンスを最適化
+			const timeoutId = setTimeout(() => {
+				console.log('[MainLayout] Mobile auto-save: updating currentSaveText')
+				setCurrentSavedText(currentNotSavedText)
+			}, 300) // 300msのデバウンス
+
+			return () => clearTimeout(timeoutId)
+		}
+	}, [currentNotSavedText])
 
 	// スワイプジェスチャーでUI制御（モバイル端末のみ）
 	const handleSwipe = useCallback(

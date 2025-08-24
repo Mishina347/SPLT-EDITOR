@@ -1,17 +1,18 @@
-import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
-import { html as diff2html, parse as diffParse } from 'diff2html'
-import 'diff2html/bundles/css/diff2html.min.css'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PreviewMode, LayoutConfig, TextSnapshot } from '../../../domain'
+import { Preview } from './preview/Preview'
 import { Diff2HtmlAdapter } from '../../../infra'
 import { useFocusTrap } from '../../hooks'
-import { formatNumber, wordCounter } from '@/utils'
 import {
 	calculateElementScale,
 	calculateScaleWithViewport,
 	ScaleInfo,
 } from '../../../utils/scaleCalculator'
+import { wordCounter, formatNumber } from '@/utils'
+import { html as diff2html, parse as diffParse } from 'diff2html'
+import 'diff2html/bundles/css/diff2html.min.css'
 import { TabPanel, TabItem } from '../'
-import { Preview, TextHistoryTimeline, HistoryDetailDialog } from './'
+import { TextHistoryTimeline, HistoryDetailDialog } from './'
 import styles from './RightPane.module.css'
 import buttonStyles from '../../shared/Button/Button.module.css'
 
@@ -72,6 +73,17 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		}
 	}, [])
 
+	// ResizeObserverのデバウンス処理
+	const resizeTimeoutRef = useRef<NodeJS.Timeout>()
+	const debouncedUpdateScaleInfo = useCallback(() => {
+		if (resizeTimeoutRef.current) {
+			clearTimeout(resizeTimeoutRef.current)
+		}
+		resizeTimeoutRef.current = setTimeout(() => {
+			updateScaleInfo()
+		}, 100) // 100msのデバウンス
+	}, [updateScaleInfo])
+
 	// フォーカスモードハンドラー
 	const handleFocusMode = useCallback((focused: boolean) => {
 		setIsFocusMode(focused)
@@ -98,96 +110,114 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		// 初期倍率を計算
 		updateScaleInfo()
 
-		// ResizeObserverでサイズ変更を監視
+		// ResizeObserverでサイズ変更を監視（デバウンス処理付き）
 		if (containerRef.current) {
 			const resizeObserver = new ResizeObserver(() => {
-				updateScaleInfo()
+				debouncedUpdateScaleInfo()
 			})
 
 			resizeObserver.observe(containerRef.current)
 
 			return () => {
 				resizeObserver.disconnect()
+				if (resizeTimeoutRef.current) {
+					clearTimeout(resizeTimeoutRef.current)
+				}
 			}
 		}
-	}, [updateScaleInfo])
+	}, [updateScaleInfo, debouncedUpdateScaleInfo])
 
 	// 差分計算を遅延実行（DIFFモードが選択された時のみ）
 	const [diffHtml, setDiffHtml] = useState('')
+	const diffCalculationTimeoutRef = useRef<NodeJS.Timeout>()
 
-	// DIFFモードが選択された時のみ差分を計算
+	// DIFFモードが選択された時のみ差分を計算（デバウンス処理付き）
 	useEffect(() => {
 		if (mode === PreviewMode.DIFF) {
-			try {
-				// 初回起動時やファイルが存在しない場合
-				if (!initialText && !currentNotSavedText) {
-					setDiffHtml('<p class="no-diff">まだテキストが入力されていません</p>')
-					return
-				}
+			// デバウンス処理でパフォーマンスを最適化
+			if (diffCalculationTimeoutRef.current) {
+				clearTimeout(diffCalculationTimeoutRef.current)
+			}
 
-				// 保存済みテキストがない場合（初回起動時）
-				if (!initialText && currentNotSavedText) {
-					setDiffHtml('<p class="no-diff">まだ保存されていません。Ctrl+S (⌘+S) で保存してください</p>')
-					return
-				}
+			diffCalculationTimeoutRef.current = setTimeout(() => {
+				try {
+					// 初回起動時やファイルが存在しない場合
+					if (!initialText || !currentNotSavedText) {
+						setDiffHtml(`
+							<div class="no-diff">
+								<p>比較対象がありません</p>
+							</div>
+						`)
+						return
+					}
 
-				// 同じ内容の場合は差分なしのメッセージを表示
-				if (initialText === currentNotSavedText) {
-					const currentStats = wordCounter(currentNotSavedText || '')
+					// 差分計算を実行
+					const unifiedDiff = diffService.generateUnifiedDiff(
+						'initial',
+						'current',
+						initialText,
+						currentNotSavedText
+					)
+
+					// 差分があるかチェック
+					if (unifiedDiff && unifiedDiff.trim() !== '') {
+						// 変更がある場合
+						const beforeStats = wordCounter(initialText || '')
+						const afterStats = wordCounter(currentNotSavedText || '')
+
+						// diff2htmlでHTMLを生成
+						const diffJson = diffParse(unifiedDiff)
+						const diffHtmlResult = diff2html(diffJson, {
+							drawFileList: false,
+							matching: 'lines',
+							outputFormat: 'line-by-line',
+						})
+
+						setDiffHtml(`
+							<div class="diff-container">
+								<div class="diff-header">
+									<div class="diff-info">
+										<span class="before-text">
+											修正前: ${formatNumber(beforeStats.characterCount)}文字
+										</span>
+										<span class="after-text">
+											修正後: ${formatNumber(afterStats.characterCount)}文字
+										</span>
+										<span class="change-count">
+											変更: ${formatNumber(Math.abs(afterStats.characterCount - beforeStats.characterCount))}文字
+										</span>
+									</div>
+								</div>
+								${diffHtmlResult}
+							</div>
+						`)
+					} else {
+						// 変更がない場合
+						const currentStats = wordCounter(currentNotSavedText || '')
+						setDiffHtml(`
+							<div class="no-diff">
+								<p>変更はありません。</p>
+								<p>現在の文字数: ${formatNumber(currentStats.characterCount)}文字</p>
+							</div>
+						`)
+					}
+				} catch (error) {
+					console.error('差分計算エラー:', error)
 					setDiffHtml(`
-						<div class="no-diff">
-							<p>変更はありません。</p>
-							<p>現在の文字数: ${formatNumber(currentStats.characterCount)}文字</p>
+						<div class="error-message">
+							<p>差分の計算中にエラーが発生しました</p>
 						</div>
 					`)
-					return
 				}
+			}, 300) // 300msのデバウンス
 
-				const unifiedDiff = diffService.generateUnifiedDiff(
-					'保存済み',
-					'編集中',
-					initialText,
-					currentNotSavedText
-				)
-
-				// unified diffが生成されているかチェック
-				if (!unifiedDiff || unifiedDiff.trim() === '') {
-					setDiffHtml('<p class="no-diff">差分を検出できませんでした</p>')
-					return
+			return () => {
+				if (diffCalculationTimeoutRef.current) {
+					clearTimeout(diffCalculationTimeoutRef.current)
 				}
-
-				const diffJson = diffParse(unifiedDiff)
-
-				// diffJsonが正常に解析されているかチェック
-				if (!diffJson || diffJson.length === 0) {
-					setDiffHtml('<p class="no-diff">差分の解析に失敗しました</p>')
-					return
-				}
-
-				const diffHtmlResult = diff2html(diffJson, {
-					drawFileList: false,
-					matching: 'lines',
-					outputFormat: 'line-by-line',
-				})
-
-				// HTMLが生成されているかチェック
-				if (!diffHtmlResult || diffHtmlResult.trim() === '') {
-					setDiffHtml('<p class="no-diff">差分HTMLの生成に失敗しました</p>')
-					return
-				}
-
-				setDiffHtml(diffHtmlResult)
-			} catch (error) {
-				console.error('Error generating diff:', error)
-				setDiffHtml(
-					'<p class="error-message">差分の生成に失敗しました。詳細はコンソールを確認してください。</p>	'
-				)
 			}
-		} else {
-			// DIFFモードでない場合は空文字を設定
-			setDiffHtml('')
 		}
-	}, [mode, diffService, initialText, currentNotSavedText])
+	}, [mode, initialText, currentNotSavedText, diffService, wordCounter, formatNumber])
 
 	const charsPerLine = useMemo(() => {
 		return previewSetting.charsPerLine

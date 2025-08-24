@@ -1,9 +1,10 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { calculateCharCount } from '../../domain/text/calculateCharCount'
 import { DEFAULT_TEXT } from '../../domain/entities/defaultSetting'
 
 export function useCharCount() {
 	const [currentNotSavedText, setCurrentNotSavedText] = useState(DEFAULT_TEXT)
+	const charCountTimeoutRef = useRef<NodeJS.Timeout>()
 
 	// 初期化時にデフォルトテキストを確実に設定
 	useEffect(() => {
@@ -13,12 +14,35 @@ export function useCharCount() {
 	}, [currentNotSavedText])
 
 	const charCount = useMemo(() => {
-		return calculateCharCount(currentNotSavedText).characterCount
+		// デバウンス処理でパフォーマンスを最適化
+		if (charCountTimeoutRef.current) {
+			clearTimeout(charCountTimeoutRef.current)
+		}
+
+		return new Promise<number>(resolve => {
+			charCountTimeoutRef.current = setTimeout(() => {
+				const result = calculateCharCount(currentNotSavedText).characterCount
+				resolve(result)
+			}, 100) // 100msのデバウンス
+		})
 	}, [currentNotSavedText])
 
-	const updateText = useCallback((newText: string) => {
-		setCurrentNotSavedText(newText)
+	// クリーンアップ
+	useEffect(() => {
+		return () => {
+			if (charCountTimeoutRef.current) {
+				clearTimeout(charCountTimeoutRef.current)
+			}
+		}
 	}, [])
 
-	return { currentNotSavedText, charCount, updateText }
+	const updateText = useCallback((text: string) => {
+		setCurrentNotSavedText(text)
+	}, [])
+
+	return {
+		currentNotSavedText,
+		charCount,
+		updateText,
+	}
 }

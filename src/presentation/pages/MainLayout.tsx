@@ -305,12 +305,28 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		return () => window.removeEventListener('keydown', handleKeyDown)
 	}, [currentNotSavedText, saveSnapshot, forceSave, isSaving])
 
+	// テキスト変更時の処理
 	const onChangeText = useCallback(
 		(v: string) => {
 			updateText(v)
 		},
 		[updateText]
 	)
+
+	// mobileでのみ最新の書き込みをcurrentSaveTextに常に保存
+	// PCでは通常の自動保存機能を使用し、mobileではリアルタイムでcurrentSaveTextを更新
+	useEffect(() => {
+		if (isMobile() && currentNotSavedText !== '') {
+			// mobileの場合、テキストが変更されるたびにcurrentSaveTextを更新
+			// デバウンス処理でパフォーマンスを最適化
+			const timeoutId = setTimeout(() => {
+				console.log('[MainLayout] Mobile auto-save: updating currentSaveText')
+				setCurrentSavedText(currentNotSavedText)
+			}, 300) // 300msのデバウンス
+
+			return () => clearTimeout(timeoutId)
+		}
+	}, [currentNotSavedText])
 
 	// スワイプジェスチャーでUI制御（モバイル端末のみ）
 	const handleSwipe = useCallback(
@@ -350,25 +366,17 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	})
 
 	// リサイザーを初期化
-	const {
-		isDragging,
-
-		isKeyboardMode,
-		announceText,
-		containerRef,
-		resizerRef,
-		resizerProps,
-		setSize,
-	} = useResizable({
-		initialSize: 50, // 50%で開始
-		minSize: 20, // 最小20%
-		maxSize: 80, // 最大80%
-		step: 5, // キーボード操作時のステップ
-		label: 'エディタとプレビューのサイズ調整',
-		onResize: newSize => {
-			setCurrentEditorSize(newSize)
-		},
-	})
+	const { isDragging, isKeyboardMode, announceText, containerRef, resizerRef, resizerProps } =
+		useResizable({
+			initialSize: 50, // 50%で開始
+			minSize: 20, // 最小20%
+			maxSize: 80, // 最大80%
+			step: 5, // キーボード操作時のステップ
+			label: 'エディタとプレビューのサイズ調整',
+			onResize: newSize => {
+				setCurrentEditorSize(newSize)
+			},
+		})
 
 	// ドラッグ可能レイアウトの設定
 	const { layoutType, getEditorContainerConfig, getPreviewContainerConfig } = useDraggableLayout(
@@ -382,7 +390,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 			setPreviewPosition,
 			setPreviewSize,
 		},
-		{ isDraggableMode, viewMode, charCount, pageInfo }
+		{ isDraggableMode, viewMode, pageInfo }
 	)
 
 	// 共通のハンドラー関数

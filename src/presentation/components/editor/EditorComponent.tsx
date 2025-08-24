@@ -13,6 +13,7 @@ import buttonStyles from '../../shared/Button/Button.module.css'
 
 import { useCaretAnimation, useIMEFloat, useLineDecorations } from './components'
 import { Counter } from './components/Counter/Counter'
+import { usePerformanceMonitor } from '../../hooks/usePerformanceMonitor'
 
 type Props = {
 	textData: string
@@ -35,6 +36,9 @@ export const EditorComponent = ({
 	onMaximize,
 	onFocusPane,
 }: Props) => {
+	// パフォーマンス監視
+	const performanceMonitor = usePerformanceMonitor('EditorComponent')
+
 	const containerRef = useRef<HTMLDivElement>(null)
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
 	const wrapperRef = useRef<HTMLDivElement>(null) // エディタ全体のWrapper
@@ -113,6 +117,39 @@ export const EditorComponent = ({
 		}
 	}, [])
 
+	// ResizeObserverのデバウンス処理
+	const resizeTimeoutRef = useRef<NodeJS.Timeout>()
+	const debouncedUpdateScaleInfo = useCallback(() => {
+		if (resizeTimeoutRef.current) {
+			clearTimeout(resizeTimeoutRef.current)
+		}
+		resizeTimeoutRef.current = setTimeout(() => {
+			updateScaleInfo()
+		}, 100) // 100msのデバウンス
+	}, [updateScaleInfo])
+
+	// 倍率計算の初期化と監視
+	useEffect(() => {
+		// 初期倍率を計算
+		updateScaleInfo()
+
+		// ResizeObserverでサイズ変更を監視（デバウンス処理付き）
+		if (containerRef.current) {
+			const resizeObserver = new ResizeObserver(() => {
+				debouncedUpdateScaleInfo()
+			})
+
+			resizeObserver.observe(containerRef.current)
+
+			return () => {
+				resizeObserver.disconnect()
+				if (resizeTimeoutRef.current) {
+					clearTimeout(resizeTimeoutRef.current)
+				}
+			}
+		}
+	}, [updateScaleInfo, debouncedUpdateScaleInfo])
+
 	// 通常のonChange関数
 	const handleChange = useCallback(
 		(newValue: string) => {
@@ -120,25 +157,6 @@ export const EditorComponent = ({
 		},
 		[onChange]
 	)
-
-	// 倍率計算の初期化と監視
-	useEffect(() => {
-		// 初期倍率を計算
-		updateScaleInfo()
-
-		// ResizeObserverでサイズ変更を監視
-		if (containerRef.current) {
-			const resizeObserver = new ResizeObserver(() => {
-				updateScaleInfo()
-			})
-
-			resizeObserver.observe(containerRef.current)
-
-			return () => {
-				resizeObserver.disconnect()
-			}
-		}
-	}, [updateScaleInfo])
 
 	// エディタ内部にフォーカスを移す関数
 	const focusIntoEditor = useCallback(() => {

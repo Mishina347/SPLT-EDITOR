@@ -28,6 +28,7 @@ import { loadText } from '../../usecases'
 import { editorService } from '../../application'
 import { hexToRgba, isMobile } from '../../utils'
 import styles from './MainLayout.module.css'
+import { SwipeDirection } from '../hooks/useSwipeGesture'
 
 interface EditorPageProps {
 	initSettings: Settings
@@ -330,7 +331,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 
 	// スワイプジェスチャーでUI制御（モバイル端末のみ）
 	const handleSwipe = useCallback(
-		(direction: any) => {
+		(direction: SwipeDirection) => {
 			if (!isMobile()) return
 
 			if (direction.up) {
@@ -498,7 +499,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 				{/* メインコンテンツレンダリング */}
 				{viewMode === DISPLAY_MODE.BOTH && (
 					<LayoutRenderer
-						layoutType={layoutType as any}
+						layoutType={layoutType}
 						editorSettings={editorSettings}
 						currentNotSavedText={currentNotSavedText}
 						initialText={initialText}
@@ -553,7 +554,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 				{/* エディター最大化 */}
 				{viewMode === DISPLAY_MODE.EDITOR && (
 					<LayoutRenderer
-						layoutType={layoutType as any}
+						layoutType={layoutType}
 						editorSettings={editorSettings}
 						currentNotSavedText={currentNotSavedText}
 						initialText={initialText}
@@ -594,7 +595,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 				{/* プレビュー最大化 */}
 				{viewMode === DISPLAY_MODE.PREVIEW && (
 					<LayoutRenderer
-						layoutType={layoutType as any}
+						layoutType={layoutType}
 						editorSettings={editorSettings}
 						currentNotSavedText={currentNotSavedText}
 						initialText={initialText}

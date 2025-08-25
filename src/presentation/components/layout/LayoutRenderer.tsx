@@ -3,6 +3,10 @@ import { RightPane } from '../preview/RightPane'
 import { LayoutContainer } from './LayoutContainer'
 import { EditorSettings, LayoutConfig, TextSnapshot } from '../../../domain'
 import { EditorComponent } from '..'
+import { ContainerConfig } from '../../hooks/useDraggableLayout'
+
+export type LayoutType = 'fixed' | 'draggable-dual' | 'draggable-editor' | 'draggable-preview'
+
 interface CommonProps {
 	// エディター関連
 	editorSettings: EditorSettings
@@ -22,7 +26,7 @@ interface CommonProps {
 	onRestoreHistory: (snapshot: TextSnapshot) => void
 
 	// レイアウト関連
-	layoutType: 'fixed' | 'draggable-dual' | 'draggable-editor' | 'draggable-preview'
+	layoutType: LayoutType
 	currentEditorSize: number
 	isDragging: boolean
 
@@ -43,9 +47,9 @@ interface FixedLayoutProps extends CommonProps {
 }
 
 interface DraggableLayoutProps extends CommonProps {
-	layoutType: 'draggable-dual' | 'draggable-editor' | 'draggable-preview'
-	editorContainerConfig?: any
-	previewContainerConfig?: any
+	layoutType: LayoutType
+	editorContainerConfig?: ContainerConfig
+	previewContainerConfig?: ContainerConfig
 	containerClassName?: string
 }
 

@@ -1034,8 +1034,8 @@ export const EditorComponent = ({
 			</main>
 			<button
 				className={`${buttonStyles.maximizeBtn} ${styles.maximizeBtnPosition} 
-				${isMaximized ? buttonStyles.buttonActive : buttonStyles.buttonSecondary}
-			`}
+			${isMaximized ? buttonStyles.buttonActive : buttonStyles.buttonSecondary}
+		`}
 				aria-pressed={isMaximized ? 'true' : 'false'}
 				onClick={e => {
 					e.preventDefault()

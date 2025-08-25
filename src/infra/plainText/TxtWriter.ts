@@ -4,9 +4,9 @@ export class TxtWriter {
 
 		pages.forEach((pageLines, pageIndex) => {
 			for (const line of pageLines) {
-				output += line + '\n'
+				output += line
 			}
-			output += '\n'
+			// ページ間の改行も削除
 		})
 
 		// Blobを作成してダウンロード

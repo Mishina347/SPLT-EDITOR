@@ -3,6 +3,7 @@ import { Dialog } from '../../../shared/Dialog/Dialog'
 import { TxtExportButton } from './TxtExportButton'
 import { DocxExportButton } from './DocxExportButton'
 import { LayoutConfig } from '../../../../domain/preview/pdf/TextContent'
+import { convertTextToManuscript } from '../../../../domain'
 import styles from './ExportDialog.module.css'
 
 interface ExportDialogProps {
@@ -18,6 +19,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 	currentSavedText,
 	previewSettings,
 }) => {
+	// currentSavedTextをManuscript形式に変換
+	const manuscript = convertTextToManuscript(currentSavedText)
+
 	return (
 		<Dialog
 			isOpen={isOpen}
@@ -48,7 +52,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 							<h4 className={styles.exportTitle}>Word形式 (.docx)</h4>
 							<p className={styles.exportDescription}>Word形式で出力します</p>
 						</div>
-						<DocxExportButton currentSavedText={currentSavedText} onExport={onClose} />
+						<DocxExportButton manuscript={manuscript} />
 					</div>
 				</section>
 			</div>

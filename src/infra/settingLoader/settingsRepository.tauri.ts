@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { Settings, SettingsRepository } from '../../domain/entities/defaultSetting'
+import { FONT_FAMILIES } from '../../domain/editor/EditorSetting'
 
 export class TauriSettingsRepository implements SettingsRepository {
 	async loadSettings(): Promise<Settings> {
@@ -13,10 +14,17 @@ export class TauriSettingsRepository implements SettingsRepository {
 					wordWrapColumn: 60,
 					backgroundColor: '#ffffff',
 					textColor: '#000000',
+					fontFamily: FONT_FAMILIES.UD_DIGITAL,
+					autoSave: {
+						enabled: true,
+						delay: 1000,
+					},
 				},
 				preview: {
 					charsPerLine: 20,
 					linesPerPage: 20,
+					fontSize: 16,
+					fontFamily: FONT_FAMILIES.UD_DIGITAL,
 				},
 			}
 			await this.saveSettings(defaultSettings)

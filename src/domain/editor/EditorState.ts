@@ -8,6 +8,10 @@ export function defaultEditorSettings(): EditorSettings {
 		backgroundColor: '#ffffff',
 		textColor: '#000000',
 		fontFamily: FONT_FAMILIES.UD_DIGITAL,
+		autoSave: {
+			enabled: true,
+			delay: 1000,
+		},
 	}
 }
 

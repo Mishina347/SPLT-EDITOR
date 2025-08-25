@@ -6,6 +6,7 @@
 
 /* ツールバーのアニメーション */
 .toolbarContainer {
+	background-color: var(--app-bg-color, #ffffff);
 	overflow: hidden;
 }
 

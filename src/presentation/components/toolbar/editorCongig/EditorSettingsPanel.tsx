@@ -62,10 +62,10 @@ export const EditorSettingsPanel = React.memo<Props>(
 		}, [onToolbarFocusChange])
 
 		return (
-			<div className={styles.container} role="group" aria-labelledby="editor-settings-heading">
-				<div id="editor-settings-heading" className={styles.srOnly}>
+			<section className={styles.container} role="group" aria-labelledby="editor-settings-heading">
+				<h3 id="editor-settings-heading" className={styles.srOnly}>
 					エディター設定
-				</div>
+				</h3>
 				<FontSelector
 					label="フォント"
 					value={settings.fontFamily}
@@ -148,7 +148,7 @@ export const EditorSettingsPanel = React.memo<Props>(
 						)}
 					</fieldset>
 				*/}
-			</div>
+			</section>
 		)
 	}
 )

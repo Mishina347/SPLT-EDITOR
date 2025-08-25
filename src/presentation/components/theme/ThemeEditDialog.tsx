@@ -82,9 +82,6 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 		{ bg: '#ffffff', text: '#000000', name: '初期テーマ' },
 		{ bg: '#3F3F3F', text: '#ffffff', name: 'ダークモード' },
 		{ bg: '#f8f9fa', text: '#212529', name: 'ライトグレー' },
-		{ bg: '#343a40', text: '#f8f9fa', name: 'ダークグレー' },
-		{ bg: '#416E98', text: '#FFE796', name: 'ピーキーテーマ' },
-		{ bg: '#000000', text: '#11AF00', name: 'マトリックス' },
 	]
 
 	if (!isOpen) return null
@@ -96,7 +93,7 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 			title="テーマ編集"
 			constrainToContainer={true}
 			maxWidth="80vw"
-			maxHeight="90vh"
+			maxHeight="95vh"
 		>
 			<div className={styles.themeEditContainer}>
 				{/* プレビューエリア */}
@@ -118,7 +115,7 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 				<div className={styles.colorPickerSection}>
 					<div className={styles.colorOption}>
 						<label htmlFor="backgroundColor">背景色</label>
-						<div className={styles.colorInputGroup}>
+						<fieldset className={styles.colorInputGroup}>
 							<input
 								id="backgroundColor"
 								aria-label="背景色"
@@ -155,12 +152,12 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 									touchAction: 'manipulation',
 								}}
 							/>
-						</div>
+						</fieldset>
 					</div>
 
 					<div className={styles.colorOption}>
 						<label htmlFor="textColor">文字色</label>
-						<div className={styles.colorInputGroup}>
+						<fieldset className={styles.colorInputGroup}>
 							<input
 								aria-label="文字色"
 								id="textColor"
@@ -197,7 +194,7 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 									touchAction: 'manipulation',
 								}}
 							/>
-						</div>
+						</fieldset>
 					</div>
 				</div>
 

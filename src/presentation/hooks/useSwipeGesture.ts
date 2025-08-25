@@ -10,10 +10,10 @@ export interface SwipeDirection {
 export interface SwipeGestureOptions {
 	threshold?: number // スワイプを検出する最小距離
 	velocityThreshold?: number // スワイプを検出する最小速度
-	onSwipe?: (direction: SwipeDirection, event: TouchEvent) => void
+	onSwipe: (direction: SwipeDirection, event: TouchEvent) => void
 }
 
-export const useSwipeGesture = (options: SwipeGestureOptions = {}) => {
+export const useSwipeGesture = (options: SwipeGestureOptions) => {
 	const { threshold = 50, velocityThreshold = 0.3, onSwipe } = options
 
 	const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null)

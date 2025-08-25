@@ -324,7 +324,7 @@ export const Preview = React.memo<Props>(
 		}, [])
 
 		return (
-			<div
+			<main
 				ref={previewRef}
 				style={{
 					margin: '0.5rem',
@@ -340,7 +340,7 @@ export const Preview = React.memo<Props>(
 					キーボード操作:
 					左矢印・上矢印で次のページ、右矢印・下矢印で前のページ、Homeで最初のページ、Endで最後のページ、PageUp/PageDownで5ページずつ移動、Escapeでフォーカス解除
 				</div>
-				<div
+				<section
 					className={`${styles.previewContainer} ${isSwipping ? styles.swipping : ''}`}
 					aria-label={`プレビュー: ページ ${pageIndex + 1} / ${pages.length}。矢印キーでページめくり、Escapeキーでフォーカス解除`}
 					aria-describedby="preview-instructions"
@@ -366,8 +366,8 @@ export const Preview = React.memo<Props>(
 					<div
 						className={`${notInitPage && styles.pageTurnRight} ${mousePosition === 'right' ? styles.visible : ''}`}
 					/>
-					<section className={styles.pageBase} onClick={handlePageBaseClick}>
-						<article
+					<article className={styles.pageBase} onClick={handlePageBaseClick}>
+						<section
 							className={`${isMaximized ? styles.fullPane : styles.halfPane}`}
 							role="region"
 							aria-label={`ページ ${pageIndex + 1} / ${pages.length}`}
@@ -380,20 +380,24 @@ export const Preview = React.memo<Props>(
 							) : (
 								<div className={styles.lines} role="text">
 									{currentPage.map((line, lineIndex) => (
-										<div key={lineIndex} className={styles.verticalLine} aria-label={`行 ${lineIndex + 1}`}>
+										<section
+											key={lineIndex}
+											className={styles.verticalLine}
+											aria-label={`行 ${lineIndex + 1}`}
+										>
 											{line.split('').map((char, charIndex) => (
 												<p key={charIndex} className={styles.verticalChar}>
 													{char}
 												</p>
 											))}
-										</div>
+										</section>
 									))}
 								</div>
 							)}
-						</article>
-					</section>
-				</div>
-			</div>
+						</section>
+					</article>
+				</section>
+			</main>
 		)
 	}
 )

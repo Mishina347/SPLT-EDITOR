@@ -1,20 +1,10 @@
-import React, { useState, useCallback, useMemo } from 'react'
-import { DISPLAY_MODE, PREVIEW_CONSTANTS } from '../../domain'
+import React, { useCallback, useMemo } from 'react'
+import { DISPLAY_MODE } from '../../domain'
 import { useViewportSize } from './useViewportSize'
 import { formatNumber, UI_CONSTANTS } from '../../utils'
+import { LayoutType } from '../components/layout/LayoutRenderer'
 
-interface DraggableLayoutConfig {
-	editorPosition: { x: number; y: number }
-	editorSize: { width: number; height: number }
-	previewPosition: { x: number; y: number }
-	previewSize: { width: number; height: number }
-	setEditorPosition: (position: { x: number; y: number }) => void
-	setEditorSize: (size: { width: number; height: number }) => void
-	setPreviewPosition: (position: { x: number; y: number }) => void
-	setPreviewSize: (size: { width: number; height: number }) => void
-}
-
-interface ContainerConfig {
+export interface ContainerConfig {
 	title: string
 	initialPosition: { x: number; y: number }
 	initialSize: { width: number; height: number }
@@ -28,6 +18,17 @@ interface ContainerConfig {
 	// カスタムヘッダー用
 	customHeader?: React.ReactNode
 	showDefaultHeader?: boolean
+}
+
+interface DraggableLayoutConfig {
+	editorPosition: { x: number; y: number }
+	editorSize: { width: number; height: number }
+	previewPosition: { x: number; y: number }
+	previewSize: { width: number; height: number }
+	setEditorPosition: (position: { x: number; y: number }) => void
+	setEditorSize: (size: { width: number; height: number }) => void
+	setPreviewPosition: (position: { x: number; y: number }) => void
+	setPreviewSize: (size: { width: number; height: number }) => void
 }
 
 interface UseDraggableLayoutOptions {
@@ -64,6 +65,12 @@ export const useDraggableLayout = (
 			width: viewportWidth,
 			height: viewportHeight, // ツールバーとマージンを考慮
 		}
+
+		const standardInitialSize = {
+			width: 400,
+			height: 300,
+		}
+
 		const maximizedInitialSize = {
 			width: Math.max(800, viewportWidth - 200),
 			height: Math.max(600, viewportHeight - 100),
@@ -73,6 +80,7 @@ export const useDraggableLayout = (
 			standard: {
 				minSize: standardMinSize,
 				maxSize: standardMaxSize,
+				initialSize: standardInitialSize,
 			},
 			maximized: {
 				minSize: maximizedMinSize,
@@ -94,7 +102,7 @@ export const useDraggableLayout = (
 			return {
 				title: titleWithCharCount,
 				initialPosition: isMaximizedMode ? { x: 20, y: 100 } : editorPosition,
-				initialSize: isMaximizedMode ? (sizes as any).initialSize || editorSize : editorSize,
+				initialSize: isMaximizedMode ? sizes.initialSize || editorSize : editorSize,
 				minSize: sizes.minSize,
 				maxSize: sizes.maxSize,
 				isMaximized: isMaximizedMode,
@@ -123,7 +131,7 @@ export const useDraggableLayout = (
 			return {
 				title: baseTitle,
 				initialPosition: isMaximizedMode ? { x: 20, y: 100 } : previewPosition,
-				initialSize: isMaximizedMode ? (sizes as any).initialSize || previewSize : previewSize,
+				initialSize: sizes.initialSize,
 				minSize: sizes.minSize,
 				maxSize: sizes.maxSize,
 				isMaximized: isMaximizedMode,
@@ -145,7 +153,7 @@ export const useDraggableLayout = (
 	)
 
 	// レイアウトタイプを判定
-	const layoutType = useMemo(() => {
+	const layoutType = useMemo<LayoutType>(() => {
 		if (!isDraggableMode) return 'fixed'
 		if (viewMode === DISPLAY_MODE.BOTH) return 'draggable-dual'
 		if (viewMode === DISPLAY_MODE.EDITOR) return 'draggable-editor'

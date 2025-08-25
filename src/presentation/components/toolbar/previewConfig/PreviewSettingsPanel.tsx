@@ -53,10 +53,10 @@ export const PreviewSettingsPanel = React.memo<Props>(
 		}, [onToolbarFocusChange])
 
 		return (
-			<div className={styles.container} role="group" aria-labelledby="preview-settings-heading">
-				<div id="preview-settings-heading" className={styles.srOnly}>
+			<section className={styles.container} role="group" aria-labelledby="preview-settings-heading">
+				<h3 id="preview-settings-heading" className={styles.srOnly}>
 					プレビュー設定
-				</div>
+				</h3>
 
 				<FontSelector
 					label="フォント"
@@ -105,7 +105,7 @@ export const PreviewSettingsPanel = React.memo<Props>(
 					decrementLabel="一ページあたりの行数を減らす"
 					incrementLabel="一ページあたりの行数を増やす"
 				/>
-			</div>
+			</section>
 		)
 	}
 )

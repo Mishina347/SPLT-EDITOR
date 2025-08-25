@@ -356,7 +356,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	])
 
 	return (
-		<div
+		<aside
 			ref={containerRef}
 			className={styles.rightPaneContent}
 			tabIndex={0}
@@ -412,12 +412,12 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 			{/* ページ番号表示（プレビューモード時のみ） */}
 			{mode === PreviewMode.VERTICAL && currentPageInfo.totalPages > 1 && (
 				<div className={styles.pageNumberBar} role="status" aria-live="polite">
-					<span
+					<output
 						className={styles.pageNumber}
 						aria-label={`現在のページ: ${currentPageInfo.currentPage}、全ページ数: ${currentPageInfo.totalPages}`}
 					>
 						{currentPageInfo.currentPage} / {currentPageInfo.totalPages} ページ
-					</span>
+					</output>
 				</div>
 			)}
 
@@ -429,6 +429,6 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 				textHistory={textHistory}
 				onRestore={onRestoreHistory}
 			/>
-		</div>
+		</aside>
 	)
 }

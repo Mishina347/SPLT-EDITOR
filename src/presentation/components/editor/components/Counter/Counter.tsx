@@ -24,19 +24,19 @@ export const Counter: React.FC<CounterProps> = ({ text }) => {
 	return (
 		<div className={styles.fieldGroup}>
 			<label className={styles.label}>現在の文章</label>
-			<div className={styles.counterDisplay} role="status" aria-label="文書統計">
-				<span className={styles.characterCount} aria-label={`${characterCount}文字`}>
+			<section className={styles.counterDisplay} role="status" aria-label="文書統計">
+				<output className={styles.characterCount} aria-label={`${characterCount}文字`}>
 					{/* 計算中は即座に更新、完了したら正確な値を表示 */}
 					{text === debouncedText ? formatNumber(characterCount) : formatNumber(immediateCharCount)} 文字
 					{text !== debouncedText && <span style={{ opacity: 0.6 }}>...</span>}
-				</span>
-				<span className={styles.lineCount} aria-label={`${lineCount}行`}>
+				</output>
+				<output className={styles.lineCount} aria-label={`${lineCount}行`}>
 					（1行20文字換算）{formatNumber(lineCount)} 行
-				</span>
-				<span className={styles.wordCount} aria-label={`${pageCount}枚`}>
+				</output>
+				<output className={styles.wordCount} aria-label={`${pageCount}枚`}>
 					(20×20換算) {formatNumber(pageCount)} 枚
-				</span>
-			</div>
+				</output>
+			</section>
 		</div>
 	)
 }

@@ -29,7 +29,7 @@ export const DEFAULT_SETTING: Settings = {
 		charsPerLine: 20,
 		linesPerPage: 20,
 		fontSize: 16,
-		fontFamily: FONT_FAMILIES.UD_DIGITAL,
+		fontFamily: FONT_FAMILIES.NOTO_SERIF,
 	},
 }
 

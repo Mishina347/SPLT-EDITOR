@@ -992,7 +992,7 @@ export const EditorComponent = ({
 	)
 
 	return (
-		<>
+		<div className={styles.editorContainer}>
 			<main className={styles.editorBody} onFocus={handleFocusPane}>
 				<h2 className={styles.srOnly}>テキストエディタ</h2>
 				<div
@@ -1055,6 +1055,6 @@ export const EditorComponent = ({
 			>
 				⛶
 			</button>
-		</>
+		</div>
 	)
 }

@@ -160,7 +160,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 					)
 
 					// 差分があるかチェック
-					if (unifiedDiff && unifiedDiff.trim() !== '') {
+					if (unifiedDiff) {
 						// 変更がある場合
 						const beforeStats = wordCounter(initialText || '')
 						const afterStats = wordCounter(currentNotSavedText || '')

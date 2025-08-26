@@ -6,7 +6,7 @@ import { Manuscript, ManuscriptLine } from '../entities/Manuscript'
  * @param title 原稿のタイトル（デフォルト: "原稿"）
  * @returns Manuscriptオブジェクト
  */
-export const convertTextToManuscript = (text: string, title: string = '原稿'): Manuscript => {
+export const convertTextToManuscript = (text: string, title: string): Manuscript => {
 	if (!text || text.trim() === '') {
 		return {
 			title,

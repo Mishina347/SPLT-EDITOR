@@ -7,6 +7,10 @@ import {
 	AlignmentType,
 	PageOrientation,
 	TextDirection,
+	Header,
+	Footer,
+	PageNumber,
+	NumberFormat,
 } from 'docx'
 import { saveAs } from 'file-saver'
 import {
@@ -19,35 +23,32 @@ import {
 export class DocxExporter implements DocxExporterRepository {
 	constructor(private settings: DocxExportSettings = DEFAULT_DOCX_SETTINGS) {}
 
-	async export(manuscript: Manuscript): Promise<void> {
-		// デバッグ用：設定値をログ出力
-		if (process.env.NODE_ENV === 'development') {
-			console.log('[DocxExporter] Export settings:', this.settings)
-			console.log('[DocxExporter] Vertical writing enabled:', this.settings.verticalWriting)
-			console.log('[DocxExporter] Page size:', this.getPageSize())
-			console.log('[DocxExporter] Margins:', this.getMargins())
-			console.log(
-				'[DocxExporter] Vertical writing properties:',
-				this.getVerticalWritingPageProperties()
-			)
-			console.log(
-				'[DocxExporter] Vertical writing paragraph properties:',
-				this.getVerticalWritingParagraphProperties()
-			)
+	async export(manuscript: Manuscript, fileExtension: 'docx' | 'dotx' = 'docx'): Promise<void> {
+		console.log('[DEBUG] DocxExporter received settings:', this.settings)
+		console.log('[DEBUG] Vertical writing:', this.settings.verticalWriting)
+		console.log('[DEBUG] Page layout:', this.settings.pageLayout)
+		console.log('[DEBUG] Margins:', this.settings.margins)
+		console.log('[DEBUG] Font:', this.settings.font)
+
+		// 設定値を確実に適用
+		const pageProperties = {
+			type: SectionType.CONTINUOUS,
+			page: {
+				size: this.getPageSize(),
+				margin: this.getMargins(),
+			},
+			// 縦書き用のページ設定を直接指定
+			...this.getVerticalWritingPageProperties(),
 		}
+
+		console.log('[DEBUG] Page properties:', pageProperties)
 
 		const doc = new Document({
 			sections: [
 				{
-					properties: {
-						type: SectionType.CONTINUOUS,
-						page: {
-							size: this.getPageSize(),
-							margin: this.getMargins(),
-						},
-						// 縦書き用のページ設定を直接指定
-						...this.getVerticalWritingPageProperties(),
-					},
+					properties: pageProperties,
+					headers: this.createHeaders(),
+					footers: this.createFooters(),
 					children: this.settings.verticalWriting
 						? this.createVerticalWritingContent(manuscript)
 						: this.createHorizontalWritingContent(manuscript),
@@ -55,51 +56,40 @@ export class DocxExporter implements DocxExporterRepository {
 			],
 		})
 
-		// デバッグ用：生成されたドキュメントの構造をログ出力
-		if (process.env.NODE_ENV === 'development') {
-			console.log('[DocxExporter] Generated document structure:', doc)
-		}
-
 		const blob = await Packer.toBlob(doc)
-		saveAs(blob, `${manuscript.title}.docx`)
+		const fileName = `${manuscript.title}.${fileExtension}`
+		saveAs(blob, fileName)
 	}
 
-	private createVerticalWritingContent(manuscript: Manuscript) {
-		// 縦書き用のコンテンツ生成
+	private createVerticalWritingContent(manuscript: Manuscript): Paragraph[] {
 		const paragraphs: Paragraph[] = []
 
-		manuscript.pages.forEach((pageLines, pageIndex) => {
-			// 各ページの行を縦書き用に処理
-			pageLines.forEach((line, lineIndex) => {
+		manuscript.pages.forEach(pageLines => {
+			pageLines.forEach(line => {
+				const children: TextRun[] = [
+					new TextRun({
+						text: line.text,
+						font: this.getPagesCompatibleFont(this.settings.font.family),
+						size: this.settings.font.size * 2, // ポイントから半ポイントに変換
+					}),
+				]
+
 				if (line.ruby) {
-					paragraphs.push(
-						new Paragraph({
-							children: [
-								new TextRun({
-									text: `${line.text}(${line.ruby})`,
-									font: this.settings.font.family,
-									size: this.settings.font.size * 2,
-								}),
-							],
-							// 縦書き用の段落設定
-							...this.getVerticalWritingParagraphProperties(),
-						})
-					)
-				} else {
-					paragraphs.push(
-						new Paragraph({
-							children: [
-								new TextRun({
-									text: line.text,
-									font: this.settings.font.family,
-									size: this.settings.font.size * 2,
-								}),
-							],
-							// 縦書き用の段落設定
-							...this.getVerticalWritingParagraphProperties(),
+					children.push(
+						new TextRun({
+							text: line.ruby,
+							font: this.getPagesCompatibleFont(this.settings.font.family),
+							size: Math.max(8, this.settings.font.size * 1.2), // ルビサイズ
 						})
 					)
 				}
+
+				const paragraph = new Paragraph({
+					children,
+					...this.getVerticalWritingParagraphProperties(),
+				})
+
+				paragraphs.push(paragraph)
 			})
 		})
 
@@ -133,78 +123,123 @@ export class DocxExporter implements DocxExporterRepository {
 		)
 	}
 
+	private createHeaders() {
+		const pageLayout = this.settings.pageLayout || {}
+		if (!pageLayout.showHeader) {
+			return {}
+		}
+
+		// Pages対応のヘッダー設定
+		return {
+			default: new Header({
+				children: [
+					new Paragraph({
+						children: [
+							new TextRun({
+								text: this.settings.verticalWriting ? '　' : ' ', // 縦書き用の空白文字
+								font: this.settings.font.family,
+								size: this.settings.font.size * 2,
+							}),
+						],
+						alignment: this.settings.verticalWriting ? AlignmentType.RIGHT : AlignmentType.LEFT,
+					}),
+				],
+			}),
+		}
+	}
+
+	private createFooters() {
+		const pageLayout = this.settings.pageLayout || {}
+		if (!pageLayout.showFooter) {
+			return {}
+		}
+
+		// Pages対応のフッター設定
+		return {
+			default: new Footer({
+				children: [
+					new Paragraph({
+						children: [
+							new TextRun({
+								text: this.settings.verticalWriting ? '　' : ' ', // 縦書き用の空白文字
+								font: this.settings.font.family,
+								size: this.settings.font.size * 2,
+							}),
+						],
+						alignment: this.settings.verticalWriting ? AlignmentType.RIGHT : AlignmentType.LEFT,
+					}),
+				],
+			}),
+		}
+	}
+
 	private getPageSize() {
-		const sizes = {
+		const sizes: Record<string, { width: number; height: number }> = {
 			A4: { width: 11906, height: 16838 }, // A4サイズ（縦書き用の横向き）
 			A5: { width: 8391, height: 11906 },
 			B5: { width: 10006, height: 14173 },
 			B6: { width: 7087, height: 10006 },
 		}
 
-		const size = sizes[this.settings.pageSize]
+		const size = sizes[this.settings.pageSize] || sizes.A4
 		// 縦書きの場合は常に横向きにする
-		if (this.settings.verticalWriting || this.settings.orientation === 'landscape') {
-			return { width: size.height, height: size.width }
-		}
-		return size
+		const isLandscape = this.settings.verticalWriting || this.settings.orientation === 'landscape'
+		const result = isLandscape ? { width: size.height, height: size.width } : size
+
+		console.log(
+			`[DEBUG] Page size: ${this.settings.pageSize}, landscape: ${isLandscape}, result:`,
+			result
+		)
+
+		return result
 	}
 
 	private getMargins() {
 		// ミリメートルをEMU（English Metric Units）に変換
 		// 1mm = 36000 EMU
-		const mmToEmu = (mm: number) => mm * 36000
 
 		// 縦書き用の余白調整
 		const margins = this.settings.margins
-		if (this.settings.verticalWriting) {
-			// 縦書きの場合、左右の余白を調整
-			return {
-				top: mmToEmu(margins.top),
-				right: mmToEmu(margins.right),
-				bottom: mmToEmu(margins.bottom),
-				left: mmToEmu(margins.left),
-				// ヘッダー・フッター余白
-				...(margins.header && { header: mmToEmu(margins.header) }),
-				...(margins.footer && { footer: mmToEmu(margins.footer) }),
-				// 装丁余白
-				...(margins.gutter && { gutter: mmToEmu(margins.gutter) }),
-			}
+		const result = {
+			top: margins.top,
+			right: margins.right,
+			bottom: margins.bottom,
+			left: margins.left,
+			// ヘッダー・フッター余白
+			...(margins.header && { header: margins.header }),
+			...(margins.footer && { footer: margins.footer }),
+			// 装丁余白
+			...(margins.gutter && { gutter: margins.gutter }),
 		}
 
-		return {
-			top: mmToEmu(margins.top),
-			right: mmToEmu(margins.right),
-			bottom: mmToEmu(margins.bottom),
-			left: mmToEmu(margins.left),
-			// ヘッダー・フッター余白
-			...(margins.header && { header: mmToEmu(margins.header) }),
-			...(margins.footer && { footer: mmToEmu(margins.footer) }),
-			// 装丁余白
-			...(margins.gutter && { gutter: mmToEmu(margins.gutter) }),
-		}
+		console.log('[DEBUG] Margins calculation:', margins, '->', result)
+
+		return result
 	}
 
 	private getVerticalWritingPageProperties() {
 		if (!this.settings.verticalWriting) {
+			console.log('[DEBUG] Vertical writing disabled')
 			return {}
 		}
 
 		const pageLayout = this.settings.pageLayout || {}
 		const properties: any = {
-			// 縦書き用のページ設定
+			// Pages対応の縦書き設定
 			pageOrientation: PageOrientation.LANDSCAPE,
-			// 縦書き用のテキスト方向設定
-			textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
+			// 縦書き用のテキスト方向を明示的に指定
+			textDirection: 'tbRl', // 上から下、右から左
 		}
 
 		// 段組み設定
 		if (pageLayout.columns && pageLayout.columns > 1) {
 			properties.columns = {
-				count: pageLayout.columns,
-				space: pageLayout.columnGap ? pageLayout.columnGap * 36000 : 360000, // 10mmをデフォルト
+				count: Math.max(1, Math.min(10, pageLayout.columns)), // 1-10段に制限
+				space: pageLayout.columnGap ? Math.max(0, pageLayout.columnGap * 36000) : 360000, // 10mmをデフォルト
 			}
 		}
 
+		console.log('[DEBUG] Vertical writing page properties:', properties)
 		return properties
 	}
 
@@ -213,20 +248,38 @@ export class DocxExporter implements DocxExporterRepository {
 			return {
 				alignment: AlignmentType.LEFT,
 				spacing: {
-					line: this.settings.lineSpacing * 240,
+					line: Math.max(120, Math.min(480, this.settings.lineSpacing * 240)), // 0.5-2.0行に制限
 				},
 			}
 		}
 
 		return {
-			// 縦書き用の段落設定
+			// Pages対応の縦書き段落設定
 			alignment: AlignmentType.RIGHT, // 縦書きでは右揃え
 			// 縦書き用の間隔設定
 			spacing: {
-				line: this.settings.lineSpacing * 240,
+				line: Math.max(120, Math.min(480, this.settings.lineSpacing * 240)), // 0.5-2.0行に制限
 				before: 120, // 段落前の間隔
 				after: 120, // 段落後の間隔
 			},
+			// Pages対応の縦書き設定
+			textDirection: 'tbRl', // 上から下、右から左
 		}
+	}
+
+	private getPagesCompatibleFont(fontFamily: string): string {
+		// Pagesで確実に認識されるフォント名に変換
+		const fontMap: Record<string, string> = {
+			游明朝: 'Yu Mincho',
+			游ゴシック: 'Yu Gothic',
+			ヒラギノ明朝: 'Hiragino Mincho ProN',
+			ヒラギノ角ゴ: 'Hiragino Kaku Gothic ProN',
+			MS明朝: 'MS Mincho',
+			MSゴシック: 'MS Gothic',
+			明朝体: 'Mincho',
+			ゴシック体: 'Gothic',
+		}
+
+		return fontMap[fontFamily] || fontFamily
 	}
 }

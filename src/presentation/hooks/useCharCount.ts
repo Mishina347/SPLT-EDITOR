@@ -3,13 +3,13 @@ import { calculateCharCount } from '../../domain/text/calculateCharCount'
 import { DEFAULT_TEXT } from '../../domain/entities/defaultSetting'
 
 export function useCharCount() {
-	const [currentNotSavedText, setCurrentNotSavedText] = useState(DEFAULT_TEXT)
+	const [currentNotSavedText, setCurrentNotSavedText] = useState('')
 	const charCountTimeoutRef = useRef<NodeJS.Timeout>()
 
 	// 初期化時にデフォルトテキストを確実に設定
 	useEffect(() => {
 		if (!currentNotSavedText) {
-			setCurrentNotSavedText(DEFAULT_TEXT)
+			setCurrentNotSavedText('')
 		}
 	}, [currentNotSavedText])
 

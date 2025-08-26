@@ -1,5 +1,6 @@
 import React from 'react'
 import { FontFamily, FONT_FAMILIES, FONT_LABELS } from '../../../domain'
+import { Selector } from '../Selector/Selector'
 import styles from './FontSelector.module.css'
 
 interface FontSelectorProps {
@@ -23,35 +24,31 @@ export const FontSelector: React.FC<FontSelectorProps> = ({
 	ariaDescribedBy,
 	disabled = false,
 }) => {
-	const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-		const fontFamily = e.target.value as FontFamily
-		onChange(fontFamily)
-	}
+	// フォントオプションをSelectorコンポーネント用の形式に変換
+	const fontOptions = [
+		{ value: FONT_FAMILIES.UD_DIGITAL, label: FONT_LABELS.UD_DIGITAL },
+		{ value: FONT_FAMILIES.NOTO_SERIF, label: FONT_LABELS.NOTO_SERIF },
+	]
 
-	const selectId = id || `font-selector-${Math.random().toString(36).substr(2, 9)}`
+	const handleChange = (selectedValue: string) => {
+		onChange(selectedValue as FontFamily)
+	}
 
 	return (
 		<div className={styles.container}>
-			<label className={styles.label} htmlFor={selectId}>
-				{label}
-			</label>
 			<div className={styles.selectWrapper}>
-				<select
-					id={selectId}
+				<Selector
+					className={styles.select}
+					label={label}
 					value={value}
+					options={fontOptions}
 					onChange={handleChange}
 					onFocus={onFocus}
-					className={styles.select}
-					aria-label={ariaLabel || `${label}を選択する`}
-					aria-describedby={ariaDescribedBy}
+					id={id}
+					ariaLabel={ariaLabel}
+					ariaDescribedBy={ariaDescribedBy}
 					disabled={disabled}
-				>
-					<option value={FONT_FAMILIES.UD_DIGITAL}>{FONT_LABELS.UD_DIGITAL}</option>
-					<option value={FONT_FAMILIES.NOTO_SERIF}>{FONT_LABELS.NOTO_SERIF}</option>
-				</select>
-				<div className={styles.arrow} aria-hidden="true">
-					▼
-				</div>
+				/>
 			</div>
 		</div>
 	)

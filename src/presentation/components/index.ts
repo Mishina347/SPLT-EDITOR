@@ -10,7 +10,7 @@ export { ThemeEditDialog } from './theme/ThemeEditDialog'
 export { ExportDialog } from './toolbar/export/ExportDialog'
 
 // Shared components
-export { Dialog } from '../shared/Dialog/Dialog'
+export { Dialog } from '../shared'
 export { TabPanel, type TabItem } from '../shared/TabPanel/TabPanel'
 export { NumberStepper, type NumberStepperProps } from '../shared/NumberStepper/NumberStepper'
 export { FontSelector } from '../shared/FontSelector/FontSelector'

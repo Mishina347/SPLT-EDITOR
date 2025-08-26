@@ -34,13 +34,13 @@
 	display: flex;
 	align-items: center;
 	min-height: 64px;
-	min-width: 120px;
 	padding: 2px;
 	border-radius: 8px;
 	overflow: hidden;
-	background: var(--app-bg-color);
+	background-color: var(--app-bg-color, #fff);
+	color: var(--app-text-color, #333);
 	transition: all 0.2s ease;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
 	border: 1px solid #e5e7eb;
 }
 
@@ -58,11 +58,11 @@
 .select {
 	width: 100%;
 	appearance: none;
-	background: transparent;
 	border: none;
-	padding: 8px 32px 8px 12px;
+	padding: 8px 12px;
 	font-size: 0.9rem;
 	font-weight: 500;
+	background-color: var(--app-bg-color, #fff);
 	color: var(--app-text-color, #333);
 	cursor: pointer;
 	outline: none;

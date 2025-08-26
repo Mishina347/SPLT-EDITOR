@@ -21,7 +21,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 	previewSettings,
 }) => {
 	// currentSavedTextをManuscript形式に変換
-	const manuscript = convertTextToManuscript(currentSavedText)
+	//const manuscript = convertTextToManuscript(currentSavedText)
 
 	return (
 		<Dialog

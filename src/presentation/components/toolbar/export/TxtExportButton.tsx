@@ -59,9 +59,9 @@ export function TxtExportButton({
 				>
 					{/* プラットフォーム情報表示 */}
 					<div style={{ marginBottom: '10px', fontSize: '0.875rem', color: '#666' }}>
-						{isAndroid() && '📱 Android端末: 文字化け対策を最適化'}
-						{isIOS() && '🍎 iOS端末: 標準的なUTF-8出力'}
-						{!isAndroid() && !isIOS() && '💻 デスクトップ: 標準的なUTF-8出力'}
+						{isAndroid() && '📱 Android端末:  UTF-8使用可能'}
+						{isIOS() && '🍎 iOS端末: UTF-8使用可能'}
+						{!isAndroid() && !isIOS() && '💻 デスクトップ:  UTF-8使用可能'}
 					</div>
 
 					<div style={{ marginBottom: '10px' }}>

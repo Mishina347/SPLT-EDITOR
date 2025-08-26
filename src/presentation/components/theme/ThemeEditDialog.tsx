@@ -153,9 +153,7 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 								}}
 							/>
 						</fieldset>
-					</div>
 
-					<div className={styles.colorOption}>
 						<label htmlFor="textColor">文字色</label>
 						<fieldset className={styles.colorInputGroup}>
 							<input
@@ -218,37 +216,36 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 						))}
 					</div>
 				</div>
-
-				{/* アクションボタン */}
-				<div className={styles.themeActionButtons}>
+			</div>
+			{/* アクションボタン */}
+			<div className={styles.themeActionButtons}>
+				<button
+					onClick={handleReset}
+					className={`${buttonStyles.button} ${buttonStyles.buttonSecondary}`}
+				>
+					リセット
+				</button>
+				<div className={styles.themeMainActions}>
 					<button
-						onClick={handleReset}
+						onClick={handleCancel}
 						className={`${buttonStyles.button} ${buttonStyles.buttonSecondary}`}
 					>
-						リセット
+						キャンセル
 					</button>
-					<div className={styles.themeMainActions}>
-						<button
-							onClick={handleCancel}
-							className={`${buttonStyles.button} ${buttonStyles.buttonSecondary}`}
-						>
-							キャンセル
-						</button>
-						<button
-							onClick={e => {
-								console.log('Save button onClick triggered')
-								e.preventDefault()
-								handleSave()
-							}}
-							className={`${buttonStyles.button} ${buttonStyles.buttonPrimary}`}
-							style={{
-								touchAction: 'manipulation', // タッチ操作を最適化
-								WebkitTapHighlightColor: 'rgba(0,0,0,0)', // タップハイライトを無効化
-							}}
-						>
-							保存
-						</button>
-					</div>
+					<button
+						onClick={e => {
+							console.log('Save button onClick triggered')
+							e.preventDefault()
+							handleSave()
+						}}
+						className={`${buttonStyles.button} ${buttonStyles.buttonPrimary}`}
+						style={{
+							touchAction: 'manipulation', // タッチ操作を最適化
+							WebkitTapHighlightColor: 'rgba(0,0,0,0)', // タップハイライトを無効化
+						}}
+					>
+						保存
+					</button>
 				</div>
 			</div>
 		</Dialog>

@@ -251,8 +251,8 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 			if (initialText) {
 				// ファイルが存在する場合
 				setInitialText(initialText)
-				setCurrentSavedText(initialText)
-				setLastSavedText(initialText)
+			setCurrentSavedText(initialText)
+			setLastSavedText(initialText)
 				// エディタの初期化完了を待ってからテキストを設定
 				setTimeout(() => {
 					updateText(initialText)
@@ -292,7 +292,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 
 					// 手動保存成功時に状態を更新（空文字でも更新）
 					setLastSavedText(currentNotSavedText)
-					setCurrentSavedText(currentNotSavedText)
+				setCurrentSavedText(currentNotSavedText)
 
 					// 手動保存時のスナップショットを追加（空文字でも記録）
 					saveSnapshot(currentNotSavedText, `手動保存 - ${new Date().toLocaleString('ja-JP')}`)

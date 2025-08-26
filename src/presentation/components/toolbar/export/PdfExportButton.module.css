@@ -1,0 +1,227 @@
+.container {
+	position: relative;
+}
+
+.settingsContent {
+	padding: 1rem;
+	max-height: 80vh;
+	overflow-y: auto;
+}
+
+.settingGroup {
+	margin-bottom: 1.5rem;
+	padding: 1rem;
+	background: var(--app-background-secondary-color, #f8f9fa);
+	border-radius: 8px;
+	border: 1px solid var(--app-border-color, #e9ecef);
+}
+
+.sectionLabel {
+	display: block;
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--app-text-color, #212529);
+	margin-bottom: 0.75rem;
+	padding-bottom: 0.5rem;
+	border-bottom: 2px solid var(--app-primary-color, #007bff);
+}
+
+.basicSettings {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem;
+}
+
+.basicSettings > div {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.basicSettings label {
+	font-size: 0.9rem;
+	font-weight: 500;
+	color: var(--app-text-color, #495057);
+}
+
+.basicSettings select {
+	padding: 0.5rem;
+	border: 1px solid var(--app-border-color, #ced4da);
+	border-radius: 4px;
+	background: var(--app-bg-color, #ffffff);
+	color: var(--app-text-color, #495057);
+	font-size: 0.9rem;
+}
+
+.checkboxLabel {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+	font-size: 0.9rem;
+	color: var(--app-text-color, #495057);
+	cursor: pointer;
+}
+
+.checkboxLabel input[type='checkbox'] {
+	margin: 0;
+	cursor: pointer;
+}
+
+.fontSettings {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem;
+}
+
+.fontSettings > div {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.fontSettings label {
+	font-size: 0.9rem;
+	font-weight: 500;
+	color: var(--app-text-color, #495057);
+}
+
+.fontSettings select,
+.fontSettings input {
+	padding: 0.5rem;
+	border: 1px solid var(--app-border-color, #ced4da);
+	border-radius: 4px;
+	background: var(--app-bg-color, #ffffff);
+	color: var(--app-text-color, #495057);
+	font-size: 0.9rem;
+}
+
+.fontSettings select {
+	min-width: 200px;
+}
+
+.fontSettings input {
+	width: 80px;
+	text-align: center;
+}
+
+.marginInputs {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem;
+}
+
+.marginInputs > div {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.marginInputs label {
+	font-size: 0.9rem;
+	font-weight: 500;
+	color: var(--app-text-color, #495057);
+	white-space: nowrap;
+}
+
+.marginInputs input {
+	width: 80px;
+	padding: 0.5rem;
+	border: 1px solid var(--app-border-color, #ced4da);
+	border-radius: 4px;
+	background: var(--app-bg-color, #ffffff);
+	color: var(--app-text-color, #495057);
+	font-size: 0.9rem;
+	text-align: center;
+}
+
+.outlineSettings {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.outlineSettings > div:last-child {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: 0.5rem;
+}
+
+.outlineSettings label {
+	font-size: 0.9rem;
+	font-weight: 500;
+	color: var(--app-text-color, #495057);
+}
+
+.outlineSettings input[type='number'] {
+	width: 80px;
+	padding: 0.5rem;
+	border: 1px solid var(--app-border-color, #ced4da);
+	border-radius: 4px;
+	background: var(--app-bg-color, #ffffff);
+	color: var(--app-text-color, #495057);
+	font-size: 0.9rem;
+	text-align: center;
+}
+
+.layoutSettings {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem;
+}
+
+.layoutSettings > div {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.layoutSettings label {
+	font-size: 0.9rem;
+	font-weight: 500;
+	color: var(--app-text-color, #495057);
+	white-space: nowrap;
+}
+
+.layoutSettings input {
+	width: 80px;
+	padding: 0.5rem;
+	border: 1px solid var(--app-border-color, #ced4da);
+	border-radius: 4px;
+	background: var(--app-bg-color, #ffffff);
+	color: var(--app-text-color, #495057);
+	font-size: 0.9rem;
+	text-align: center;
+}
+
+.buttonGroup {
+	display: flex;
+	justify-content: center;
+	margin-top: 2rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--app-border-color, #e9ecef);
+}
+
+.buttonGroup button {
+	min-width: 120px;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 600px) {
+	.basicSettings {
+		grid-template-columns: 1fr;
+	}
+
+	.fontSettings {
+		grid-template-columns: 1fr;
+	}
+
+	.marginInputs {
+		grid-template-columns: 1fr;
+	}
+
+	.layoutSettings {
+		grid-template-columns: 1fr;
+	}
+}

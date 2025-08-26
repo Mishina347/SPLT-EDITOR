@@ -16,6 +16,7 @@ export { PreviewMode } from './preview/PreviewMode'
 export { type LayoutConfig } from './preview/pdf/TextContent'
 export { type Manuscript, type DocxExporterRepository } from './entities/Manuscript'
 export { type DocxExportSettings, DEFAULT_DOCX_SETTINGS } from './entities/DocxExportSettings'
+export { type PdfExportSettings, DEFAULT_PDF_SETTINGS, EMBEDDED_FONTS } from './entities/PdfExportSettings'
 
 // Editor
 export { type EditorUIState } from './editor/EditorState'

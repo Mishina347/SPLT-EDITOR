@@ -2,6 +2,7 @@ import React from 'react'
 import { Dialog } from '../../../shared/Dialog/Dialog'
 import { TxtExportButton } from './TxtExportButton'
 import { DocxExportButton } from './DocxExportButton'
+import { PdfExportButton } from './PdfExportButton'
 import { LayoutConfig } from '../../../../domain/preview/pdf/TextContent'
 import { convertTextToManuscript } from '../../../../domain'
 import styles from './ExportDialog.module.css'
@@ -47,13 +48,22 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 							onExport={onClose}
 						/>
 					</div>
+					{/* 
 					<div className={styles.exportOption}>
 						<div>
 							<h4 className={styles.exportTitle}>Word形式 (.docx)</h4>
 							<p className={styles.exportDescription}>Word形式で出力します</p>
 						</div>
 						<DocxExportButton manuscript={manuscript} />
+					</div> 
+					<div className={styles.exportOption}>
+						<div>
+							<h4 className={styles.exportTitle}>PDF形式 (.pdf)</h4>
+							<p className={styles.exportDescription}>縦書き対応のPDFで出力します</p>
+						</div>
+						<PdfExportButton manuscript={manuscript} />
 					</div>
+					*/}
 				</section>
 			</div>
 		</Dialog>

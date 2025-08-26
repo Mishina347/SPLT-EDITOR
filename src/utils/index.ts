@@ -8,6 +8,12 @@ export {
 } from './deviceDetection'
 export { isTauri } from './isTauri'
 export {
+	isMobileSize,
+	getOptimalOrientation,
+	updateManifestOrientation,
+	setupManifestOrientationListener,
+} from './manifestManager'
+export {
 	formatNumber,
 	isInRange,
 	formatBytes,

@@ -9,6 +9,8 @@ import type { RegisterSWOptions } from 'vite-plugin-pwa/client'
 import './utils/swDebug'
 // Monaco Editorのワーカー設定をside-effects importで実行
 import '@/useMonacoWorker'
+// manifestのorientation管理
+import { setupManifestOrientationListener } from './utils/manifestManager'
 
 // Service Workerの動作確認用デバッグ
 function debugServiceWorker() {
@@ -44,6 +46,12 @@ function Root() {
 
 	useEffect(() => {
 		loadSettings().then(setSettings)
+		
+		// manifestのorientation管理を初期化
+		const cleanup = setupManifestOrientationListener()
+		
+		// クリーンアップ関数を返す
+		return cleanup
 	}, [])
 
 	if (!settings) {

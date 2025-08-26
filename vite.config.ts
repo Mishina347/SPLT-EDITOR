@@ -24,6 +24,7 @@ export default defineConfig(({ command, mode }) => {
           display: 'standalone',
           background_color: '#000000',
           theme_color: '#FFFFFF',
+          // デフォルトはlandscape（デスクトップ用）
           orientation: "landscape",
           icons: [
             {

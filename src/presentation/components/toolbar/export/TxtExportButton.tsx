@@ -2,6 +2,8 @@ import { FontFamily } from '@/domain'
 import { ExportTxtUseCase } from '../../../../application/preview/usePagination'
 import { TxtWriter } from '../../../../infra/plainText/TxtWriter'
 import buttonStyles from '../../../shared/Button/Button.module.css'
+import { Selector } from '../../../shared/Selector/Selector'
+import { isAndroid, isIOS } from '../../../../utils/deviceDetection'
 import { useState } from 'react'
 
 type Props = {
@@ -55,18 +57,23 @@ export function TxtExportButton({
 				<div
 					style={{ marginTop: '10px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
 				>
+					{/* プラットフォーム情報表示 */}
+					<div style={{ marginBottom: '10px', fontSize: '0.875rem', color: '#666' }}>
+						{isAndroid() && '📱 Android端末: 文字化け対策を最適化'}
+						{isIOS() && '🍎 iOS端末: 標準的なUTF-8出力'}
+						{!isAndroid() && !isIOS() && '💻 デスクトップ: 標準的なUTF-8出力'}
+					</div>
+
 					<div style={{ marginBottom: '10px' }}>
-						<label>
-							エンコーディング:
-							<select
-								value={selectedEncoding}
-								onChange={e => setSelectedEncoding(e.target.value as 'utf8' | 'shift_jis')}
-								style={{ marginLeft: '10px' }}
-							>
-								<option value="utf8">UTF-8 (推奨)</option>
-								<option value="shift_jis">Shift_JIS (日本語環境)</option>
-							</select>
-						</label>
+						<Selector
+							label="エンコーディング"
+							value={selectedEncoding}
+							options={[
+								{ value: 'utf8', label: 'UTF-8 (推奨)' },
+								{ value: 'shift_jis', label: 'Shift_JIS (日本語環境)' },
+							]}
+							onChange={value => setSelectedEncoding(value as 'utf8' | 'shift_jis')}
+						/>
 					</div>
 					<div>
 						<button

@@ -1,4 +1,10 @@
 /* 書き出しダイアログ用のスタイル */
+.exportDialogContainer {
+	width: 100%;
+	height: 100%;
+	overflow-y: auto;
+}
+
 .exportOptions {
 	display: flex;
 	flex-direction: column;

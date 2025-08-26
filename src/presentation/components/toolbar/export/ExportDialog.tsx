@@ -1,5 +1,5 @@
 import React from 'react'
-import { Dialog } from '../../../shared/Dialog/Dialog'
+import { Dialog } from '../../../shared'
 import { TxtExportButton } from './TxtExportButton'
 import { DocxExportButton } from './DocxExportButton'
 import { PdfExportButton } from './PdfExportButton'
@@ -32,23 +32,24 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 			maxWidth="800px"
 			maxHeight="600px"
 		>
-			<div onClick={e => e.stopPropagation()}>
-				<section className={styles.exportOptions}>
-					<div className={styles.exportOption}>
-						<div>
-							<h4 className={styles.exportTitle}>テキスト形式 (.txt)</h4>
-							<p className={styles.exportDescription}>.txtで出力します</p>
+			<div className={styles.exportDialogContainer}>
+				<div onClick={e => e.stopPropagation()}>
+					<section className={styles.exportOptions}>
+						<div className={styles.exportOption}>
+							<div>
+								<h4 className={styles.exportTitle}>テキスト形式 (.txt)</h4>
+								<p className={styles.exportDescription}>.txtで出力します</p>
+							</div>
+							<TxtExportButton
+								text={currentSavedText}
+								charsPerLine={previewSettings.charsPerLine}
+								linesPerPage={previewSettings.linesPerPage}
+								fontSize={previewSettings.fontSize}
+								fontFamily={previewSettings.fontFamily}
+								onExport={onClose}
+							/>
 						</div>
-						<TxtExportButton
-							text={currentSavedText}
-							charsPerLine={previewSettings.charsPerLine}
-							linesPerPage={previewSettings.linesPerPage}
-							fontSize={previewSettings.fontSize}
-							fontFamily={previewSettings.fontFamily}
-							onExport={onClose}
-						/>
-					</div>
-					{/* 
+						{/* 
 					<div className={styles.exportOption}>
 						<div>
 							<h4 className={styles.exportTitle}>Word形式 (.docx)</h4>
@@ -64,7 +65,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 						<PdfExportButton manuscript={manuscript} />
 					</div>
 					*/}
-				</section>
+					</section>
+				</div>
 			</div>
 		</Dialog>
 	)

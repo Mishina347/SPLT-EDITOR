@@ -46,12 +46,12 @@ function Root() {
 
 	useEffect(() => {
 		loadSettings().then(setSettings)
-		
+
 		// manifestのorientation管理を初期化
 		const cleanup = setupManifestOrientationListener()
-		
-		// クリーンアップ関数を返す
-		return cleanup
+
+		// クリーンアップ関数を返す（undefinedの場合は何もしない）
+		return cleanup || (() => {})
 	}, [])
 
 	if (!settings) {

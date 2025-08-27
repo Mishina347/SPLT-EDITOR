@@ -1,3 +1,4 @@
+import { isMobileSize } from '@/utils'
 import { EditorSettings, FONT_FAMILIES } from '../editor/EditorSetting'
 import { LayoutConfig } from '../preview/pdf/TextContent'
 
@@ -12,26 +13,47 @@ export enum DISPLAY_MODE {
 	PREVIEW = 'preview',
 }
 
-export const DEFAULT_SETTING: Settings = {
-	editor: {
-		fontSize: 16,
-		wordWrapColumn: 60,
-		backgroundColor: '#ffffff',
-		textColor: '#000000',
-		fontFamily:
-			'"UD デジタル 教科書体 N-R", "Hiragino Sans", "Yu Gothic UI", "Meiryo UI", sans-serif',
-		autoSave: {
-			enabled: true,
-			delay: 10, // 10分後に自動保存
-		},
-	},
-	preview: {
-		charsPerLine: 20,
-		linesPerPage: 20,
-		fontSize: 16,
-		fontFamily: FONT_FAMILIES.NOTO_SERIF,
-	},
-}
+export const DEFAULT_SETTING: Settings = !isMobileSize()
+	? {
+			editor: {
+				fontSize: 16,
+				wordWrapColumn: 60,
+				backgroundColor: '#ffffff',
+				textColor: '#000000',
+				fontFamily:
+					'"UD デジタル 教科書体 N-R", "Hiragino Sans", "Yu Gothic UI", "Meiryo UI", sans-serif',
+				autoSave: {
+					enabled: true,
+					delay: 10, // 10分後に自動保存
+				},
+			},
+			preview: {
+				charsPerLine: 20,
+				linesPerPage: 20,
+				fontSize: 16,
+				fontFamily: FONT_FAMILIES.NOTO_SERIF,
+			},
+		}
+	: {
+			editor: {
+				fontSize: 12,
+				wordWrapColumn: 30,
+				backgroundColor: '#ffffff',
+				textColor: '#000000',
+				fontFamily:
+					'"UD デジタル 教科書体 N-R", "Hiragino Sans", "Yu Gothic UI", "Meiryo UI", sans-serif',
+				autoSave: {
+					enabled: true,
+					delay: 1, // 10分後に自動保存
+				},
+			},
+			preview: {
+				charsPerLine: 30,
+				linesPerPage: 16,
+				fontSize: 14,
+				fontFamily: FONT_FAMILIES.NOTO_SERIF,
+			},
+		}
 
 // デフォルトのテキスト
 export const DEFAULT_TEXT = `縦書きエディタへようこそ

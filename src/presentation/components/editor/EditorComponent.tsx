@@ -15,7 +15,7 @@ import { useCaretAnimation, useIMEFloat, useLineDecorations } from './components
 import { Counter } from './components/Counter/Counter'
 import { usePerformanceMonitor } from '../../hooks/usePerformanceMonitor'
 import { useViewportSize } from '../../hooks/useViewportSize'
-import { isMobile, isPortrait } from '../../../utils/deviceDetection'
+import { isMobileSize, isPortrait } from '../../../utils/deviceDetection'
 
 type Props = {
 	textData: string
@@ -93,7 +93,7 @@ export const EditorComponent = ({
 	// 画面の向きとデバイスサイズを検出してIMEフロートの有効/無効を決定
 	const viewportSize = useViewportSize()
 	const isPortraitMode = useMemo(() => isPortrait(), [viewportSize])
-	const isMobileDevice = useMemo(() => isMobile(), [viewportSize])
+	const isMobileDevice = useMemo(() => isMobileSize(), [viewportSize])
 	const shouldUseIMEFloat = useMemo(() => {
 		// スマホで縦画面の場合はIMEフロートを無効化
 		const enabled = !(isMobileDevice && isPortraitMode)
@@ -256,7 +256,7 @@ export const EditorComponent = ({
 			wordWrapBreakBeforeCharacters: '',
 			wordWrapBreakObtrusiveCharacters: '',
 			// IME入力制御
-			accessibilitySupport: 'off' as const, // IME入力の自動制御を無効化
+			accessibilitySupport: isMobileSize() ? ('on' as const) : ('off' as const), // IME入力の自動制御を無効化
 			renderFinalNewline: 'off' as const,
 			minimap: { enabled: false },
 			tabFocusMode: false, // 外部でフォーカス制御するため無効化

@@ -14,6 +14,8 @@ import buttonStyles from '../../shared/Button/Button.module.css'
 import { useCaretAnimation, useIMEFloat, useLineDecorations } from './components'
 import { Counter } from './components/Counter/Counter'
 import { usePerformanceMonitor } from '../../hooks/usePerformanceMonitor'
+import { useViewportSize } from '../../hooks/useViewportSize'
+import { isMobile, isPortrait } from '../../../utils/deviceDetection'
 
 type Props = {
 	textData: string
@@ -88,6 +90,16 @@ export const EditorComponent = ({
 		enabled: true,
 	})
 
+	// 画面の向きとデバイスサイズを検出してIMEフロートの有効/無効を決定
+	const viewportSize = useViewportSize()
+	const isPortraitMode = useMemo(() => isPortrait(), [viewportSize])
+	const isMobileDevice = useMemo(() => isMobile(), [viewportSize])
+	const shouldUseIMEFloat = useMemo(() => {
+		// スマホで縦画面の場合はIMEフロートを無効化
+		const enabled = !(isMobileDevice && isPortraitMode)
+		return enabled
+	}, [isMobileDevice, isPortraitMode, viewportSize])
+
 	const { createIMEFloat, updateIMEFloatContent, removeIMEFloat } = useIMEFloat({
 		containerRef,
 		editorRef,
@@ -95,7 +107,7 @@ export const EditorComponent = ({
 		fontFamily,
 		backgroundColor,
 		textColor,
-		enabled: true,
+		enabled: shouldUseIMEFloat,
 	})
 
 	const { addLineDecorations } = useLineDecorations({
@@ -559,8 +571,11 @@ export const EditorComponent = ({
 
 					// IME開始時にwordWrapを無効化
 					updateWordWrapColumn()
-					// IMEフロート要素を作成（常時表示）
-					createIMEFloat()
+
+					// IMEフロートが有効な場合のみ作成
+					if (shouldUseIMEFloat) {
+						createIMEFloat()
+					}
 				}
 
 				const handleCompositionUpdate = (e: CompositionEvent) => {
@@ -578,16 +593,20 @@ export const EditorComponent = ({
 							editorRef.current.setPosition(imeStartPositionRef.current)
 						}
 
-						// IME入力中の文字をフロート内容更新
-						updateIMEFloatContent(imeCompositionTextRef.current)
+						// IMEフロートが有効な場合のみ内容更新
+						if (shouldUseIMEFloat) {
+							updateIMEFloatContent(imeCompositionTextRef.current)
+						}
 					}
 				}
 
 				const handleCompositionEnd = (e: CompositionEvent) => {
 					const finalText = e.data || ''
 
-					// フロート表示を削除
-					removeIMEFloat()
+					// IMEフロートが有効な場合のみ削除
+					if (shouldUseIMEFloat) {
+						removeIMEFloat()
+					}
 
 					if (editorRef.current && imeStartPositionRef.current) {
 						// エディタを元の状態に戻す
@@ -908,8 +927,8 @@ export const EditorComponent = ({
 			const model = editor.getModel()
 			if (model) {
 				// カーソル位置を保存
-			const position = editor.getPosition()
-			const selection = editor.getSelection()
+				const position = editor.getPosition()
+				const selection = editor.getSelection()
 
 				// 少しの差分であれば編集操作を使用（カーソル位置が保持される）
 				const lengthDiff = Math.abs(currentValue.length - textData.length)
@@ -924,14 +943,14 @@ export const EditorComponent = ({
 					])
 				} else {
 					// 大きな変更の場合は setValue を使用し、位置を復元
-			model.setValue(textData)
+					model.setValue(textData)
 
 					// カーソル位置を復元（位置が有効な範囲内の場合のみ）
 					if (position) {
 						// 次のフレームで実行してレンダリング完了を待つ
 						setTimeout(() => {
 							if (editorRef.current) {
-				const lineCount = model.getLineCount()
+								const lineCount = model.getLineCount()
 								const maxLine = Math.min(position.lineNumber, lineCount)
 								const lineLength = model.getLineLength(maxLine)
 								const maxColumn = Math.min(position.column, lineLength + 1)
@@ -1013,16 +1032,16 @@ export const EditorComponent = ({
 					}}
 					onDoubleClick={focusIntoEditor}
 				>
-				<div
-					ref={containerRef}
-					className="monaco-editor-container"
-					style={{
-						...containerStyle,
-						touchAction: 'auto', // Monaco Editorのタッチ操作を有効にする
-						userSelect: 'text', // Monaco Editor内でのテキスト選択を明示的に有効
-						WebkitUserSelect: 'text', // Webkit系ブラウザ対応
-					}}
-				/>
+					<div
+						ref={containerRef}
+						className="monaco-editor-container"
+						style={{
+							...containerStyle,
+							touchAction: 'auto', // Monaco Editorのタッチ操作を有効にする
+							userSelect: 'text', // Monaco Editor内でのテキスト選択を明示的に有効
+							WebkitUserSelect: 'text', // Webkit系ブラウザ対応
+						}}
+					/>
 
 					<div id="editor-instructions" className={styles.instructions}>
 						<p>Enterキーで編集開始 • Escapeキーで編集終了 • Ctrl+Tabでフォーカス移動</p>

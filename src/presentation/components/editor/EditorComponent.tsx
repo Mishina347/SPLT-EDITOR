@@ -405,8 +405,8 @@ export const EditorComponent = ({
 			wordBasedSuggestions: 'off', // 正しい型を使用
 			parameterHints: { enabled: false },
 			codeLens: false,
-			contextmenu: true, // コンテキストメニューを無効（長押しとの競合防止）
-			mouseWheelZoom: false, // マウスホイールズームを無効
+			contextmenu: false, // コンテキストメニューを無効（長押しとの競合防止）
+			mouseWheelZoom: true, // マウスホイールズームを無効
 		})
 		editorRef.current = editor
 

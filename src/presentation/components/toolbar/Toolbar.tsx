@@ -52,6 +52,68 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 	// ツールバーアイテムのref
 	const editorPanelRef = useRef<HTMLDivElement>(null)
 	const previewPanelRef = useRef<HTMLDivElement>(null)
+	const spacerRef = useRef<HTMLDivElement>(null)
+	const lastSpacerRef = useRef<HTMLDivElement>(null)
+
+	// スクロール位置の状態管理
+	const [canScrollLeft, setCanScrollLeft] = useState(false)
+	const [canScrollRight, setCanScrollRight] = useState(false)
+
+	// パネルがはみ出しているかどうかを判定する関数
+	const isPanelOverflowing = useCallback((panelRef: React.RefObject<HTMLDivElement>) => {
+		if (!panelRef.current || !toolbarRef.current) return false
+
+		const panel = panelRef.current
+		const toolbar = toolbarRef.current
+		const content = toolbar.querySelector(`.${styles.toolbarContent}`) as HTMLElement
+
+		if (!content) return false
+
+		const panelRect = panel.getBoundingClientRect()
+		const contentRect = content.getBoundingClientRect()
+
+		// パネルが左または右にはみ出しているかチェック
+		return panelRect.left < contentRect.left || panelRect.right > contentRect.right
+	}, [])
+
+	// パネルを確実に見えるようにスクロールする関数
+	const scrollToMakePanelVisible = useCallback((panelRef: React.RefObject<HTMLDivElement>) => {
+		if (!panelRef.current || !toolbarRef.current) return
+
+		const panel = panelRef.current
+		const toolbar = toolbarRef.current
+		const content = toolbar.querySelector(`.${styles.toolbarContent}`) as HTMLElement
+
+		if (!content) return
+
+		const panelRect = panel.getBoundingClientRect()
+		const contentRect = content.getBoundingClientRect()
+
+		// パネルが左にはみ出している場合
+		if (panelRect.left < contentRect.left) {
+			const scrollAmount = contentRect.left - panelRect.left + 100 // 100pxの余白
+			content.scrollBy({ left: -scrollAmount, behavior: 'smooth' })
+		}
+		// パネルが右にはみ出している場合
+		else if (panelRect.right > contentRect.right) {
+			const scrollAmount = panelRect.right - contentRect.right + 100 // 100pxの余白
+			content.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+		}
+	}, [])
+
+	// パネルの表示状態が変更された時に、はみ出しているパネルを自動的に表示
+	useEffect(() => {
+		// 少し遅延を入れてDOMの更新を待つ
+		const timer = setTimeout(() => {
+			if (activePane === DISPLAY_MODE.PREVIEW && isPanelOverflowing(lastSpacerRef)) {
+				scrollToMakePanelVisible(lastSpacerRef)
+			} else if (activePane === DISPLAY_MODE.EDITOR && isPanelOverflowing(editorPanelRef)) {
+				scrollToMakePanelVisible(editorPanelRef)
+			}
+		}, 100)
+
+		return () => clearTimeout(timer)
+	}, [activePane, isPanelOverflowing, scrollToMakePanelVisible])
 
 	// visibleの変化に応じてアニメーション状態を設定
 	useEffect(() => {
@@ -159,10 +221,37 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 		threshold: 120, // オーバーフローボタンとマージンのためのスペース
 	})
 
-	// アイテム変更時にオーバーフローを再計算
 	useEffect(() => {
 		recheck()
 	}, [activePane, recheck])
+
+	// スクロール位置を監視する関数
+	const checkScrollPosition = useCallback(() => {
+		if (toolbarRef.current) {
+			const content = toolbarRef.current.querySelector(`.${styles.toolbarContent}`) as HTMLElement
+			if (content) {
+				const { scrollLeft, scrollWidth, clientWidth } = content
+				setCanScrollLeft(scrollLeft > 0)
+				setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1)
+			}
+		}
+	}, [])
+
+	// スクロールイベントリスナーを設定
+	useEffect(() => {
+		if (toolbarRef.current) {
+			const content = toolbarRef.current.querySelector(`.${styles.toolbarContent}`) as HTMLElement
+			if (content) {
+				content.addEventListener('scroll', checkScrollPosition)
+				// 初期状態をチェック
+				checkScrollPosition()
+
+				return () => {
+					content.removeEventListener('scroll', checkScrollPosition)
+				}
+			}
+		}
+	}, [checkScrollPosition])
 
 	// テーマカラー用のインラインスタイル
 	const themeStyles = useMemo(
@@ -182,9 +271,38 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 					onExportOpen={onExportOpen}
 				/>
 			</div>
+
+			{/* 左スクロールボタン */}
+			<button
+				className={`${styles.scrollButton} ${styles.left} ${!canScrollLeft ? styles.hidden : ''}`}
+				onClick={() => {
+					// まず、はみ出しているパネルがある場合はそれを優先的に表示
+					if (isPanelOverflowing(lastSpacerRef)) {
+						scrollToMakePanelVisible(lastSpacerRef)
+					} else if (isPanelOverflowing(editorPanelRef)) {
+						scrollToMakePanelVisible(editorPanelRef)
+					} else {
+						// 通常のスクロール
+						if (toolbarRef.current) {
+							const content = toolbarRef.current.querySelector(`.${styles.toolbarContent}`) as HTMLElement
+							if (content) {
+								// パネルの幅に応じてスクロール量を調整
+								const scrollAmount = Math.max(200, content.clientWidth * 0.8)
+								content.scrollBy({ left: -scrollAmount, behavior: 'smooth' })
+							}
+						}
+					}
+				}}
+				aria-label="左にスクロール"
+				disabled={!canScrollLeft}
+			>
+				‹
+			</button>
+
 			<div className={styles.toolbarContent}>
+				{/* エディターパネル：PREVIEWモード以外で表示（左寄せ） */}
 				{activePane !== DISPLAY_MODE.PREVIEW && (
-					<div ref={editorPanelRef} className={styles.toolbarItem}>
+					<div ref={editorPanelRef} className={`${styles.toolbarItem} ${styles.editorPanel}`}>
 						<EditorSettingsPanel
 							settings={editorSettings}
 							onChange={onEditorSettingChange}
@@ -193,8 +311,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 						/>
 					</div>
 				)}
+
+				{/* 中央のスペーサー：両方のパネルが表示される場合のみ */}
+				{activePane === DISPLAY_MODE.BOTH && <div className={styles.spacer}></div>}
+
+				{/* プレビューパネル：EDITORモード以外で表示（右寄せ） */}
 				{activePane !== DISPLAY_MODE.EDITOR && (
-					<div ref={previewPanelRef} className={styles.toolbarItem}>
+					<div ref={previewPanelRef} className={`${styles.toolbarItem} ${styles.previewPanel}`}>
 						<PreviewSettingsPanel
 							settings={previewSettings}
 							onChange={onPreviewSettingChange}
@@ -202,11 +325,37 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 						/>
 					</div>
 				)}
+				{activePane === DISPLAY_MODE.BOTH && (
+					<div ref={previewPanelRef} className={styles.lastSpacer}></div>
+				)}
 			</div>
-			<OverflowMenu
-				items={hiddenItems.map(item => ({ id: item.id, element: item.element }))}
-				visible={hasOverflow}
-			/>
+
+			{/* 右スクロールボタン */}
+			<button
+				className={`${styles.scrollButton} ${styles.right} ${!canScrollRight ? styles.hidden : ''}`}
+				onClick={() => {
+					// まず、はみ出しているパネルがある場合はそれを優先的に表示
+
+					if (isPanelOverflowing(lastSpacerRef)) {
+						scrollToMakePanelVisible(lastSpacerRef)
+					} else {
+						// 通常のスクロール
+						if (toolbarRef.current) {
+							const content = toolbarRef.current.querySelector(`.${styles.toolbarContent}`) as HTMLElement
+							if (content) {
+								// パネルの幅に応じてスクロール量を調整
+								const scrollAmount = Math.max(200, content.clientWidth * 0.8)
+								content.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+							}
+						}
+					}
+				}}
+				aria-label="右にスクロール"
+				disabled={!canScrollRight}
+			>
+				›
+			</button>
+			<div></div>
 		</nav>
 	)
 }

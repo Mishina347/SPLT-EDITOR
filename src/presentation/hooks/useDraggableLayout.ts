@@ -99,10 +99,18 @@ export const useDraggableLayout = (
 			const titleWithCharCount =
 				charCount !== undefined ? `${baseTitle} - ${formatNumber(charCount)}文字` : baseTitle
 
+			// 現在のサイズが初期サイズと異なる場合は、現在のサイズを優先
+			const currentSize =
+				editorSize.width !== 800 || editorSize.height !== 600
+					? editorSize
+					: isMaximizedMode
+						? sizes.initialSize
+						: editorSize
+
 			return {
 				title: titleWithCharCount,
 				initialPosition: isMaximizedMode ? { x: 20, y: 100 } : editorPosition,
-				initialSize: isMaximizedMode ? sizes.initialSize || editorSize : editorSize,
+				initialSize: currentSize,
 				minSize: sizes.minSize,
 				maxSize: sizes.maxSize,
 				isMaximized: isMaximizedMode,
@@ -128,10 +136,18 @@ export const useDraggableLayout = (
 				baseTitle += ` - ${pageInfo.currentPage} / ${pageInfo.totalPages} ページ目`
 			}
 
+			// 現在のサイズが初期サイズと異なる場合は、現在のサイズを優先
+			const currentSize =
+				previewSize.width !== 600 || previewSize.height !== 400
+					? previewSize
+					: isMaximizedMode
+						? sizes.initialSize
+						: previewSize
+
 			return {
 				title: baseTitle,
 				initialPosition: isMaximizedMode ? { x: 20, y: 100 } : previewPosition,
-				initialSize: sizes.initialSize,
+				initialSize: currentSize,
 				minSize: sizes.minSize,
 				maxSize: sizes.maxSize,
 				isMaximized: isMaximizedMode,

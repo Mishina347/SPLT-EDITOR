@@ -6,9 +6,9 @@
 	left: 0;
 	z-index: 100;
 	width: 100%;
+	height: 100px;
 	align-content: center;
 	align-items: center;
-	height: 100px;
 	overflow: hidden; /* オーバーフロー要素を隠す */
 	transition:
 		transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
@@ -93,32 +93,134 @@
 /* ツールバーコンテンツのコンテナ */
 .toolbarContent {
 	display: flex;
+	position: relative;
+	width: 100%;
 	align-items: center;
-	flex: 1;
-	overflow: hidden; /* コンテンツがはみ出ないように */
+	overflow-x: auto; /* 横スクロールを有効化 */
+	overflow-y: hidden; /* 縦スクロールは無効 */
 	gap: 0.5rem;
+	scrollbar-width: thin; /* Firefox用のスクロールバー */
+	scrollbar-color: rgba(0, 0, 0, 0.3) transparent; /* Firefox用のスクロールバー色 */
+	/* スクロール動作の改善 */
+	scroll-behavior: smooth;
+	-webkit-overflow-scrolling: touch; /* iOSでのスムーズスクロール */
+}
+
+/* Webkit系ブラウザ用のスクロールバースタイル */
+.toolbarContent::-webkit-scrollbar {
+	height: 6px;
+}
+
+.toolbarContent::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.toolbarContent::-webkit-scrollbar-thumb {
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 3px;
+}
+
+.toolbarContent::-webkit-scrollbar-thumb:hover {
+	background: rgba(0, 0, 0, 0.5);
+}
+
+/* スクロールボタン */
+.scrollButton {
+	position: absolute;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	background: rgba(255, 255, 255, 0.8);
+	border: 1px solid rgba(0, 0, 0, 0.1);
+	border-radius: 50%;
+	cursor: pointer;
+	font-size: 18px;
+	font-weight: bold;
+	color: rgba(0, 0, 0, 0.6);
+	transition: all 0.2s ease;
+	flex-shrink: 0;
+	z-index: 1001;
+}
+
+.scrollButton:hover {
+	background: rgba(255, 255, 255, 0.95);
+	color: rgba(0, 0, 0, 0.8);
+	transform: scale(1.1);
+}
+
+.scrollButton:active {
+	transform: scale(0.95);
+}
+
+.scrollButton:focus {
+	outline: 2px solid #007acc;
+	outline-offset: 2px;
+}
+
+/* スクロールボタンの表示/非表示制御 */
+.scrollButton.hidden {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.scrollButton.left {
+	bottom: 0%;
+	left: 0;
+}
+
+.scrollButton.right {
+	bottom: 0%;
+	right: 0;
 }
 
 /* ツールバーアイテム */
 .toolbarItem {
-	flex-shrink: 1; /* 必要に応じて縮小 */
-	min-width: 0; /* フレックスアイテムの最小幅を0に */
 	transition: opacity 0.2s ease;
 }
 
-/* レスポンシブ対応 */
-@media (max-width: 768px) {
-	.toolbar {
-		height: 80px;
-	}
+/* エディターパネル（左寄せ） */
+.editorPanel {
+	display: inline;
+	min-width: 480px; /* 最小幅を維持 */
+	flex-shrink: 0; /* 幅を固定して縮小を防ぐ */
+	justify-self: flex-start;
+}
 
-	.toolbarContainer {
-		height: 80px;
-	}
+/* プレビューパネル（右寄せ） */
+.previewPanel {
+	min-width: 650px; /* 最小幅を維持 */
+	flex-shrink: 0; /* 幅を固定して縮小を防ぐ */
+	justify-self: flex-end;
+}
 
-	.hamburgerContainer {
-		margin-left: 1rem;
-		margin-right: 0.5rem;
+/* 中央のスペーサー */
+.spacer {
+	flex: 1;
+	height: 100%;
+	min-width: 2rem; /* パネル間の最小間隔を確保 */
+	flex-shrink: 0; /* 間隔を固定 */
+}
+
+/* 最後のパネルの左のスペーサー */
+.lastSpacer {
+	position: relative;
+	flex: 1;
+	height: 100%;
+	min-width: 4rem; /* パネル間の最小間隔を確保 */
+	flex-shrink: 0; /* 間隔を固定 */
+}
+
+/* パネルが2つ表示される場合のレイアウト調整 */
+.toolbarContent:has(.editorPanel):has(.previewPanel) {
+	justify-content: space-between; /* 両端に配置 */
+}
+
+/* 750px以下の場合のスクロールボタン表示 */
+@media (max-width: 750px) {
+	.scrollButton {
+		display: flex; /* 常に表示 */
 	}
 }
 

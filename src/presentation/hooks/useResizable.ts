@@ -69,9 +69,12 @@ export const useResizable = (options: UseResizableOptions = {}) => {
 
 			// MonacoEditorなどのコンポーネントにリサイズを通知
 			// 少し遅延をつけてDOMの更新を待つ
-			setTimeout(() => {
-				window.dispatchEvent(new Event('resize'))
-			}, 10)
+			// ただし、draggableモードでは不要なリサイズイベントを防ぐ
+			if (!isFromDrag) {
+				setTimeout(() => {
+					window.dispatchEvent(new Event('resize'))
+				}, 10)
+			}
 
 			return clampedSize
 		},

@@ -1,14 +1,15 @@
 .container {
-	max-height: 100px;
-	background: var(--app-bg-color);
-	color: var(--app-text-color);
 	display: flex;
+	position: relative;
+	width: 100%;
+	min-width: 480px;
+	background-color: var(--app-bg-color, #fff);
+	color: var(--app-text-color, #333);
 	align-items: center;
 	gap: 16px;
-	padding: 4px;
-	margin: 0.8rem;
 	border-radius: 12px;
 	flex-wrap: wrap;
+	overflow: hidden; /* はみ出しを防ぐ */
 }
 
 /* アクセシビリティ用のスクリーンリーダー専用クラス */

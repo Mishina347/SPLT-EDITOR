@@ -17,6 +17,7 @@ interface SelectorProps {
 	ariaDescribedBy?: string
 	disabled?: boolean
 	className?: string
+	ignoreTheme?: boolean
 }
 
 export const Selector: React.FC<SelectorProps> = ({
@@ -30,6 +31,7 @@ export const Selector: React.FC<SelectorProps> = ({
 	ariaDescribedBy,
 	disabled = false,
 	className,
+	ignoreTheme = false,
 }) => {
 	const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 		onChange(e.target.value)
@@ -37,8 +39,12 @@ export const Selector: React.FC<SelectorProps> = ({
 
 	const selectId = id || `selector-${Math.random().toString(36).substr(2, 9)}`
 
+	const containerClass = ignoreTheme
+		? `${styles.container} ${styles.ignoreTheme} ${className || ''}`
+		: `${styles.container} ${className || ''}`
+
 	return (
-		<div className={`${styles.container} ${className || ''}`}>
+		<div className={containerClass}>
 			<label className={styles.label} htmlFor={selectId}>
 				{label}
 			</label>

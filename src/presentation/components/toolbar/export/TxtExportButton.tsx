@@ -5,6 +5,7 @@ import buttonStyles from '../../../shared/Button/Button.module.css'
 import { Selector } from '../../../shared/Selector/Selector'
 import { isAndroid, isIOS } from '../../../../utils/deviceDetection'
 import { useState } from 'react'
+import styles from './TxtExportButton.module.css'
 
 type Props = {
 	text: string
@@ -54,28 +55,29 @@ export function TxtExportButton({
 			</button>
 
 			{showEncodingOptions && (
-				<div
-					style={{ marginTop: '10px', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
-				>
+				<div className={styles.encodingOptions}>
 					{/* プラットフォーム情報表示 */}
-					<div style={{ marginBottom: '10px', fontSize: '0.875rem', color: '#666' }}>
+					<div className={styles.platformInfo}>
 						{isAndroid() && '📱 Android端末:  UTF-8使用可能'}
 						{isIOS() && '🍎 iOS端末: UTF-8使用可能'}
 						{!isAndroid() && !isIOS() && '💻 デスクトップ:  UTF-8使用可能'}
 					</div>
 
-					<div style={{ marginBottom: '10px' }}>
-						<Selector
-							label="エンコーディング"
-							value={selectedEncoding}
-							options={[
-								{ value: 'utf8', label: 'UTF-8 (推奨)' },
-								{ value: 'shift_jis', label: 'Shift_JIS (日本語環境)' },
-							]}
-							onChange={value => setSelectedEncoding(value as 'utf8' | 'shift_jis')}
-						/>
+					<div className={styles.encodingSelector}>
+						<div className={styles.exportSelectorContainer}>
+							<Selector
+								label="エンコーディング"
+								value={selectedEncoding}
+								options={[
+									{ value: 'utf8', label: 'UTF-8 (推奨)' },
+									{ value: 'shift_jis', label: 'Shift_JIS (日本語環境)' },
+								]}
+								ignoreTheme={true}
+								onChange={value => setSelectedEncoding(value as 'utf8' | 'shift_jis')}
+							/>
+						</div>
 					</div>
-					<div>
+					<div className={styles.buttonGroup}>
 						<button
 							className={`${buttonStyles.button} ${buttonStyles.buttonSecondary}`}
 							onClick={() => setShowEncodingOptions(false)}
@@ -85,7 +87,6 @@ export function TxtExportButton({
 						<button
 							className={`${buttonStyles.button} ${buttonStyles.buttonPrimary}`}
 							onClick={handleExportWithEncoding}
-							style={{ marginRight: '10px' }}
 						>
 							選択したエンコーディングで出力
 						</button>

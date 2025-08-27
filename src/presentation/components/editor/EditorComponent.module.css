@@ -2,6 +2,9 @@
 	width: 100%;
 	height: 100%;
 	background-color: var(--app-bg-color, #ffffff);
+	/* モバイルでのピンチズームを有効化 */
+	touch-action: manipulation;
+	-webkit-overflow-scrolling: touch;
 }
 
 .editorBody {
@@ -10,6 +13,9 @@
 	display: flex;
 	flex-direction: column;
 	user-select: none; /* 長押し時のテキスト選択を防ぐ */
+	/* モバイルでのピンチズームを有効化 */
+	touch-action: manipulation;
+	-webkit-overflow-scrolling: touch;
 }
 
 /* Monaco Editor内では確実にテキスト選択と入力を有効にする */
@@ -22,7 +28,7 @@
 	-webkit-user-select: text !important;
 	-moz-user-select: text !important;
 	-ms-user-select: text !important;
-	touch-action: auto !important;
+	touch-action: manipulation !important; /* ピンチズームを有効化 */
 	pointer-events: auto !important;
 	/* IME入力最適化 */
 	-webkit-composition-fill-color: transparent;
@@ -48,6 +54,9 @@
 	outline: none;
 	border-radius: 4px;
 	transition: all 0.2s ease;
+	/* モバイルでのピンチズームを有効化 */
+	touch-action: manipulation;
+	-webkit-overflow-scrolling: touch;
 }
 
 /* 外部フォーカス状態 */
@@ -108,6 +117,26 @@
 		padding: 3px 6px;
 		bottom: 8px;
 	}
+
+	/* モバイルでのピンチズームを確実に有効化 */
+	.editorContainer,
+	.editorBody,
+	.editorWrapper {
+		touch-action: manipulation;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	/* Monaco Editorのモバイル最適化 */
+	.editorBody .monaco-editor {
+		touch-action: manipulation;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	/* スクロール可能な要素のモバイル最適化 */
+	.editorBody .monaco-editor .monaco-scrollable-element {
+		touch-action: manipulation;
+		-webkit-overflow-scrolling: touch;
+	}
 }
 
 /* タイピング中の再描画抑制最適化 */
@@ -140,6 +169,9 @@
 	contain: layout;
 	/* GPU合成の最適化 */
 	will-change: scroll-position;
+	/* モバイルでのピンチズームを有効化 */
+	touch-action: manipulation;
+	-webkit-overflow-scrolling: touch;
 }
 
 .maximizeBtnPosition {

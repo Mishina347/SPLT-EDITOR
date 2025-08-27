@@ -405,8 +405,12 @@ export const EditorComponent = ({
 			wordBasedSuggestions: 'off', // 正しい型を使用
 			parameterHints: { enabled: false },
 			codeLens: false,
-			contextmenu: false, // コンテキストメニューを無効（長押しとの競合防止）
-			mouseWheelZoom: true, // マウスホイールズームを無効
+			contextmenu: false,
+			mouseWheelZoom: true, // マウスホイールズームを有効
+			// モバイルでのピンチズームを有効化
+			fastScrollSensitivity: 5, // 高速スクロール感度を調整
+			// タッチデバイスでの操作を最適化
+			multiCursorModifier: 'alt', // モバイルでのマルチカーソル操作をaltキーに変更
 		})
 		editorRef.current = editor
 

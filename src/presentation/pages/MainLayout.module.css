@@ -1,5 +1,10 @@
 /* アニメーション用のコンテナ */
 .animatedContainer {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+	position: 'relative';
 	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	overflow: hidden;
 }
@@ -63,6 +68,13 @@
 	outline: none;
 	color: var(--app-text-color, #000000); /* フォーカス時もアプリのテキストカラーを維持 */
 	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* スマホサイズでのレイアウト切替ボタンの非表示 */
+@media (max-width: 768px) {
+	.layoutToggle {
+		display: none !important;
+	}
 }
 
 /* ドラッグ可能エリア */

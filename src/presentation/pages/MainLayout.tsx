@@ -16,17 +16,12 @@ import {
 	useResizable,
 	useDraggableLayout,
 } from '../hooks'
-import {
-	DISPLAY_MODE,
-	Settings,
-	TextSnapshot,
-	LayoutConfig,
-	EditorSettings,
-	EditorUIState,
-} from '../../domain'
+import { DISPLAY_MODE, Settings, TextSnapshot, LayoutConfig, EditorSettings } from '../../domain'
+
+import { EditorUIState } from '../../domain'
 import { loadText } from '../../usecases'
 import { editorService } from '../../application'
-import { hexToRgba, isMobile } from '../../utils'
+import { hexToRgba, isMobile, isMobileSize } from '../../utils'
 import styles from './MainLayout.module.css'
 import { SwipeDirection } from '../hooks/useSwipeGesture'
 
@@ -106,6 +101,25 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	// ドラッグ可能レイアウトモードの状態
 	const [isDraggableMode, setIsDraggableMode] = useState(false)
 
+	// スマホサイズの場合はドラッグ可能モードを無効化
+	useEffect(() => {
+		const handleResize = () => {
+			if (isMobileSize()) {
+				setIsDraggableMode(false)
+			}
+		}
+
+		// 初期チェック
+		handleResize()
+
+		// リサイズイベントリスナーを追加
+		window.addEventListener('resize', handleResize)
+
+		return () => {
+			window.removeEventListener('resize', handleResize)
+		}
+	}, [])
+
 	// z-index管理（最後にフォーカスしたコンポーネントを上に表示）
 	const [focusedContainer, setFocusedContainer] = useState<'editor' | 'preview'>('preview')
 
@@ -151,6 +165,52 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 
 	// エディターサイズの初期化
 	const [currentEditorSize, setCurrentEditorSize] = useState(75)
+
+	// draggableモードでのサイズ変更を追跡
+	const [lastDraggableEditorSize, setLastDraggableEditorSize] = useState({ width: 800, height: 600 })
+	const [lastDraggablePreviewSize, setLastDraggablePreviewSize] = useState({
+		width: 600,
+		height: 400,
+	})
+
+	// draggableモードの変更を監視してサイズを復元
+	useEffect(() => {
+		if (isDraggableMode) {
+			// draggableモードが有効になった時、最後のサイズを復元
+			if (lastDraggableEditorSize.width !== 800 || lastDraggableEditorSize.height !== 600) {
+				setEditorSize(lastDraggableEditorSize)
+			}
+			if (lastDraggablePreviewSize.width !== 600 || lastDraggablePreviewSize.height !== 400) {
+				setPreviewSize(lastDraggablePreviewSize)
+			}
+		}
+	}, [
+		isDraggableMode,
+		lastDraggableEditorSize,
+		lastDraggablePreviewSize,
+		setEditorSize,
+		setPreviewSize,
+	])
+
+	// ウィンドウリサイズ時にdraggableモードのサイズを保持
+	useEffect(() => {
+		const handleWindowResize = () => {
+			if (isDraggableMode) {
+				// 現在のサイズを保存
+				setLastDraggableEditorSize(editorSize)
+				setLastDraggablePreviewSize(previewSize)
+			}
+		}
+
+		window.addEventListener('resize', handleWindowResize)
+		return () => window.removeEventListener('resize', handleWindowResize)
+	}, [
+		isDraggableMode,
+		editorSize,
+		previewSize,
+		setLastDraggableEditorSize,
+		setLastDraggablePreviewSize,
+	])
 
 	const onChangeToolbarDisplayMode = useCallback(
 		(displayMode: DISPLAY_MODE) => {
@@ -251,8 +311,8 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 			if (initialText) {
 				// ファイルが存在する場合
 				setInitialText(initialText)
-			setCurrentSavedText(initialText)
-			setLastSavedText(initialText)
+				setCurrentSavedText(initialText)
+				setLastSavedText(initialText)
 				// エディタの初期化完了を待ってからテキストを設定
 				setTimeout(() => {
 					updateText(initialText)
@@ -292,7 +352,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 
 					// 手動保存成功時に状態を更新（空文字でも更新）
 					setLastSavedText(currentNotSavedText)
-				setCurrentSavedText(currentNotSavedText)
+					setCurrentSavedText(currentNotSavedText)
 
 					// 手動保存時のスナップショットを追加（空文字でも記録）
 					saveSnapshot(currentNotSavedText, `手動保存 - ${new Date().toLocaleString('ja-JP')}`)
@@ -369,7 +429,6 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	// リサイザーを初期化
 	const {
 		isDragging,
-
 		isKeyboardMode,
 		announceText,
 		containerRef,
@@ -394,10 +453,26 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 			editorSize,
 			previewPosition,
 			previewSize,
-			setEditorPosition,
-			setEditorSize,
-			setPreviewPosition,
-			setPreviewSize,
+			setEditorPosition: position => {
+				setEditorPosition(position)
+			},
+			setEditorSize: size => {
+				setEditorSize(size)
+				// draggableモードでのサイズ変更を追跡
+				if (isDraggableMode) {
+					setLastDraggableEditorSize(size)
+				}
+			},
+			setPreviewPosition: position => {
+				setPreviewPosition(position)
+			},
+			setPreviewSize: size => {
+				setPreviewSize(size)
+				// draggableモードでのサイズ変更を追跡
+				if (isDraggableMode) {
+					setLastDraggablePreviewSize(size)
+				}
+			},
 		},
 		{ isDraggableMode, viewMode, charCount, pageInfo }
 	)
@@ -440,16 +515,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 				overflow: 'hidden',
 			}}
 		>
-			<main
-				className={styles.animatedContainer}
-				style={{
-					display: 'flex',
-					flexDirection: 'column',
-					width: '100%',
-					height: '100%',
-					position: 'relative',
-				}}
-			>
+			<main className={styles.animatedContainer}>
 				{/* ツールバー */}
 				<section
 					className={`${styles.toolbarContainer} ${uiState.showToolbar ? styles.visible : styles.hidden}`}
@@ -484,18 +550,20 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 					{uiState.showToolbar ? '▲' : '▼'}
 				</button>
 
-				{/* ドラッグ可能モード切替ボタン */}
-				<button
-					className={styles.layoutToggle}
-					onClick={() => {
-						setIsDraggableMode(!isDraggableMode)
-						// レイアウトモード切り替え時に最大化状態をリセット
-						resetMaximizedState()
-					}}
-					aria-label={isDraggableMode ? '固定レイアウトに切り替え' : 'ドラッグ可能レイアウトに切り替え'}
-				>
-					<LayerIcon isDraggable={isDraggableMode} />
-				</button>
+				{/* ドラッグ可能モード切替ボタン（スマホサイズでは非表示） */}
+				{!isMobileSize() && (
+					<button
+						className={styles.layoutToggle}
+						onClick={() => {
+							setIsDraggableMode(!isDraggableMode)
+							// レイアウトモード切り替え時に最大化状態をリセット
+							resetMaximizedState()
+						}}
+						aria-label={isDraggableMode ? '固定レイアウトに切り替え' : 'ドラッグ可能レイアウトに切り替え'}
+					>
+						<LayerIcon isDraggable={isDraggableMode} />
+					</button>
+				)}
 				{/* メインコンテンツレンダリング */}
 				{viewMode === DISPLAY_MODE.BOTH && (
 					<LayoutRenderer

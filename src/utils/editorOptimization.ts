@@ -68,6 +68,11 @@ export function getOptimizedEditorOptions(baseOptions: any) {
 		minimap: {
 			enabled: false, // ミニマップを無効化して軽量化
 		},
+		// モバイルでのピンチズームを有効化
+		mouseWheelZoom: true, // マウスホイールでのズームを有効化
+		fastScrollSensitivity: 5, // 高速スクロール感度を調整
+		// タッチデバイスでの操作を最適化
+		multiCursorModifier: 'alt' as const, // モバイルでのマルチカーソル操作をaltキーに変更
 		// レンダリング最適化
 		renderControlCharacters: false,
 		renderFinalNewline: 'on' as const,

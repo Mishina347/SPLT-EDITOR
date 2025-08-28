@@ -45,6 +45,14 @@ export const usePWA = () => {
 			// インストール可能かチェック
 			const isInstallable = !isInstalled && 'serviceWorker' in navigator
 
+			console.log('[PWA] Installability check:', {
+				isInstalled,
+				isInstallable,
+				hasServiceWorker: 'serviceWorker' in navigator,
+				displayMode: window.matchMedia('(display-mode: standalone)').matches,
+				navigatorStandalone: (window.navigator as any).standalone,
+			})
+
 			setPwaState(prev => ({
 				...prev,
 				isInstallable,
@@ -57,14 +65,21 @@ export const usePWA = () => {
 		// インストールプロンプトイベントのリスナー
 		const handleBeforeInstallPrompt = (e: Event) => {
 			e.preventDefault()
-			setDeferredPrompt(e as PWAInstallPromptEvent)
+			const promptEvent = e as PWAInstallPromptEvent
+			setDeferredPrompt(promptEvent)
+			// グローバルにも設定（HamburgerMenu.tsxで使用）
+			;(window as any).deferredPrompt = promptEvent
 			setPwaState(prev => ({ ...prev, isInstallable: true }))
+			console.log('[PWA] beforeinstallprompt event captured, deferredPrompt set')
 		}
 
 		// インストール完了イベントのリスナー
 		const handleAppInstalled = () => {
 			setPwaState(prev => ({ ...prev, isInstalled: true, isInstallable: false }))
 			setDeferredPrompt(null)
+			// グローバルからも削除
+			;(window as any).deferredPrompt = null
+			console.log('[PWA] App installed event captured')
 		}
 
 		// オフライン状態のチェック
@@ -130,7 +145,9 @@ export const usePWA = () => {
 	// PWAのインストール
 	const installPWA = useCallback(
 		async (options?: PWAInstallOptions) => {
-			if (!deferredPrompt) {
+			// グローバルのdeferredPromptもチェック
+			const prompt = deferredPrompt || (window as any).deferredPrompt
+			if (!prompt) {
 				throw new Error('インストールプロンプトが利用できません')
 			}
 
@@ -141,8 +158,8 @@ export const usePWA = () => {
 				}
 
 				// ネイティブインストールプロンプトを表示
-				await deferredPrompt.prompt()
-				const { outcome } = await deferredPrompt.userChoice
+				await prompt.prompt()
+				const { outcome } = await prompt.userChoice
 
 				if (outcome === 'accepted') {
 					console.log('PWAがインストールされました')
@@ -152,6 +169,8 @@ export const usePWA = () => {
 				}
 
 				setDeferredPrompt(null)
+				// グローバルからも削除
+				;(window as any).deferredPrompt = null
 			} catch (error) {
 				console.error('PWAのインストールに失敗しました:', error)
 				throw error
@@ -166,7 +185,7 @@ export const usePWA = () => {
 			const {
 				title = 'アプリをインストール',
 				description = 'ホーム画面に追加して、より快適に使用できます',
-				icon = '/SPLT-EDITOR/icons/icon-96x96.png',
+				icon = '/SPLT-EDITOR/images/icons/icon-192x192.png',
 			} = options
 
 			// カスタムダイアログを作成
@@ -286,8 +305,8 @@ export const usePWA = () => {
 	const sendNotification = useCallback((title: string, options?: NotificationOptions) => {
 		if ('Notification' in window && Notification.permission === 'granted') {
 			return new Notification(title, {
-				icon: '/SPLT-EDITOR/icons/icon-192x192.png',
-				badge: '/SPLT-EDITOR/icons/icon-72x72.png',
+				icon: '/SPLT-EDITOR/images/icons/icon-192x192.png',
+				badge: '/SPLT-EDITOR/images/icons/icon-72x72.png',
 				...options,
 			})
 		}

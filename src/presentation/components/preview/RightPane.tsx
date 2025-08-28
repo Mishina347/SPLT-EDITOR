@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PreviewMode, LayoutConfig, TextSnapshot } from '../../../domain'
 import { Preview } from './preview/Preview'
 import { Diff2HtmlAdapter } from '../../../infra'
-import { useFocusTrap } from '../../hooks'
+import { useFocusTrap, useOptimizedPreviewLayout } from '../../hooks'
 import {
 	calculateElementScale,
 	calculateScaleWithViewport,
@@ -73,7 +73,10 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		}
 	}, [])
 
-	// ResizeObserverのデバウンス処理
+	// 最適化されたプレビューレイアウト更新フック
+	const { updateLayout, updateLayoutImmediate, cleanup: cleanupLayout } = useOptimizedPreviewLayout()
+
+	// ResizeObserverのデバウンス処理（最適化版）
 	const resizeTimeoutRef = useRef<NodeJS.Timeout>()
 	const debouncedUpdateScaleInfo = useCallback(() => {
 		if (resizeTimeoutRef.current) {
@@ -81,13 +84,23 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		}
 		resizeTimeoutRef.current = setTimeout(() => {
 			updateScaleInfo()
+			// レイアウト更新も最適化
+			updateLayout(containerRef.current)
 		}, 100) // 100msのデバウンス
-	}, [updateScaleInfo])
+	}, [updateScaleInfo, updateLayout])
 
-	// フォーカスモードハンドラー
-	const handleFocusMode = useCallback((focused: boolean) => {
-		setIsFocusMode(focused)
-	}, [])
+	// フォーカスモードハンドラー（最適化版）
+	const handleFocusMode = useCallback(
+		(focused: boolean) => {
+			setIsFocusMode(focused)
+
+			// フォーカス時にレイアウトを最適化
+			if (focused && containerRef.current) {
+				updateLayout(containerRef.current)
+			}
+		},
+		[updateLayout]
+	)
 
 	// ページ情報更新ハンドラー
 	const handleInternalPageInfoChange = useCallback(
@@ -105,7 +118,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	// 差分計算を最適化（DIFFモードが選択された時のみ計算）
 	const diffService = useMemo(() => new Diff2HtmlAdapter(), [])
 
-	// 倍率計算の初期化と監視
+	// 倍率計算の初期化と監視（最適化版）
 	useEffect(() => {
 		// 初期倍率を計算
 		updateScaleInfo()
@@ -123,9 +136,22 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 				if (resizeTimeoutRef.current) {
 					clearTimeout(resizeTimeoutRef.current)
 				}
+				// レイアウト更新のクリーンアップ
+				cleanupLayout()
 			}
 		}
-	}, [updateScaleInfo, debouncedUpdateScaleInfo])
+	}, [updateScaleInfo, debouncedUpdateScaleInfo, cleanupLayout])
+
+	// 最大化状態の変更を監視してレイアウトを更新（最適化版）
+	useEffect(() => {
+		if (isMaximized && containerRef.current) {
+			// 最大化時に最適化されたレイアウト更新
+			requestAnimationFrame(() => {
+				updateScaleInfo()
+				updateLayoutImmediate(containerRef.current)
+			})
+		}
+	}, [isMaximized, updateScaleInfo, updateLayoutImmediate])
 
 	// 差分計算を遅延実行（DIFFモードが選択された時のみ）
 	const [diffHtml, setDiffHtml] = useState('')
@@ -209,7 +235,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 						</div>
 					`)
 				}
-			}, 300) // 300msのデバウンス
+			}, 100) // 300msのデバウンス
 
 			return () => {
 				if (diffCalculationTimeoutRef.current) {

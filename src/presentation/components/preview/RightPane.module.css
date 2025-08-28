@@ -3,6 +3,10 @@
 	height: 100%;
 	display: flex;
 	flex-direction: column;
+	/* パフォーマンス最適化 */
+	will-change: transform;
+	transform: translateZ(0);
+	contain: layout style;
 }
 
 .rightPaneContent {
@@ -27,6 +31,10 @@
 	flex-direction: column;
 	position: relative;
 	z-index: 1; /* 長押しエリアより下に配置 */
+	/* パフォーマンス最適化 */
+	will-change: transform;
+	transform: translateZ(0);
+	contain: layout style;
 }
 
 /* ページ番号バーのスタイル */
@@ -265,4 +273,34 @@
 
 .previewText p:last-child {
 	margin-bottom: 0;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+	.rightPaneContent {
+		padding: 0.5rem;
+		/* モバイルでのパフォーマンス最適化 */
+		will-change: auto;
+		transform: none;
+	}
+
+	.historyContainer {
+		padding: 0.5rem;
+		gap: 0.5rem;
+	}
+
+	.tabContainer {
+		padding: 0.25rem;
+		/* モバイルでのパフォーマンス最適化 */
+		will-change: auto;
+		transform: none;
+	}
+
+	.pageNumberBar {
+		padding: 6px 12px;
+	}
+
+	.pageNumber {
+		font-size: 0.8rem;
+	}
 }

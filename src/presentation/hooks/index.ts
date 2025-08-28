@@ -12,6 +12,7 @@ export type {
 } from './useDraggableResize'
 export { useViewportSize } from './useViewportSize'
 export { useOptimizedLayout } from './useOptimizedLayout'
+export { useOptimizedPreviewLayout } from './useOptimizedPreviewLayout'
 export { useDraggableLayout } from './useDraggableLayout'
 export { usePinchZoom } from './usePinchZoom'
 export { useFullscreen } from './useFullscreen'

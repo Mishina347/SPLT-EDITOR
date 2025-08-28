@@ -44,8 +44,7 @@ export const Preview = React.memo<Props>(
 				// CSSカスタムプロパティを更新
 				if (containerRef.current) {
 					const container = containerRef.current
-					container.style.setProperty('--preview-font-size', `${config.fontSize || 16}px`)
-					container.style.setProperty('--preview-font-family', config.fontFamily || 'sans-serif')
+					container.style.setProperty('--preview-font-family', config.fontFamily)
 				}
 
 				// 強制再描画をトリガー

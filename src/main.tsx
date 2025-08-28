@@ -34,7 +34,7 @@ function debugServiceWorker() {
 		})
 
 		navigator.serviceWorker.addEventListener('error', event => {
-			console.error('[SW Debug] SW Error:', event.error)
+			console.error('[SW Debug] SW Error:', (event as any).error)
 		})
 	} else {
 		console.log('[SW Debug] Service Worker API is not available')
@@ -70,11 +70,11 @@ const swRegistration = registerSW({
 	onOfflineReady() {
 		console.log('[SW] App ready to work offline')
 	},
-	onRegistered(registration) {
+	onRegistered(registration: any) {
 		console.log('[SW] Service Worker registered:', registration)
 		debugServiceWorker()
 	},
-	onRegisterError(error) {
+	onRegisterError(error: any) {
 		console.error('[SW] Registration error:', error)
 	},
 })

@@ -1018,6 +1018,22 @@ export const EditorComponent = ({
 		[focusIntoEditor, focusOutOfEditor, focusNextElement, focusPrevElement]
 	)
 
+	// 長押し選択を最適化するためのタッチイベントハンドラー
+	const handleTouchStart = useCallback((e: React.TouchEvent) => {
+		// 長押し選択を有効化するため、タッチイベントを処理
+		if (e.touches.length === 1) {
+			// シングルタッチの場合、長押し選択を許可
+			const target = e.currentTarget as HTMLElement
+			target.style.setProperty('--touch-action', 'auto')
+		}
+	}, [])
+
+	const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+		// タッチ終了時にスタイルをリセット
+		const target = e.currentTarget as HTMLElement
+		target.style.removeProperty('--touch-action')
+	}, [])
+
 	return (
 		<div className={styles.editorContainer}>
 			<main className={styles.editorBody} onFocus={handleFocusPane}>
@@ -1032,6 +1048,8 @@ export const EditorComponent = ({
 					aria-describedby="editor-instructions"
 					data-inner-focus="false"
 					onKeyDown={handleWrapperKeyDown}
+					onTouchStart={handleTouchStart}
+					onTouchEnd={handleTouchEnd}
 					onClick={() => {
 						// シングルクリックでエディタにフォーカス
 						if (!isInnerFocusRef.current) {

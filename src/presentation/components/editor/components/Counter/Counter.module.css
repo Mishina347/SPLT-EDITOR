@@ -20,12 +20,12 @@
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-	justify-content: center;
+	justify-content: flex-end;
 	flex-wrap: wrap;
+	margin-right: 4px;
 	padding: 4px 8px;
 	border-radius: 8px;
 	overflow: hidden;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 	background: var(--app-bg-color);
 	transition: all 0.2s ease;
 }
@@ -71,35 +71,15 @@
 /* モバイル向けのレスポンシブ対応 */
 @media (max-width: 768px) {
 	.fieldGroup {
-		min-height: 72px;
-		max-width: 180px;
+		min-height: 48px; /* 高さを調整 */
+		padding: 0.25rem;
 	}
 
 	.counterDisplay {
-		gap: 6px;
-		flex-direction: column;
+		flex-direction: row; /* 横並びを維持 */
 		align-items: center;
-	}
-
-	.characterCount {
-		font-size: 1rem;
-	}
-
-	.lineCount,
-	.wordCount {
-		font-size: 0.8rem;
-	}
-}
-
-/* 小画面での調整 */
-@media (max-width: 480px) {
-	.fieldGroup {
-		min-height: 60px;
-		max-width: 150px;
-	}
-
-	.counterDisplay {
-		gap: 4px;
+		gap: 0.5rem;
+		padding: 0.5rem;
 	}
 
 	.characterCount {
@@ -108,7 +88,32 @@
 
 	.lineCount,
 	.wordCount {
-		font-size: 0.75rem;
+		font-size: 0.7rem;
+	}
+}
+
+/* 小画面での調整 */
+@media (max-width: 425px) {
+	.fieldGroup {
+		flex-direction: row;
+		text-align: center;
+		justify-content: center;
+		align-items: center;
+		min-height: 40px; /* さらに高さを調整 */
+	}
+
+	.counterDisplay {
+		gap: 0.25rem;
+		padding: 0.25rem;
+	}
+
+	.characterCount {
+		font-size: 0.8rem;
+	}
+
+	.lineCount,
+	.wordCount {
+		font-size: 0.65rem;
 	}
 }
 

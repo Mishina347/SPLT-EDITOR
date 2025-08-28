@@ -14,7 +14,7 @@ import buttonStyles from '../../shared/Button/Button.module.css'
 import { useCaretAnimation, useIMEFloat, useLineDecorations } from './components'
 import { Counter } from './components/Counter/Counter'
 import { usePerformanceMonitor } from '../../hooks/usePerformanceMonitor'
-import { useViewportSize } from '../../hooks/useViewportSize'
+import { useViewportSize, useOptimizedLayout } from '../../hooks'
 import { isMobileSize, isPortrait } from '../../../utils/deviceDetection'
 
 type Props = {
@@ -115,6 +115,9 @@ export const EditorComponent = ({
 		textColor,
 		enabled: true,
 	})
+
+	// 最適化されたレイアウト更新フック
+	const { updateLayout, updateLayoutImmediate, cleanup: cleanupLayout } = useOptimizedLayout()
 
 	// 倍率計算のロジック
 	const updateScaleInfo = useCallback(() => {
@@ -256,7 +259,7 @@ export const EditorComponent = ({
 			wordWrapBreakBeforeCharacters: '',
 			wordWrapBreakObtrusiveCharacters: '',
 			// IME入力制御
-			accessibilitySupport: isMobileSize() ? ('on' as const) : ('off' as const), // IME入力の自動制御を無効化
+			accessibilitySupport: 'off' as const, // IME入力の自動制御を無効化
 			renderFinalNewline: 'off' as const,
 			minimap: { enabled: false },
 			tabFocusMode: false, // 外部でフォーカス制御するため無効化
@@ -305,23 +308,21 @@ export const EditorComponent = ({
 		[isDragging, backgroundColor, textColor]
 	)
 
-	// コールバック関数をメモ化
+	// コールバック関数をメモ化（パフォーマンス最適化版）
 	const handleMaximize = useCallback(() => {
+		// 最大化処理を最適化
 		onMaximize()
-	}, [onMaximize])
+
+		// 最適化されたレイアウト更新を使用
+		updateLayout(editorRef.current)
+	}, [onMaximize, updateLayout])
 
 	const handleFocusPane = useCallback(() => {
 		onFocusPane()
 
-		// フォーカス時にエディタのレイアウトを再計算
-		if (editorRef.current) {
-			setTimeout(() => {
-				if (editorRef.current) {
-					editorRef.current.layout()
-				}
-			}, 50)
-		}
-	}, [onFocusPane])
+		// 最適化されたレイアウト更新を使用
+		updateLayout(editorRef.current)
+	}, [onFocusPane, updateLayout])
 
 	// 禁則処理用の文字判定関数
 	const applyKinsokuToEditor = useCallback(() => {
@@ -349,6 +350,9 @@ export const EditorComponent = ({
 			editorRef.current.dispose()
 			editorRef.current = null
 		}
+
+		// レイアウト更新のクリーンアップ
+		cleanupLayout()
 
 		// カスタムテーマを定義（視認性向上）
 		monaco.editor.defineTheme('custom-theme', {
@@ -1050,9 +1054,9 @@ export const EditorComponent = ({
 					<div id="editor-instructions" className={styles.instructions}>
 						<p>Enterキーで編集開始 • Escapeキーで編集終了 • Ctrl+Tabでフォーカス移動</p>
 					</div>
-				</div>
-				<div className={styles.counterInfoBar} role="status" aria-live="polite">
-					<Counter text={textData} />
+					<div className={styles.counterInfoBar} role="status" aria-live="polite">
+						<Counter text={textData} />
+					</div>
 				</div>
 			</main>
 			<button

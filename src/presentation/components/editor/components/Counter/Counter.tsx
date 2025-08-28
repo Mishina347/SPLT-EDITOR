@@ -23,7 +23,6 @@ export const Counter: React.FC<CounterProps> = ({ text }) => {
 
 	return (
 		<div className={styles.fieldGroup}>
-			<label className={styles.label}>現在の文章</label>
 			<section className={styles.counterDisplay} role="status" aria-label="文書統計">
 				<output className={styles.characterCount} aria-label={`${characterCount}文字`}>
 					{/* 計算中は即座に更新、完了したら正確な値を表示 */}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
 	Toolbar,
 	SwipeIndicator,
@@ -43,32 +43,35 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	// 初期化状態の管理
 	const [isInitialized, setIsInitialized] = useState(false)
 
-	// 最大化状態の詳細管理
+	// 最大化状態の詳細管理（パフォーマンス最適化版）
 	const handleMaximize = useCallback(
 		(target: DISPLAY_MODE) => {
-			if (target === DISPLAY_MODE.EDITOR) {
-				if (isEditorMaximized) {
-					// エディタの最大化を解除
-					setIsEditorMaximized(false)
-					setViewMode(DISPLAY_MODE.BOTH)
-				} else {
-					// エディタを最大化
-					setIsEditorMaximized(true)
-					setIsPreviewMaximized(false)
-					setViewMode(DISPLAY_MODE.EDITOR)
+			// 状態更新をバッチ化してパフォーマンスを向上
+			React.startTransition(() => {
+				if (target === DISPLAY_MODE.EDITOR) {
+					if (isEditorMaximized) {
+						// エディタの最大化を解除
+						setIsEditorMaximized(false)
+						setViewMode(DISPLAY_MODE.BOTH)
+					} else {
+						// エディタを最大化
+						setIsEditorMaximized(true)
+						setIsPreviewMaximized(false)
+						setViewMode(DISPLAY_MODE.EDITOR)
+					}
+				} else if (target === DISPLAY_MODE.PREVIEW) {
+					if (isPreviewMaximized) {
+						// プレビューの最大化を解除
+						setIsPreviewMaximized(false)
+						setViewMode(DISPLAY_MODE.BOTH)
+					} else {
+						// プレビューを最大化
+						setIsPreviewMaximized(true)
+						setIsEditorMaximized(false)
+						setViewMode(DISPLAY_MODE.PREVIEW)
+					}
 				}
-			} else if (target === DISPLAY_MODE.PREVIEW) {
-				if (isPreviewMaximized) {
-					// プレビューの最大化を解除
-					setIsPreviewMaximized(false)
-					setViewMode(DISPLAY_MODE.BOTH)
-				} else {
-					// プレビューを最大化
-					setIsPreviewMaximized(true)
-					setIsEditorMaximized(false)
-					setViewMode(DISPLAY_MODE.PREVIEW)
-				}
-			}
+			})
 		},
 		[isEditorMaximized, isPreviewMaximized]
 	)

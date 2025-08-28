@@ -17,12 +17,14 @@
 		'Meiryo UI',
 		sans-serif
 	);
-	font-size: var(--preview-font-size, 16px);
 	transition: all 0.3s ease;
 	/* パフォーマンス最適化 */
 	will-change: transform;
 	transform: translateZ(0);
 	contain: layout style;
+	/* モバイルでの文字サイズ更新を確実にする */
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
 }
 
 /* フォーカス時のスタイル */
@@ -70,7 +72,6 @@
 		'Noto Sans',
 		sans-serif
 	);
-	font-size: var(--preview-font-size, 16px); /* カスタムプロパティでフォントサイズを制御 */
 
 	/* レスポンシブ対応 */
 	transition: all 0.3s ease;
@@ -306,7 +307,6 @@
 	.pageBase {
 		padding: 1rem;
 		min-width: 240px;
-		font-size: 0.9rem;
 	}
 
 	.previewContainer {
@@ -358,16 +358,16 @@
 }
 
 /* ページ番号のレスポンシブ対応 */
-@media (max-width: 480px) {
+@media (max-width: 425px) {
 	.pageNumber {
 		font-size: 12px;
 		padding: 0.3rem 0.8rem;
 	}
 }
 
-@media (min-width: 481px) and (max-width: 768px) {
+@media (max-width: 768px) {
 	.pageNumber {
-		font-size: 13px;
+		font-size: 1rem;
 		padding: 0.4rem 0.9rem;
 	}
 }

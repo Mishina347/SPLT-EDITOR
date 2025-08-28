@@ -3,8 +3,6 @@ import { EditorSettingsPanel } from './editorCongig/EditorSettingsPanel'
 import { PreviewSettingsPanel } from './previewConfig/PreviewSettingsPanel'
 
 import { HamburgerMenu } from './HamburgerMenu'
-import { OverflowMenu } from './OverflowMenu'
-import { useToolbarOverflow } from '../../hooks/useToolbarOverflow'
 import { LayoutConfig, DISPLAY_MODE, EditorSettings } from '../../../domain'
 import styles from './Toolbar.module.css'
 
@@ -214,17 +212,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 		return items
 	}, [activePane, editorPanelRef.current, previewPanelRef.current])
 
-	// オーバーフロー管理
-	const { hiddenItems, hasOverflow, recheck } = useToolbarOverflow({
-		container: toolbarRef.current,
-		items: toolbarItems,
-		threshold: 120, // オーバーフローボタンとマージンのためのスペース
-	})
-
-	useEffect(() => {
-		recheck()
-	}, [activePane, recheck])
-
 	// スクロール位置を監視する関数
 	const checkScrollPosition = useCallback(() => {
 		if (toolbarRef.current) {
@@ -355,7 +342,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 			>
 				›
 			</button>
-			<div></div>
 		</nav>
 	)
 }

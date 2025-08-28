@@ -12,7 +12,8 @@
 	height: 98%;
 	display: flex;
 	flex-direction: column;
-	user-select: none; /* 長押し時のテキスト選択を防ぐ */
+	/* 長押し選択を有効化 */
+	user-select: auto;
 	/* モバイルでのピンチズームを有効化 */
 	touch-action: manipulation;
 	-webkit-overflow-scrolling: touch;
@@ -28,6 +29,9 @@
 	-webkit-user-select: text !important;
 	-moz-user-select: text !important;
 	-ms-user-select: text !important;
+	/* 長押し選択を確実に有効化 */
+	-webkit-touch-callout: default !important;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
 	touch-action: manipulation !important; /* ピンチズームを有効化 */
 	pointer-events: auto !important;
 	/* IME入力最適化 */
@@ -46,6 +50,25 @@
 	contain: layout style;
 }
 
+/* 長押し選択を確実に有効化 */
+.editorBody .monaco-editor .view-line {
+	/* 長押し選択を有効化 */
+	-webkit-touch-callout: default !important;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
+	/* テキスト選択を確実に有効化 */
+	user-select: text !important;
+	-webkit-user-select: text !important;
+	-moz-user-select: text !important;
+	-ms-user-select: text !important;
+}
+
+/* 選択範囲のスタイルを最適化 */
+.editorBody .monaco-editor .view-line::selection,
+.editorBody .monaco-editor .view-line *::selection {
+	background-color: rgba(0, 95, 204, 0.3) !important;
+	color: inherit !important;
+}
+
 /* エディタWrapper - 2段階フォーカス制御 */
 .editorWrapper {
 	position: relative;
@@ -55,8 +78,11 @@
 	border-radius: 4px;
 	transition: all 0.2s ease;
 	/* モバイルでのピンチズームを有効化 */
-	touch-action: manipulation;
+	touch-action: var(--touch-action, manipulation);
 	-webkit-overflow-scrolling: touch;
+	/* 長押し選択を有効化 */
+	-webkit-touch-callout: default;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
 }
 
 /* 外部フォーカス状態 */

@@ -124,7 +124,7 @@ export class TxtWriter {
 
 		// ファイルをダウンロード
 		this.downloadFile(
-			new Blob([optimizedContent.data], {
+			new Blob([optimizedContent.data as BlobPart], {
 				type: `text/plain;charset=${optimizedContent.charset}`,
 			}),
 			optimizedContent.filename

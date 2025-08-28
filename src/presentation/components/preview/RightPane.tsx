@@ -203,13 +203,13 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 							<div class="diff-container">
 								<div class="diff-header">
 									<div class="diff-info">
-										<span class="before-text">
+										<span className=${styles.beforeText}>
 											修正前: ${formatNumber(beforeStats.characterCount)}文字
 										</span>
-										<span class="after-text">
+										<span className=${styles.afterText}>
 											修正後: ${formatNumber(afterStats.characterCount)}文字
 										</span>
-										<span class="change-count">
+										<span className=${styles.changeCount}>
 											変更: ${formatNumber(Math.abs(afterStats.characterCount - beforeStats.characterCount))}文字
 										</span>
 									</div>
@@ -298,8 +298,6 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	const renderTabContent = useCallback(() => {
 		if (mode === PreviewMode.DIFF) {
 			// 修正前後のテキスト情報を計算
-			const beforeStats = wordCounter(initialText || '')
-			const afterStats = wordCounter(currentNotSavedText || '')
 
 			return (
 				<div className={styles.diffContainer}>
@@ -307,17 +305,6 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 					<div className={styles.diffHeader}>
 						<div className={styles.diffInfo}>
 							<h3 className={styles.diffTitle}>差分表示</h3>
-							<div className={styles.diffMeta}>
-								<span className={styles.beforeText}>
-									修正前: {formatNumber(beforeStats.characterCount)}文字
-								</span>
-								<span className={styles.afterText}>
-									修正後: {formatNumber(afterStats.characterCount)}文字
-								</span>
-								<span className={styles.changeCount}>
-									変更: {formatNumber(Math.abs(afterStats.characterCount - beforeStats.characterCount))}文字
-								</span>
-							</div>
 						</div>
 						{/* 差分基準更新ボタン */}
 						<button

@@ -369,18 +369,24 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 										<div className={styles.pwaInstallButtonContainer}>
 											<button
 												className={`${styles.menuItem} ${styles.pwaInstallButton}`}
-												onClick={() => {
-													// PWAインストール処理
-													if (window.deferredPrompt) {
-														window.deferredPrompt.prompt()
-														window.deferredPrompt.userChoice.then((choiceResult: any) => {
+												onClick={async () => {
+													try {
+														// PWAインストール処理
+														if (window.deferredPrompt) {
+															console.log('[PWA] Installing PWA...')
+															await window.deferredPrompt.prompt()
+															const choiceResult = await window.deferredPrompt.userChoice
 															if (choiceResult.outcome === 'accepted') {
-																console.log('PWAインストールが承認されました')
+																console.log('[PWA] PWAインストールが承認されました')
 															} else {
-																console.log('PWAインストールが拒否されました')
+																console.log('[PWA] PWAインストールが拒否されました')
 															}
 															window.deferredPrompt = null
-														})
+														} else {
+															console.log('[PWA] deferredPrompt not available')
+														}
+													} catch (error) {
+														console.error('[PWA] インストールエラー:', error)
 													}
 												}}
 												role="menuitem"
@@ -391,6 +397,12 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 											{/* PWA状態表示 */}
 											<div className={styles.pwaStatusContainer}>
 												<PWAStatus detail="minimal" />
+											</div>
+											{/* デバッグ情報 */}
+											<div style={{ fontSize: '0.8rem', color: '#666', marginTop: '8px' }}>
+												<div>isInstallable: {isInstallable ? 'true' : 'false'}</div>
+												<div>isInstalled: {isInstalled ? 'true' : 'false'}</div>
+												<div>deferredPrompt: {window.deferredPrompt ? 'available' : 'not available'}</div>
 											</div>
 										</div>
 									)}

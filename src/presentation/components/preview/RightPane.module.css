@@ -35,6 +35,8 @@
 	will-change: transform;
 	transform: translateZ(0);
 	contain: layout style;
+	/* ページナンバーとの間隔を最小化 */
+	margin-bottom: 0;
 }
 
 /* ページ番号バーのスタイル */
@@ -45,7 +47,7 @@
 	padding: 8px 16px;
 	background: var(--app-bg-color, #f9f9f9);
 	border-top: 1px solid var(--app-border-color, #e0e0e0);
-	margin-top: auto; /* コンテンツの下に配置 */
+	margin-top: 0; /* ページナンバーとの間隔を最小化 */
 	opacity: 0.3;
 }
 .pageNumberBar:hover {
@@ -298,6 +300,7 @@
 
 	.pageNumberBar {
 		padding: 6px 12px;
+		margin-top: 0; /* モバイルでもページナンバーとの間隔を最小化 */
 	}
 
 	.pageNumber {

@@ -73,10 +73,13 @@ export function getOptimizedEditorOptions(baseOptions: any) {
 		fastScrollSensitivity: 5, // 高速スクロール感度を調整
 		// タッチデバイスでの操作を最適化
 		multiCursorModifier: 'alt' as const, // モバイルでのマルチカーソル操作をaltキーに変更
+		// パフォーマンス最適化
+		renderWhitespace: 'none' as const, // 空白文字の描画を無効化
+		renderControlCharacters: false, // 制御文字の描画を無効化
+		renderLineHighlight: 'line' as const, // 行ハイライトを最小限に
+		scrollBeyondLastLine: false, // 最後の行を超えたスクロールを無効化
 		// レンダリング最適化
-		renderControlCharacters: false,
 		renderFinalNewline: 'on' as const,
-		renderLineHighlight: 'line' as const,
 		renderLineHighlightOnlyWhenFocus: true, // フォーカス時のみハイライト
 		// スクロール最適化
 		smoothScrolling: false, // スムーススクロールを無効化

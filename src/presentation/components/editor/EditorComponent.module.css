@@ -91,14 +91,17 @@
 
 /* ページ番号バーのスタイル */
 .counterInfoBar {
-	position: relative;
 	width: 100%;
+	position: relative;
 	display: flex;
-	justify-content: center;
+	justify-content: flex-end;
 	align-items: center;
 	background: var(--app-bg-color, #f9f9f9);
 	margin-top: 1rem; /* コンテンツの下に配置 */
 	opacity: 0.3;
+	/* モバイルでの表示位置を調整 */
+	margin-right: 4px;
+	padding: 0.5rem;
 }
 
 .counterInfoBar:hover {
@@ -116,6 +119,13 @@
 		font-size: 0.7rem;
 		padding: 3px 6px;
 		bottom: 8px;
+	}
+
+	/* Counterのモバイル表示調整 */
+	.counterInfoBar {
+		margin-top: 0.5rem;
+		padding: 0.25rem;
+		opacity: 0.8;
 	}
 
 	/* モバイルでのピンチズームを確実に有効化 */
@@ -179,4 +189,18 @@
 	position: fixed;
 	bottom: 1rem;
 	left: 1rem;
+}
+
+/* 小画面でのCounter表示調整 */
+@media (max-width: 425px) {
+	.counterInfoBar {
+		margin-top: 0.25rem;
+		padding: 0.125rem;
+		align-items: baseline;
+		justify-content: flex-end;
+	}
+
+	.editorBody {
+		height: 96%; /* Counterの表示スペースを確保 */
+	}
 }

@@ -11,6 +11,7 @@ export type {
 	ResizeDirection,
 } from './useDraggableResize'
 export { useViewportSize } from './useViewportSize'
+export { useOptimizedLayout } from './useOptimizedLayout'
 export { useDraggableLayout } from './useDraggableLayout'
 export { usePinchZoom } from './usePinchZoom'
 export { useFullscreen } from './useFullscreen'

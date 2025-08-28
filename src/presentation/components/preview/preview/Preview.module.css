@@ -22,9 +22,8 @@
 	will-change: transform;
 	transform: translateZ(0);
 	contain: layout style;
-	/* モバイルでの文字サイズ更新を確実にする */
-	-webkit-text-size-adjust: 100%;
-	text-size-adjust: 100%;
+	/* ページナンバーとの間隔を最小化 */
+	margin-bottom: 0;
 }
 
 /* フォーカス時のスタイル */
@@ -50,6 +49,7 @@
 	width: 100%;
 	min-width: 280px; /* 最小幅を設定 */
 	max-width: 100%;
+	height: calc(100% - 2rem); /* ページナンバーとの間隔を最小化 */
 	padding: 2rem;
 	background: transparent;
 	border: 1px solid #ddd;
@@ -307,11 +307,13 @@
 	.pageBase {
 		padding: 1rem;
 		min-width: 240px;
+		height: calc(100% - 1rem); /* モバイルでのページナンバーとの間隔を最小化 */
 	}
 
 	.previewContainer {
 		padding: 2px;
 		margin-top: 0.5rem;
+		margin-bottom: 0; /* ページナンバーとの間隔を最小化 */
 	}
 }
 

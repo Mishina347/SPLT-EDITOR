@@ -111,8 +111,8 @@ jobs:
           retention-days: 90
           if-no-files-found: error
 
-  # Tauriビルドジョブ（mainブランチプッシュ時のみ）
-  tauri-build:
+  # Tauriビルドジョブ（Linux）（mainブランチプッシュ時のみ）
+  tauri-build-linux:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build-and-deploy
     runs-on: ubuntu-latest
@@ -135,6 +135,21 @@ jobs:
           toolchain: stable
           target: x86_64-unknown-linux-gnu
       
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.0-dev \
+            build-essential \
+            curl \
+            wget \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libglib2.0-dev \
+            pkg-config
+      
       - name: Install Tauri CLI
         run: yarn add -D @tauri-apps/cli
       
@@ -146,11 +161,19 @@ jobs:
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
           sudo apt update && sudo apt install gh -y
       
-      - name: Build Tauri app
+      - name: Build Tauri app (Linux)
         env:
           VITE_TAURI_PLATFORM: desktop
           TAURI_PLATFORM: desktop
         run: yarn tauri:build
+      
+      - name: Build Tauri app (macOS)
+        env:
+          VITE_TAURI_PLATFORM: desktop
+          TAURI_PLATFORM: desktop
+        run: |
+          rustup target add x86_64-apple-darwin
+          yarn tauri:build --target x86_64-apple-darwin
       
       - name: List Tauri build outputs
         run: |
@@ -174,13 +197,67 @@ jobs:
             src-tauri/target/release/bundle/**/*.app
             src-tauri/target/release/bundle/**/*.exe
             src-tauri/target/release/bundle/**/*.AppImage
+            src-tauri/target/x86_64-apple-darwin/release/bundle/**/*.dmg
+            src-tauri/target/x86_64-apple-darwin/release/bundle/**/*.app
+            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/**/*.msi
+            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/**/*.exe
+          retention-days: 90
+          if-no-files-found: warn
+
+  # Tauriビルドジョブ（Windows）（mainブランチプッシュ時のみ）
+  tauri-build-windows:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-and-deploy
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+      
+      - name: Install dependencies
+        run: yarn install
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
+      
+      - name: Install Tauri CLI
+        run: yarn add -D @tauri-apps/cli
+      
+      - name: Build Tauri app (Windows)
+        env:
+          VITE_TAURI_PLATFORM: desktop
+          TAURI_PLATFORM: desktop
+        run: yarn tauri:build
+      
+      - name: List Tauri build outputs
+        run: |
+          echo "=== Tauri build outputs ==="
+          dir src-tauri\target\release
+          echo "=== Tauri bundle outputs ==="
+          dir src-tauri\target\release\bundle
+      
+      - name: Upload Tauri artifacts (Windows)
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-build-windows
+          path: |
+            src-tauri/target/release/bundle/**/*.msi
+            src-tauri/target/release/bundle/**/*.exe
           retention-days: 90
           if-no-files-found: warn
 
   # リリース作成時にビルド成果物をリリースにアップロードするジョブ
   upload-to-release:
     if: github.event_name == 'release'
-    needs: [save-build-artifacts, tauri-build]
+    needs: [save-build-artifacts, tauri-build-linux, tauri-build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifacts
@@ -189,11 +266,17 @@ jobs:
           name: build-dist
           path: ./dist
       
-      - name: Download Tauri artifacts
+      - name: Download Tauri artifacts (Linux)
         uses: actions/download-artifact@v4
         with:
           name: tauri-build
-          path: ./tauri-build
+          path: ./tauri-build-linux
+      
+      - name: Download Tauri artifacts (Windows)
+        uses: actions/download-artifact@v4
+        with:
+          name: tauri-build-windows
+          path: ./tauri-build-windows
       
       - name: Create release archive
         run: |
@@ -203,11 +286,17 @@ jobs:
           cd ..
           ls -la release-${GITHUB_REF_NAME}.tar.gz
           
-          echo "=== Creating Tauri release archive ==="
-          cd tauri-build
-          tar -czf ../tauri-release-${GITHUB_REF_NAME}.tar.gz .
+          echo "=== Creating Tauri release archive (Linux) ==="
+          cd tauri-build-linux
+          tar -czf ../tauri-release-linux-${GITHUB_REF_NAME}.tar.gz .
           cd ..
-          ls -la tauri-release-${GITHUB_REF_NAME}.tar.gz
+          ls -la tauri-release-linux-${GITHUB_REF_NAME}.tar.gz
+          
+          echo "=== Creating Tauri release archive (Windows) ==="
+          cd tauri-build-windows
+          tar -czf ../tauri-release-windows-${GITHUB_REF_NAME}.tar.gz .
+          cd ..
+          ls -la tauri-release-windows-${GITHUB_REF_NAME}.tar.gz
       
       - name: Upload Web Release to Release
         uses: actions/upload-release-asset@v1
@@ -219,12 +308,22 @@ jobs:
           asset_name: release-${GITHUB_REF_NAME}.tar.gz
           asset_content_type: application/gzip
       
-      - name: Upload Tauri Release to Release
+      - name: Upload Tauri Release (Linux) to Release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./tauri-release-${GITHUB_REF_NAME}.tar.gz
-          asset_name: tauri-release-${GITHUB_REF_NAME}.tar.gz
+          asset_path: ./tauri-release-linux-${GITHUB_REF_NAME}.tar.gz
+          asset_name: tauri-release-linux-${GITHUB_REF_NAME}.tar.gz
+          asset_content_type: application/gzip
+      
+      - name: Upload Tauri Release (Windows) to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./tauri-release-windows-${GITHUB_REF_NAME}.tar.gz
+          asset_name: tauri-release-windows-${GITHUB_REF_NAME}.tar.gz
           asset_content_type: application/gzip

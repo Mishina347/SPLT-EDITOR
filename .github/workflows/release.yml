@@ -111,10 +111,67 @@ jobs:
           retention-days: 90
           if-no-files-found: error
 
+  # Tauriビルドジョブ（mainブランチプッシュ時のみ）
+  tauri-build:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-and-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+      
+      - name: Install dependencies
+        run: yarn install
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-unknown-linux-gnu
+      
+      - name: Install Tauri CLI
+        run: yarn add -D @tauri-apps/cli
+      
+      - name: Install GitHub CLI
+        run: |
+          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update && sudo apt install gh -y
+      
+      - name: Build Tauri app
+        run: yarn tauri build
+      
+      - name: List Tauri build outputs
+        run: |
+          echo "=== Tauri build outputs ==="
+          ls -la src-tauri/target/release/
+          echo "=== Tauri build size ==="
+          du -sh src-tauri/target/release/
+      
+      - name: Upload Tauri artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-build
+          path: |
+            src-tauri/target/release/*.deb
+            src-tauri/target/release/*.msi
+            src-tauri/target/release/*.dmg
+            src-tauri/target/release/*.app
+          retention-days: 90
+          if-no-files-found: warn
+
   # リリース作成時にビルド成果物をリリースにアップロードするジョブ
   upload-to-release:
     if: github.event_name == 'release'
-    needs: save-build-artifacts
+    needs: [save-build-artifacts, tauri-build]
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifacts
@@ -122,6 +179,12 @@ jobs:
         with:
           name: build-dist
           path: ./dist
+      
+      - name: Download Tauri artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: tauri-build
+          path: ./tauri-build
       
       - name: Create release archive
         run: |

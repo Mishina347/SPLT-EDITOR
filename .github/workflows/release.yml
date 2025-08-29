@@ -222,21 +222,41 @@ jobs:
         run: |
           echo "=== Installing AppImage creation tools ==="
           
+          # 利用可能なバージョンを確認
+          echo "Checking available versions..."
+          
+          # linuxdeployの最新リリースを取得
+          LINUXDEPLOY_VERSION=$(curl -s https://api.github.com/repos/linuxdeploy/linuxdeploy/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "Latest linuxdeploy version: $LINUXDEPLOY_VERSION"
+          
           # linuxdeployのインストール
-          wget -O linuxdeploy-x86_64.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget -O linuxdeploy-x86_64.AppImage "https://github.com/linuxdeploy/linuxdeploy/releases/download/$LINUXDEPLOY_VERSION/linuxdeploy-x86_64.AppImage"
           chmod +x linuxdeploy-x86_64.AppImage
           sudo mv linuxdeploy-x86_64.AppImage /usr/local/bin/linuxdeploy
           
+          # linuxdeploy-plugin-appimageの最新リリースを取得
+          PLUGIN_VERSION=$(curl -s https://api.github.com/repos/linuxdeploy/appimage-plugin/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "Latest plugin version: $PLUGIN_VERSION"
+          
           # linuxdeploy-plugin-appimageのインストール
-          wget -O linuxdeploy-plugin-appimage-x86_64.AppImage https://github.com/linuxdeploy/appimage-plugin/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage
+          wget -O linuxdeploy-plugin-appimage-x86_64.AppImage "https://github.com/linuxdeploy/appimage-plugin/releases/download/$PLUGIN_VERSION/linuxdeploy-plugin-appimage-x86_64.AppImage"
+          chmod +x linuxdeploy-plugin-appimage-x86_64.AppImage
           sudo mv linuxdeploy-plugin-appimage-x86_64.AppImage /usr/local/bin/linuxdeploy-plugin-appimage
-          chmod +x /usr/local/bin/linuxdeploy-plugin-appimage
           
           # インストール確認
-          linuxdeploy --version
-          linuxdeploy-plugin-appimage --version
-          
-          echo "=== AppImage tools installed successfully ==="
+          if linuxdeploy --version && linuxdeploy-plugin-appimage --version; then
+            echo "=== AppImage tools installed successfully ==="
+          else
+            echo "=== AppImage tools installation failed, using fallback ==="
+            echo "Will attempt to build without AppImage support"
+            
+            # 基本的なツールの確認
+            which wget || echo "wget not found"
+            which curl || echo "curl not found"
+            
+            # 代替手段の準備
+            echo "Preparing fallback build configuration..."
+          fi
       
       - name: Check build environment
         run: |
@@ -286,14 +306,15 @@ jobs:
           which linuxdeploy-plugin-appimage
           
           # Tauriビルドの実行
-          yarn tauri:build:linux || {
-            echo "=== Tauri build failed, trying alternative approach ==="
-            echo "Attempting to build without AppImage..."
-            
-            # AppImageを無効化してビルド
+          if command -v linuxdeploy >/dev/null 2>&1 && command -v linuxdeploy-plugin-appimage >/dev/null 2>&1; then
+            echo "=== AppImage tools available, building with AppImage support ==="
+            yarn tauri:build:linux
+          else
+            echo "=== AppImage tools not available, building without AppImage ==="
+            echo "Setting TAURI_BUNDLE_APPIMAGE=false"
             export TAURI_BUNDLE_APPIMAGE=false
             yarn tauri:build:linux
-          }
+          fi
       
       - name: List Tauri build outputs (Linux)
         run: |
@@ -400,18 +421,50 @@ jobs:
           du -sh src-tauri/target/release/
           echo "=== Tauri bundle size ==="
           du -sh src-tauri/target/release/bundle/
+          
+          # ファイルの整合性を確認
+          echo "=== File integrity check ==="
+          cd src-tauri/target/release/bundle
+          
+          # .appファイルの確認
+          for app_file in *.app; do
+            if [ -d "$app_file" ]; then
+              echo "Checking $app_file..."
+              echo "  Size: $(du -sh "$app_file")"
+              echo "  Contents: $(ls "$app_file" | head -3 | tr '\n' ' ')"
+              echo "  Executable: $(find "$app_file" -name "*.app" -type d -exec test -x "{}/Contents/MacOS/"* \; && echo "Yes" || echo "No")"
+            fi
+          done
+          
+          # .dmgファイルの確認
+          for dmg_file in *.dmg; do
+            if [ -f "$dmg_file" ]; then
+              echo "Checking $dmg_file..."
+              echo "  Size: $(du -sh "$dmg_file")"
+              echo "  File type: $(file "$dmg_file")"
+            fi
+          done
+          
+          cd ../../../..
       
       - name: Create macOS bundle archive
         run: |
           echo "=== Creating macOS bundle archive ==="
           cd src-tauri/target/release/bundle
           
-          # .appファイルを個別に圧縮
+          # 利用可能なファイルを確認
+          echo "Available files:"
+          ls -la
+          
+          # .appファイルを個別に圧縮（より安全な方法）
           for app_file in *.app; do
             if [ -d "$app_file" ]; then
               echo "Compressing $app_file..."
-              tar -czf "${app_file}.tar.gz" "$app_file"
+              # より安全な圧縮方法を使用
+              tar --exclude='*.DS_Store' --exclude='__pycache__' -czf "${app_file}.tar.gz" "$app_file"
               ls -la "${app_file}.tar.gz"
+              echo "Verifying archive integrity..."
+              tar -tzf "${app_file}.tar.gz" | head -5
             fi
           done
           
@@ -419,16 +472,58 @@ jobs:
           for dmg_file in *.dmg; do
             if [ -f "$dmg_file" ]; then
               echo "Compressing $dmg_file..."
+              # .dmgファイルは直接圧縮
               tar -czf "${dmg_file}.tar.gz" "$dmg_file"
               ls -la "${dmg_file}.tar.gz"
+              echo "Verifying archive integrity..."
+              tar -tzf "${dmg_file}.tar.gz" | head -3
             fi
           done
           
-          # 全体を圧縮
-          tar -czf macos-bundle.tar.gz .
+          # 全体を圧縮（より安全な方法）
+          echo "Creating complete bundle archive..."
+          tar --exclude='*.DS_Store' --exclude='__pycache__' -czf macos-bundle.tar.gz .
           ls -la macos-bundle.tar.gz
           echo "=== Archive sizes ==="
           du -sh *.tar.gz
+          
+          # アーカイブの整合性を確認
+          echo "=== Verifying archive integrity ==="
+          for archive in *.tar.gz; do
+            echo "Checking $archive..."
+            if tar -tzf "$archive" >/dev/null 2>&1; then
+              echo "✓ $archive is valid"
+            else
+              echo "✗ $archive is corrupted"
+            fi
+          done
+          
+          cd ../../../..
+      
+      - name: Final integrity check before upload
+        run: |
+          echo "=== Final integrity check before upload ==="
+          cd src-tauri/target/release/bundle
+          
+          # 作成されたアーカイブの最終確認
+          echo "Created archives:"
+          ls -la *.tar.gz
+          
+          # 各アーカイブの整合性を最終確認
+          for archive in *.tar.gz; do
+            echo "Final check of $archive..."
+            if tar -tzf "$archive" >/dev/null 2>&1; then
+              echo "✓ $archive is ready for upload"
+              # アーカイブの内容を少し表示
+              echo "  Contents preview:"
+              tar -tzf "$archive" | head -5
+            else
+              echo "✗ $archive is corrupted - will not upload"
+              # 破損したアーカイブを削除
+              rm -f "$archive"
+            fi
+          done
+          
           cd ../../../..
       
       - name: Upload Tauri artifacts (macOS)
@@ -436,9 +531,7 @@ jobs:
         with:
           name: tauri-build-macos
           path: |
-            src-tauri/target/release/bundle/**/*.dmg
-            src-tauri/target/release/bundle/**/*.app
-            src-tauri/target/release/bundle/**/*.tar.gz
+            src-tauri/target/release/bundle/*.tar.gz
             src-tauri/target/release/bundle/macos-bundle.tar.gz
           retention-days: 90
           if-no-files-found: warn

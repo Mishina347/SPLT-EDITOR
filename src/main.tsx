@@ -1,28 +1,36 @@
 import { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
-import { DEFAULT_SETTING, Settings } from './domain/entities/defaultSetting'
+import { Settings, getDefaultSettingForDevice } from './domain/entities/defaultSetting'
 import { loadSettings } from './usecases/settingsUseCase'
+// manifestのorientation管理
+import { setupManifestOrientationListener } from './utils/manifestManager'
+import { isTauri } from './utils'
+// Monaco Editorのワーカー設定をside-effects importで実行
+import '@/useMonacoWorker'
 
 // PWA関連のインポート（Tauri環境では無効化）
 let registerSW: any = null
-let RegisterSWOptions: any = null
+// RegisterSWOptionsの型定義
+interface RegisterSWOptions {
+	immediate?: boolean
+	onNeedRefresh?: () => void
+	onOfflineReady?: () => void
+	onRegistered?: (registration: ServiceWorkerRegistration | undefined) => void
+	onRegisterError?: (error: any) => void
+}
+let RegisterSWOptions: RegisterSWOptions | null = null
 
 // Tauri環境でない場合のみPWA関連をインポート
-if (typeof window !== 'undefined' && !isTauri()) {
+if (!isTauri()) {
 	try {
 		registerSW = require('virtual:pwa-register').registerSW
-		RegisterSWOptions = require('vite-plugin-pwa/client').RegisterSWOptions
+		// vite-plugin-pwa/clientのrequireを削除（ESモジュール環境では動作しない）
 		require('./utils/swDebug')
 	} catch (error) {
 		console.log('[App] PWA imports skipped:', error)
 	}
 }
-// Monaco Editorのワーカー設定をside-effects importで実行
-import '@/useMonacoWorker'
-// manifestのorientation管理
-import { setupManifestOrientationListener } from './utils/manifestManager'
-import { isTauri, isTauriBuild } from './utils'
 
 // Service Workerの動作確認用デバッグ（Tauri環境では無効化）
 function debugServiceWorker() {
@@ -60,7 +68,7 @@ function debugServiceWorker() {
 }
 
 function Root() {
-	const [settings, setSettings] = useState<Settings>(DEFAULT_SETTING)
+	const [settings, setSettings] = useState<Settings>(getDefaultSettingForDevice())
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 
@@ -113,6 +121,24 @@ function Root() {
 			console.error('[App] Failed to setup manifest orientation listener:', error)
 			return () => {}
 		}
+	}, [])
+
+	// ウィンドウサイズの変更を監視して設定を動的に更新
+	useEffect(() => {
+		const handleResize = () => {
+			const newSettings = getDefaultSettingForDevice()
+			setSettings(prevSettings => {
+				// 設定が変更された場合のみ更新
+				if (JSON.stringify(prevSettings) !== JSON.stringify(newSettings)) {
+					console.log('[App] Device size changed, updating settings:', newSettings)
+					return newSettings
+				}
+				return prevSettings
+			})
+		}
+
+		window.addEventListener('resize', handleResize)
+		return () => window.removeEventListener('resize', handleResize)
 	}, [])
 
 	if (isLoading) {

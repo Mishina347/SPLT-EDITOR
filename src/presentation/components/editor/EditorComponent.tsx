@@ -14,6 +14,7 @@ import buttonStyles from '../../shared/Button/Button.module.css'
 import { useCaretAnimation, useIMEFloat, useLineDecorations } from './components'
 import { Counter } from './components/Counter/Counter'
 import { usePerformanceMonitor } from '../../hooks/usePerformanceMonitor'
+import { MonacoThemeService } from '../../../infra/MonacoThemeService'
 import { useViewportSize, useOptimizedLayout } from '../../hooks'
 import { isMobileSize, isPortrait } from '../../../utils/deviceDetection'
 

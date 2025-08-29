@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
-import { Settings, SettingsRepository } from '../../domain/entities/defaultSetting'
+import { Settings, SettingsRepository, DEFAULT_THEME } from '../../domain/entities/defaultSetting'
 import { FONT_FAMILIES } from '../../domain/editor/EditorSetting'
 
 export class TauriSettingsRepository implements SettingsRepository {
@@ -19,6 +19,7 @@ export class TauriSettingsRepository implements SettingsRepository {
 						enabled: true,
 						delay: 1000,
 					},
+					theme: DEFAULT_THEME,
 				},
 				preview: {
 					charsPerLine: 20,

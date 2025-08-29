@@ -7,6 +7,7 @@ export {
 	getViewportSize,
 } from './deviceDetection'
 export { isTauri, isTauriBuild } from './isTauri'
+export { saveThemeSettings, getCurrentTheme } from './themeManager'
 export {
 	isMobileSize,
 	getOptimalOrientation,

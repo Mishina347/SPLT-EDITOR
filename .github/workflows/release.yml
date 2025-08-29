@@ -131,7 +131,7 @@ jobs:
         run: |
           echo "=== Checking package.json scripts ==="
           echo "Using simplified Tauri scripts without cross-env"
-          echo "Scripts: tauri:build, tauri:build:linux, tauri:build:macos, tauri:build:windows"
+          echo "Scripts: tauri:build, tauri:build:linux, tauri:build:universal:macos, tauri:build:windows"
           echo "Environment variables set in GitHub Actions workflow"
           echo "================================================="
       
@@ -365,7 +365,7 @@ jobs:
         run: |
           echo "=== Checking package.json scripts ==="
           echo "Using simplified Tauri scripts without cross-env"
-          echo "Scripts: tauri:build, tauri:build:linux, tauri:build:macos, tauri:build:windows"
+          echo "Scripts: tauri:build, tauri:build:linux, tauri:build:universal:macos, tauri:build:windows"
           echo "Environment variables set in GitHub Actions workflow"
           echo "================================================="
       
@@ -424,7 +424,7 @@ jobs:
           echo "Rust target: $(rustc --print target-list | grep apple)"
           
           # Tauriビルドの実行
-          yarn tauri:build:macos
+          yarn tauri:build:universal:macos
       
       - name: List Tauri build outputs
         run: |
@@ -655,7 +655,7 @@ jobs:
         run: |
           echo "=== Checking package.json scripts ==="
           echo "Using simplified Tauri scripts without cross-env"
-          echo "Scripts: tauri:build, tauri:build:linux, tauri:build:macos, tauri:build:windows"
+          echo "Scripts: tauri:build, tauri:build:linux, tauri:build:universal:macos, tauri:build:windows"
           echo "Environment variables set in GitHub Actions workflow"
           echo "================================================="
       

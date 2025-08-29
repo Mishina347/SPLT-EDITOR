@@ -33,11 +33,30 @@ function isTauriBuild(): boolean {
 		// プロセスの親プロセス情報による判定
 		process.env.npm_lifecycle_event === 'build' && 
 		(process.env.npm_lifecycle_script?.includes('tauri') || 
-		 process.env.npm_lifecycle_script?.includes('tauri build'))
+		 process.env.npm_lifecycle_script?.includes('tauri build')) ||
+		// ターゲット指定付きのTauriビルドコマンドの検出
+		process.argv.some(arg => arg.includes('--target')) && 
+		(process.env.npm_lifecycle_script?.includes('tauri') || 
+		 process.env.npm_lifecycle_script?.includes('tauri build')) ||
+		// yarnスクリプト名でのターゲット指定検出
+		process.env.npm_lifecycle_script?.includes('--target') ||
+		// 環境変数でのターゲット指定検出
+		process.env.TAURI_TARGET !== undefined ||
+		process.env.VITE_TAURI_TARGET !== undefined ||
+		// より詳細なターゲット指定の検出
+		process.argv.some(arg => arg.includes('universal-apple-darwin')) ||
+		process.argv.some(arg => arg.includes('aarch64-apple-darwin')) ||
+		process.argv.some(arg => arg.includes('x86_64-apple-darwin')) ||
+		// スクリプト名でのターゲット指定検出（より柔軟）
+		process.env.npm_lifecycle_script?.includes('universal') ||
+		process.env.npm_lifecycle_script?.includes('aarch64') ||
+		process.env.npm_lifecycle_script?.includes('x86_64')
 
 	console.log('=== TAURI BUILD DETECTION DEBUG ===')
 	console.log('TAURI_PLATFORM:', process.env.TAURI_PLATFORM)
 	console.log('VITE_TAURI_PLATFORM:', process.env.VITE_TAURI_PLATFORM)
+	console.log('TAURI_TARGET:', process.env.TAURI_TARGET)
+	console.log('VITE_TAURI_TARGET:', process.env.VITE_TAURI_TARGET)
 	console.log('npm_lifecycle_event:', process.env.npm_lifecycle_event)
 	console.log('npm_lifecycle_script:', process.env.npm_lifecycle_script)
 	console.log('npm_execpath:', process.env.npm_execpath)
@@ -47,6 +66,8 @@ function isTauriBuild(): boolean {
 	console.log('argv[0]:', process.argv[0])
 	console.log('argv[1]:', process.argv[1])
 	console.log('argv[2]:', process.argv[2])
+	console.log('argv[3]:', process.argv[3])
+	console.log('argv[4]:', process.argv[4])
 	console.log('cwd:', process.cwd())
 	console.log('isTauriEnv:', isTauriEnv)
 	console.log('====================================')
@@ -64,6 +85,7 @@ export default defineConfig(({ command, mode }) => {
   console.log('Vite config - command:', command, 'mode:', mode)
   console.log('Vite config - isTauriBuild:', isTauriBuildResult)
   console.log('Vite config - TAURI_PLATFORM:', process.env.TAURI_PLATFORM)
+  console.log('Vite config - TAURI_TARGET:', process.env.TAURI_TARGET)
   console.log('Vite config - npm_lifecycle_event:', process.env.npm_lifecycle_event)
   console.log('Vite config - argv:', process.argv)
   console.log('Vite config - cwd:', process.cwd())

@@ -11,24 +11,33 @@ export async function loadSettings() {
 	if (isTauri()) {
 		try {
 			console.log('[Settings] Attempting to read from Tauri AppConfig directory...')
-			const content = await readTextFile(SETTINGS_FILE, { baseDir: BaseDirectory.AppConfig })
-			console.log('[Settings] Successfully read settings file')
-			const parsed = JSON.parse(content)
-			console.log('[Settings] Successfully parsed settings:', parsed)
-			return parsed
-		} catch (error) {
-			console.error('[Settings] Failed to read settings from Tauri:', error)
-			console.log('[Settings] Attempting to save default settings...')
+			console.log('[Settings] BaseDirectory.AppConfig:', BaseDirectory.AppConfig)
 
+			// ファイルの存在確認を試行
 			try {
-				await saveSettings(DEFAULT_SETTING)
-				console.log('[Settings] Successfully saved default settings')
-				return DEFAULT_SETTING
-			} catch (saveError) {
-				console.error('[Settings] Failed to save default settings:', saveError)
-				console.log('[Settings] Returning default settings from memory')
-				return DEFAULT_SETTING
+				const content = await readTextFile(SETTINGS_FILE, { baseDir: BaseDirectory.AppConfig })
+				console.log('[Settings] Successfully read settings file')
+				const parsed = JSON.parse(content)
+				console.log('[Settings] Successfully parsed settings:', parsed)
+				return parsed
+			} catch (readError) {
+				console.log('[Settings] File read failed, this is expected for first run:', readError)
+				console.log('[Settings] Attempting to save default settings...')
+
+				try {
+					await saveSettings(DEFAULT_SETTING)
+					console.log('[Settings] Successfully saved default settings')
+					return DEFAULT_SETTING
+				} catch (saveError) {
+					console.error('[Settings] Failed to save default settings:', saveError)
+					console.log('[Settings] Returning default settings from memory')
+					return DEFAULT_SETTING
+				}
 			}
+		} catch (error) {
+			console.error('[Settings] Unexpected error in Tauri settings handling:', error)
+			console.log('[Settings] Returning default settings from memory')
+			return DEFAULT_SETTING
 		}
 	} else {
 		// ブラウザ環境 → localStorage から読み込み

@@ -4,7 +4,7 @@ use tauri::AppHandle;
 use tauri::Manager;
 use tauri_plugin_dialog::{DialogExt,FilePath};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct EditorSettings {
     fontSize: u32,
     wordWrapColumn: u32,
@@ -14,10 +14,35 @@ struct EditorSettings {
     autoSave: AutoSaveSettings,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct AutoSaveSettings {
     enabled: bool,
     interval: u32,
+}
+
+impl Default for EditorSettings {
+    fn default() -> Self {
+        Self {
+            fontSize: 16,
+            wordWrapColumn: 60,
+            backgroundColor: "#ffffff".to_string(),
+            textColor: "#000000".to_string(),
+            fontFamily: "\"UD デジタル 教科書体 N-R\", \"Hiragino Sans\", \"Yu Gothic UI\", \"Meiryo UI\", sans-serif".to_string(),
+            autoSave: AutoSaveSettings {
+                enabled: true,
+                interval: 10,
+            },
+        }
+    }
+}
+
+impl Default for AutoSaveSettings {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            interval: 10,
+        }
+    }
 }
 
 #[tauri::command]
@@ -41,6 +66,14 @@ fn load_settings(app: tauri::AppHandle) -> Result<EditorSettings, String> {
         .app_data_dir()
         .map_err(|_| "App data dir not found")?;
     let path = dir.join("settings.json");
+
+    // 設定ファイルが存在しない場合、デフォルト設定を作成
+    if !path.exists() {
+        println!("[Tauri] Settings file not found, creating default settings");
+        let default_settings = EditorSettings::default();
+        save_settings(default_settings.clone(), app.clone())?;
+        return Ok(default_settings);
+    }
 
     let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
     serde_json::from_str(&data).map_err(|e| e.to_string())
@@ -93,6 +126,18 @@ fn main() {
         .setup(|app| {
             println!("[Tauri] App setup completed");
             println!("[Tauri] App info: {:?}", app.package_info());
+            
+            // アプリ起動時に設定ファイルの初期化を確認
+            let app_handle = app.handle();
+            match load_settings(app_handle.clone()) {
+                Ok(settings) => {
+                    println!("[Tauri] Settings loaded successfully: {:?}", settings);
+                }
+                Err(e) => {
+                    println!("[Tauri] Failed to load settings: {}", e);
+                }
+            }
+            
             Ok(())
         })
         .run(tauri::generate_context!())

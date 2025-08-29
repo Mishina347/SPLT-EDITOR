@@ -7,46 +7,51 @@ import path from 'path'
 function isTauriBuild(): boolean {
 	// より確実なTauri環境の判定
 	const isTauriEnv =
-		process.env.TAURI_PLATFORM !== undefined ||
 		process.env.npm_lifecycle_event === 'tauri:build' ||
 		process.env.npm_lifecycle_event === 'tauri:dev' ||
-		process.argv.includes('--tauri') ||
-		process.argv.includes('tauri') ||
-		process.cwd().includes('tauri') ||
-		// 追加の判定条件
-		(process.env.npm_lifecycle_event === 'build' && process.argv.includes('tauri')) ||
-		(process.env.npm_lifecycle_event === 'build' && process.cwd().includes('tauri')) ||
-		// 実行コマンドの詳細確認
-		process.argv.some(arg => arg.includes('tauri')) ||
-		process.argv.some(arg => arg.includes('Tauri')) ||
-		// プロセスの親プロセス情報
-		process.env.npm_config_user_agent?.includes('tauri') ||
-		process.env.npm_config_user_agent?.includes('Tauri') ||
-		// 環境変数の詳細確認
+		// スクリプト名の詳細判定
+		process.env.npm_lifecycle_script?.includes('tauri build') ||
+		process.env.npm_lifecycle_script?.includes('tauri:build') ||
+		// プロセスパスによる判定
 		process.env.npm_execpath?.includes('tauri') ||
 		process.env.npm_execpath?.includes('Tauri') ||
-		// スクリプト名の確認
-		process.env.npm_lifecycle_script?.includes('tauri') ||
-		process.env.npm_lifecycle_script?.includes('Tauri')
+		// ユーザーエージェントによる判定
+		process.env.npm_config_user_agent?.includes('tauri') ||
+		process.env.npm_config_user_agent?.includes('Tauri') ||
+		// 現在のディレクトリによる判定
+		process.cwd().includes('tauri') ||
+		// コマンドライン引数による判定（フォールバック）
+		process.argv.some(arg => arg.includes('tauri')) ||
+		process.argv.some(arg => arg.includes('Tauri')) ||
+		// プロセスの親プロセス情報による判定
+		process.env.npm_lifecycle_event === 'build' && 
+		(process.env.npm_lifecycle_script?.includes('tauri') || 
+		 process.env.npm_lifecycle_script?.includes('tauri build'))
 
 	console.log('=== TAURI BUILD DETECTION DEBUG ===')
 	console.log('TAURI_PLATFORM:', process.env.TAURI_PLATFORM)
+	console.log('VITE_TAURI_PLATFORM:', process.env.VITE_TAURI_PLATFORM)
 	console.log('npm_lifecycle_event:', process.env.npm_lifecycle_event)
 	console.log('npm_lifecycle_script:', process.env.npm_lifecycle_script)
 	console.log('npm_execpath:', process.env.npm_execpath)
 	console.log('npm_config_user_agent:', process.env.npm_config_user_agent)
 	console.log('argv:', process.argv)
+	console.log('argv length:', process.argv.length)
+	console.log('argv[0]:', process.argv[0])
+	console.log('argv[1]:', process.argv[1])
+	console.log('argv[2]:', process.argv[2])
 	console.log('cwd:', process.cwd())
 	console.log('isTauriEnv:', isTauriEnv)
 	console.log('====================================')
 
-	return isTauriEnv || false
+	return isTauriEnv ?? false
 }
 
 export default defineConfig(({ command, mode }) => {
   const isProduction = command === 'build' || mode === 'production'
   // Tauriビルドの判定をより確実に
   const isTauriBuildResult = isTauriBuild()
+  console.log('isTauriBuildResult:', isTauriBuildResult)
   
   console.log('=== VITE CONFIG DEBUG ===')
   console.log('Vite config - command:', command, 'mode:', mode)

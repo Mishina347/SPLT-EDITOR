@@ -230,7 +230,7 @@ jobs:
           echo "Latest linuxdeploy version: $LINUXDEPLOY_VERSION"
           
           # linuxdeployのインストール
-          wget -O linuxdeploy-x86_64.AppImage "https://github.com/linuxdeploy/linuxdeploy/releases/download$LINUXDEPLOY_VERSION/linuxdeploy-x86_64.AppImage"
+          wget -O linuxdeploy-x86_64.AppImage "https://github.com/linuxdeploy/linuxdeploy/releases/download/$LINUXDEPLOY_VERSION/linuxdeploy-x86_64.AppImage"
           chmod +x linuxdeploy-x86_64.AppImage
           sudo mv linuxdeploy-x86_64.AppImage /usr/local/bin/linuxdeploy
           
@@ -239,7 +239,7 @@ jobs:
           echo "Latest plugin version: $PLUGIN_VERSION"
           
           # linuxdeploy-plugin-appimageのインストール
-          wget -O linuxdeploy-plugin-appimage-x86_64.AppImage "https://github.com/linuxdeploy/appimage-plugin/releases/download/$PLUGIN_VERSION/linuxdeploy-plugin-appimage-x86_64.AppImage"
+          wget -O linuxdeploy-plugin-appimage-x86_64.AppImage "https://github.com/linuxdeploy/appimage-plugin/releases/download/linuxdeploy-plugin-appimage-x86_64.AppImage"
           chmod +x linuxdeploy-plugin-appimage-x86_64.AppImage
           sudo mv linuxdeploy-plugin-appimage-x86_64.AppImage /usr/local/bin/linuxdeploy-plugin-appimage
           

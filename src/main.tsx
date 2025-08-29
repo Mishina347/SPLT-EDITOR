@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import { Settings, getDefaultSettingForDevice } from './domain/entities/defaultSetting'
@@ -71,75 +71,104 @@ function Root() {
 	const [settings, setSettings] = useState<Settings>(getDefaultSettingForDevice())
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
+	const [isInitialized, setIsInitialized] = useState(false)
 
+	// 起動時の初期化処理
 	useEffect(() => {
-		// 確実なログ出力
-		console.log('=== APP STARTUP LOGS ===')
-		console.log('[App] Starting application...')
-		console.log('[App] Environment:', import.meta.env.MODE)
-		console.log('[App] Tauri platform:', import.meta.env.VITE_TAURI_PLATFORM || 'undefined')
-		console.log('[App] User agent:', navigator.userAgent)
-		console.log('[App] Platform:', navigator.platform)
-		console.log('[App] Language:', navigator.language)
-		console.log('[App] Root element exists:', !!document.getElementById('root'))
+		const initializeApp = async () => {
+			try {
+				console.log('[App] Starting app initialization...')
+				console.log('[App] Initial window size:', window.innerWidth, 'x', window.innerHeight)
 
-		// localStorageにも保存
-		try {
-			const logs = [
-				`[${new Date().toISOString()}] App Starting...`,
-				`[${new Date().toISOString()}] Environment: ${import.meta.env.MODE}`,
-				`[${new Date().toISOString()}] Tauri platform: ${import.meta.env.VITE_TAURI_PLATFORM || 'undefined'}`,
-				`[${new Date().toISOString()}] User agent: ${navigator.userAgent}`,
-				`[${new Date().toISOString()}] Platform: ${navigator.platform}`,
-				`[${new Date().toISOString()}] Root element exists: ${!!document.getElementById('root')}`,
-			]
-			localStorage.setItem('app_startup_logs', JSON.stringify(logs))
-			console.log('[App] Logs saved to localStorage')
-		} catch (error) {
-			console.error('[App] Failed to save logs to localStorage:', error)
+				// 起動時のウィンドウサイズを元に初期設定を決定
+				const initialSettings = getDefaultSettingForDevice()
+				console.log('[App] Initial settings based on window size:', initialSettings)
+
+				// 設定を読み込み（失敗した場合は初期設定を使用）
+				try {
+					const loadedSettings = await loadSettings()
+					console.log('[App] Settings loaded successfully:', loadedSettings)
+
+					// 読み込んだ設定と初期設定を比較して、必要に応じて更新
+					const finalSettings = shouldUpdateSettings(loadedSettings, initialSettings)
+						? initialSettings
+						: loadedSettings
+
+					console.log('[App] Final settings to use:', finalSettings)
+					setSettings(finalSettings)
+				} catch (error) {
+					console.error('[App] Failed to load settings, using initial settings:', error)
+					setSettings(initialSettings)
+				}
+
+				// manifestのorientation管理を初期化
+				try {
+					const cleanup = setupManifestOrientationListener()
+					console.log('[App] Manifest orientation listener setup completed')
+					// クリーンアップ関数を返す（undefinedの場合は何もしない）
+					return cleanup || (() => {})
+				} catch (error) {
+					console.error('[App] Failed to setup manifest orientation listener:', error)
+					return () => {}
+				}
+			} catch (error) {
+				console.error('[App] Initialization failed:', error)
+				setError((error as any).toString())
+			} finally {
+				setIsLoading(false)
+				setIsInitialized(true)
+				console.log('[App] App initialization completed')
+			}
 		}
 
-		loadSettings()
-			.then(loadedSettings => {
-				console.log('[App] Settings loaded successfully:', loadedSettings)
-				setSettings(loadedSettings)
-				setIsLoading(false)
-			})
-			.catch(error => {
-				console.error('[App] Failed to load settings:', error)
-				setError(error.toString())
-				setIsLoading(false)
+		initializeApp()
+	}, [])
+
+	// 設定の更新が必要かどうかを判定する関数
+	const shouldUpdateSettings = useCallback(
+		(currentSettings: Settings, newSettings: Settings): boolean => {
+			// 現在のウィンドウサイズと新しい設定のデバイスタイプが一致しない場合は更新
+			const currentIsMobile = window.innerWidth <= 768 || window.innerHeight <= 768
+			const newIsMobile =
+				newSettings.editor.fontSize === 12 && newSettings.editor.wordWrapColumn === 30
+
+			console.log('[App] Settings comparison:', {
+				currentIsMobile,
+				newIsMobile,
+				currentFontSize: currentSettings.editor.fontSize,
+				newFontSize: newSettings.editor.fontSize,
+				windowSize: `${window.innerWidth}x${window.innerHeight}`,
 			})
 
-		// manifestのorientation管理を初期化
-		try {
-			const cleanup = setupManifestOrientationListener()
-			console.log('[App] Manifest orientation listener setup completed')
-			// クリーンアップ関数を返す（undefinedの場合は何もしない）
-			return cleanup || (() => {})
-		} catch (error) {
-			console.error('[App] Failed to setup manifest orientation listener:', error)
-			return () => {}
-		}
+			return currentIsMobile !== newIsMobile
+		},
+		[]
+	)
+
+	const handleResize = useCallback(() => {
+		const newSettings = getDefaultSettingForDevice()
+
+		setSettings(prevSettings => {
+			// 設定が変更された場合のみ更新
+			if (JSON.stringify(prevSettings) !== JSON.stringify(newSettings)) {
+				console.log('[App] Resize detected, updating settings from:', prevSettings, 'to:', newSettings)
+				return newSettings
+			} else {
+				console.log('[App] Settings unchanged, no update needed')
+			}
+			return prevSettings
+		})
 	}, [])
 
 	// ウィンドウサイズの変更を監視して設定を動的に更新
 	useEffect(() => {
-		const handleResize = () => {
-			const newSettings = getDefaultSettingForDevice()
-			setSettings(prevSettings => {
-				// 設定が変更された場合のみ更新
-				if (JSON.stringify(prevSettings) !== JSON.stringify(newSettings)) {
-					console.log('[App] Device size changed, updating settings:', newSettings)
-					return newSettings
-				}
-				return prevSettings
-			})
-		}
+		// 初期化完了後にのみリサイズリスナーを設定
+		if (!isInitialized) return
 
+		console.log('[App] Setting up resize listener...')
 		window.addEventListener('resize', handleResize)
 		return () => window.removeEventListener('resize', handleResize)
-	}, [])
+	}, [isInitialized, handleResize])
 
 	if (isLoading) {
 		console.log('[App] Rendering loading state...')
@@ -184,9 +213,6 @@ function Root() {
 			</div>
 		)
 	}
-
-	console.log('[App] Rendering main app with settings:', settings)
-
 	// Appコンポーネントの存在確認
 	if (typeof App === 'undefined') {
 		console.error('[App] App component is undefined!')
@@ -195,7 +221,6 @@ function Root() {
 		)
 	}
 
-	console.log('[App] App component found, rendering...')
 	return <App initSettings={settings} />
 }
 

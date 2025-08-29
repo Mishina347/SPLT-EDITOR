@@ -1,0 +1,3 @@
+[capabilities.default]
+fs = { scope = ["**"] }
+dialog = { scope = ["**"] }

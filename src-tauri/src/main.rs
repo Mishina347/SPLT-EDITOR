@@ -1,18 +1,31 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::PathBuf;
-use tauri::api::dialog;
+use tauri::AppHandle;
+use tauri::Manager;
+use tauri_plugin_dialog::{DialogExt,FilePath};
 
 #[derive(Serialize, Deserialize)]
 struct EditorSettings {
-    font_size: u32,
-    word_wrap_column: u32,
+    fontSize: u32,
+    wordWrapColumn: u32,
+    backgroundColor: String,
+    textColor: String,
+    fontFamily: String,
+    autoSave: AutoSaveSettings,
+}
+
+#[derive(Serialize, Deserialize)]
+struct AutoSaveSettings {
+    enabled: bool,
+    interval: u32,
 }
 
 #[tauri::command]
-fn save_settings(settings: EditorSettings) -> Result<(), EditorSettings> {
-    let dir = tauri::api::path::app_data_dir(&tauri::Config::default())
-        .ok_or("App data dir not found")?;
+fn save_settings(settings: EditorSettings, app: tauri::AppHandle) -> Result<(), String> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|_| "App data dir not found")?;
     let path = dir.join("settings.json");
 
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
@@ -22,41 +35,66 @@ fn save_settings(settings: EditorSettings) -> Result<(), EditorSettings> {
 }
 
 #[tauri::command]
-fn load_settings() -> Result<EditorSettings, String> {
-    let dir = tauri::api::path::app_data_dir(&tauri::Config::default())
-        .ok_or("App data dir not found")?;
+fn load_settings(app: tauri::AppHandle) -> Result<EditorSettings, String> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|_| "App data dir not found")?;
     let path = dir.join("settings.json");
 
     let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
     serde_json::from_str(&data).map_err(|e| e.to_string())
 }
 
+
+
 #[tauri::command]
-async fn open_text_file() -> Result<(String, String), String> {
-    // ファイル選択ダイアログを開く
-    let file_path = dialog::blocking::FileDialogBuilder::new()
-        .add_filter("テキストファイル", &["txt", "md", "json", "js", "ts", "jsx", "tsx", "html", "css", "xml"])
+fn open_text_file(app: AppHandle) -> Result<(String, String), String> {
+    // ファイル選択ダイアログ
+    let file_path = app
+        .dialog()
+        .file()
+        .add_filter("テキストファイル", &[
+            "txt", "md", "json", "js", "ts", "jsx", "tsx", "html", "css", "xml"
+        ])
         .add_filter("すべてのファイル", &["*"])
-        .pick_file()
-        .ok_or("ファイルが選択されませんでした")?;
+        .blocking_pick_file(); // 同期版
 
-    // ファイル名を取得
-    let file_name = file_path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("unknown")
-        .to_string();
+    match file_path {
+        Some(FilePath::Path(path_buf)) => {
+            // ファイル内容を読み込み
+            let contents = fs::read_to_string(&path_buf)
+                .map_err(|e| format!("ファイル読み込みエラー: {}", e))?;
 
-    // ファイル内容を読み込み
-    let content = fs::read_to_string(&file_path)
-        .map_err(|e| format!("ファイルの読み込みに失敗しました: {}", e))?;
+            // ファイル名だけ取り出す
+            let file_name = path_buf
+                .file_name()
+                .and_then(|os_str| os_str.to_str())
+                .unwrap_or("不明なファイル")
+                .to_string();
 
-    Ok((content, file_name))
+            Ok((contents, file_name))
+        }
+        Some(FilePath::Url(_url)) => {
+            Err("URL 経由のファイル選択は未対応です".to_string())
+        }
+        None => Err("ファイルが選択されませんでした".to_string()),
+    }
 }
 
 fn main() {
+    println!("[Tauri] Starting application...");
+    println!("[Tauri] Initializing plugins...");
+    
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![save_settings, load_settings, open_text_file])
+        .setup(|app| {
+            println!("[Tauri] App setup completed");
+            println!("[Tauri] App info: {:?}", app.package_info());
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

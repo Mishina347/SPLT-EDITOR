@@ -6,7 +6,7 @@ export {
 	isPortrait,
 	getViewportSize,
 } from './deviceDetection'
-export { isTauri } from './isTauri'
+export { isTauri, isTauriBuild } from './isTauri'
 export {
 	isMobileSize,
 	getOptimalOrientation,

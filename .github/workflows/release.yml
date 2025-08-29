@@ -138,20 +138,84 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
+          # 基本的なビルドツール
           sudo apt-get install -y \
-            libwebkit2gtk-4.0-dev \
             build-essential \
             curl \
             wget \
             libssl-dev \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
+            pkg-config \
+            cmake \
+            ninja-build
+          
+          # GTKとWebKitの依存関係
+          sudo apt-get install -y \
             libglib2.0-dev \
-            pkg-config
+            libgtk-3-dev \
+            libcairo2-dev \
+            libpango1.0-dev \
+            libatk1.0-dev \
+            libgdk-pixbuf2.0-dev \
+            libharfbuzz-dev \
+            libfreetype6-dev \
+            libfontconfig1-dev
+          
+          # WebKit2GTKの代替パッケージを試す
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev || \
+            libwebkit2gtk-4.0-dev || \
+            libwebkit2gtk-3.0-dev || \
+            libwebkit2gtk-dev || \
+            echo "WebKit2GTK not found, will try alternative approach"
+          
+          # WebKit2GTKが見つからない場合の代替手段
+          if ! dpkg -l | grep -q libwebkit2gtk; then
+            echo "Installing alternative WebView libraries..."
+            sudo apt-get install -y \
+              libgtk-3-dev \
+              libwebkit2gtk-4.0-dev || \
+              libwebkit2gtk-3.0-dev || \
+              echo "Alternative WebView libraries not available"
+          fi
+          
+          # その他の必要なライブラリ
+          sudo apt-get install -y \
+            libcups2-dev \
+            libdrm-dev \
+            libxkbcommon-dev \
+            libx11-dev \
+            libxext-dev \
+            libxfixes-dev \
+            libxrender-dev \
+            libxrandr-dev \
+            libxss-dev \
+            libasound2-dev \
+            libpulse-dev \
+            libdbus-1-dev \
+            libudev-dev \
+            libsqlite3-dev \
+            libxml2-dev \
+            libcurl4-openssl-dev
       
       - name: Install Tauri CLI
         run: yarn add -D @tauri-apps/cli
+      
+      - name: Check build environment
+        run: |
+          echo "=== Checking build environment ==="
+          echo "Node version: $(node --version)"
+          echo "Yarn version: $(yarn --version)"
+          echo "Rust version: $(rustc --version)"
+          echo "Current directory: $(pwd)"
+          echo "================================"
+      
+      - name: Check WebKit2GTK status
+        run: |
+          echo "=== Checking WebKit2GTK status ==="
+          dpkg -l | grep -i webkit || echo "No WebKit packages found"
+          pkg-config --exists webkit2gtk-4.0 && echo "WebKit2GTK-4.0 found" || echo "WebKit2GTK-4.0 not found"
+          pkg-config --exists webkit2gtk-3.0 && echo "WebKit2GTK-3.0 found" || echo "WebKit2GTK-3.0 not found"
+          echo "=================================="
       
       - name: Install GitHub CLI
         run: |
@@ -163,17 +227,91 @@ jobs:
       
       - name: Build Tauri app (Linux)
         env:
-          VITE_TAURI_PLATFORM: desktop
-          TAURI_PLATFORM: desktop
-        run: yarn tauri:build
+          VITE_TAURI_PLATFORM: linux
+          TAURI_PLATFORM: linux
+          NODE_ENV: production
+          RUST_BACKTRACE: 1
+        run: |
+          echo "=== Building Tauri app for Linux ==="
+          echo "VITE_TAURI_PLATFORM: $VITE_TAURI_PLATFORM"
+          echo "TAURI_PLATFORM: $TAURI_PLATFORM"
+          echo "NODE_ENV: $NODE_ENV"
+          yarn tauri:build:linux
+      
+      - name: List Tauri build outputs (Linux)
+        run: |
+          echo "=== Tauri build outputs (Linux) ==="
+          ls -la src-tauri/target/release/
+          echo "=== Tauri bundle outputs (Linux) ==="
+          ls -la src-tauri/target/release/bundle/
+          echo "=== Tauri build size (Linux) ==="
+          du -sh src-tauri/target/release/
+          echo "=== Tauri bundle size (Linux) ==="
+          du -sh src-tauri/target/release/bundle/
+          echo "=== Environment variables used (Linux) ==="
+          echo "VITE_TAURI_PLATFORM: $VITE_TAURI_PLATFORM"
+          echo "TAURI_PLATFORM: $TAURI_PLATFORM"
+          echo "NODE_ENV: $NODE_ENV"
+      
+      - name: Upload Tauri artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-build
+          path: |
+            src-tauri/target/release/bundle/**/*.deb
+            src-tauri/target/release/bundle/**/*.AppImage
+          retention-days: 90
+          if-no-files-found: warn
+
+  # Tauriビルドジョブ（macOS）（mainブランチプッシュ時のみ）
+  tauri-build-macos:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-and-deploy
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+      
+      - name: Install dependencies
+        run: yarn install
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-apple-darwin
+      
+      - name: Install Tauri CLI
+        run: yarn add -D @tauri-apps/cli
+      
+      - name: Check build environment (macOS)
+        run: |
+          echo "=== Checking build environment (macOS) ==="
+          echo "Node version: $(node --version)"
+          echo "Yarn version: $(yarn --version)"
+          echo "Rust version: $(rustc --version)"
+          echo "Current directory: $(pwd)"
+          echo "Target: x86_64-apple-darwin"
+          echo "====================================="
       
       - name: Build Tauri app (macOS)
         env:
-          VITE_TAURI_PLATFORM: desktop
-          TAURI_PLATFORM: desktop
+          VITE_TAURI_PLATFORM: macos
+          TAURI_PLATFORM: macos
+          NODE_ENV: production
+          RUST_BACKTRACE: 1
         run: |
-          rustup target add x86_64-apple-darwin
-          yarn tauri:build --target x86_64-apple-darwin
+          echo "=== Building Tauri app for macOS ==="
+          echo "VITE_TAURI_PLATFORM: $VITE_TAURI_PLATFORM"
+          echo "TAURI_PLATFORM: $TAURI_PLATFORM"
+          echo "NODE_ENV: $NODE_ENV"
+          yarn tauri:build:macos
       
       - name: List Tauri build outputs
         run: |
@@ -186,21 +324,13 @@ jobs:
           echo "=== Tauri bundle size ==="
           du -sh src-tauri/target/release/bundle/
       
-      - name: Upload Tauri artifacts
+      - name: Upload Tauri artifacts (macOS)
         uses: actions/upload-artifact@v4
         with:
-          name: tauri-build
+          name: tauri-build-macos
           path: |
-            src-tauri/target/release/bundle/**/*.deb
-            src-tauri/target/release/bundle/**/*.msi
             src-tauri/target/release/bundle/**/*.dmg
             src-tauri/target/release/bundle/**/*.app
-            src-tauri/target/release/bundle/**/*.exe
-            src-tauri/target/release/bundle/**/*.AppImage
-            src-tauri/target/x86_64-apple-darwin/release/bundle/**/*.dmg
-            src-tauri/target/x86_64-apple-darwin/release/bundle/**/*.app
-            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/**/*.msi
-            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/**/*.exe
           retention-days: 90
           if-no-files-found: warn
 
@@ -231,11 +361,28 @@ jobs:
       - name: Install Tauri CLI
         run: yarn add -D @tauri-apps/cli
       
+      - name: Check build environment (Windows)
+        run: |
+          echo "=== Checking build environment (Windows) ==="
+          echo "Node version: $(node --version)"
+          echo "Yarn version: $(yarn --version)"
+          echo "Rust version: $(rustc --version)"
+          echo "Current directory: $(pwd)"
+          echo "Target: x86_64-pc-windows-msvc"
+          echo "======================================="
+      
       - name: Build Tauri app (Windows)
         env:
-          VITE_TAURI_PLATFORM: desktop
-          TAURI_PLATFORM: desktop
-        run: yarn tauri:build
+          VITE_TAURI_PLATFORM: windows
+          TAURI_PLATFORM: windows
+          NODE_ENV: production
+          RUST_BACKTRACE: 1
+        run: |
+          echo "=== Building Tauri app for Windows ==="
+          echo "VITE_TAURI_PLATFORM: $VITE_TAURI_PLATFORM"
+          echo "TAURI_PLATFORM: $TAURI_PLATFORM"
+          echo "NODE_ENV: $NODE_ENV"
+          yarn tauri:build:windows
       
       - name: List Tauri build outputs
         run: |
@@ -257,7 +404,7 @@ jobs:
   # リリース作成時にビルド成果物をリリースにアップロードするジョブ
   upload-to-release:
     if: github.event_name == 'release'
-    needs: [save-build-artifacts, tauri-build-linux, tauri-build-windows]
+    needs: [save-build-artifacts, tauri-build-linux, tauri-build-macos, tauri-build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifacts
@@ -278,6 +425,12 @@ jobs:
           name: tauri-build-windows
           path: ./tauri-build-windows
       
+      - name: Download Tauri artifacts (macOS)
+        uses: actions/download-artifact@v4
+        with:
+          name: tauri-build-macos
+          path: ./tauri-build-macos
+      
       - name: Create release archive
         run: |
           echo "=== Creating release archive ==="
@@ -291,6 +444,12 @@ jobs:
           tar -czf ../tauri-release-linux-${GITHUB_REF_NAME}.tar.gz .
           cd ..
           ls -la tauri-release-linux-${GITHUB_REF_NAME}.tar.gz
+          
+          echo "=== Creating Tauri release archive (macOS) ==="
+          cd tauri-build-macos
+          tar -czf ../tauri-release-macos-${GITHUB_REF_NAME}.tar.gz .
+          cd ..
+          ls -la tauri-release-macos-${GITHUB_REF_NAME}.tar.gz
           
           echo "=== Creating Tauri release archive (Windows) ==="
           cd tauri-build-windows
@@ -316,6 +475,16 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./tauri-release-linux-${GITHUB_REF_NAME}.tar.gz
           asset_name: tauri-release-linux-${GITHUB_REF_NAME}.tar.gz
+          asset_content_type: application/gzip
+      
+      - name: Upload Tauri Release (macOS) to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./tauri-release-macos-${GITHUB_REF_NAME}.tar.gz
+          asset_name: tauri-release-macos-${GITHUB_REF_NAME}.tar.gz
           asset_content_type: application/gzip
       
       - name: Upload Tauri Release (Windows) to Release

@@ -32,6 +32,13 @@ interface EditorPageProps {
 export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	const [editorSettings, setEditorSettings] = useState<EditorSettings>(initSettings.editor)
 	const [previewSettings, setPreviewSettings] = useState<LayoutConfig>(initSettings.preview)
+
+	// initSettingsの変更を監視して設定を更新
+	useEffect(() => {
+		console.log('[EditorPage] Settings updated:', initSettings)
+		setEditorSettings(initSettings.editor)
+		setPreviewSettings(initSettings.preview)
+	}, [initSettings])
 	// 最大化状態の詳細管理
 	const [viewMode, setViewMode] = useState<DISPLAY_MODE>(DISPLAY_MODE.BOTH)
 	const [focusedPane, setFocusedPane] = useState<DISPLAY_MODE>(DISPLAY_MODE.BOTH)

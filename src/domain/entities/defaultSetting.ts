@@ -1,3 +1,4 @@
+import { isMobileSize } from '@/utils'
 import { EditorSettings, FONT_FAMILIES } from '../editor/EditorSetting'
 import { LayoutConfig } from '../preview/pdf/TextContent'
 import { EditorTheme } from '../theme/EditorTheme'
@@ -61,8 +62,8 @@ export const MOBILE_SETTING: Settings = {
 		},
 	},
 	preview: {
-		charsPerLine: 30,
-		linesPerPage: 16,
+		charsPerLine: 26,
+		linesPerPage: 14,
 		fontSize: 14,
 		fontFamily: FONT_FAMILIES.NOTO_SERIF,
 	},
@@ -75,8 +76,7 @@ export const DEFAULT_SETTING: Settings = DESKTOP_SETTING
 export function getDefaultSettingForDevice(): Settings {
 	// ブラウザ環境でのみ実行
 	if (typeof window !== 'undefined') {
-		const isMobile = window.innerWidth <= 768 || window.innerHeight <= 768
-		return isMobile ? MOBILE_SETTING : DESKTOP_SETTING
+		return isMobileSize() ? MOBILE_SETTING : DESKTOP_SETTING
 	}
 	// Node.js環境ではデスクトップ設定を返す
 	return DESKTOP_SETTING

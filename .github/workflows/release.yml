@@ -384,6 +384,9 @@ jobs:
           toolchain: stable
           target: x86_64-apple-darwin
       
+      - name: Add aarch64 target
+        run: rustup target add aarch64-apple-darwin
+      
       - name: Install Tauri CLI
         run: yarn add -D @tauri-apps/cli
       
@@ -394,13 +397,16 @@ jobs:
           echo "Yarn version: $(yarn --version)"
           echo "Rust version: $(rustc --version)"
           echo "Current directory: $(pwd)"
-          echo "Target: x86_64-apple-darwin"
+          echo "Available targets:"
+          rustc --print target-list | grep apple
           echo "====================================="
       
-      - name: Build Tauri app (macOS)
+      - name: Build Tauri app (macOS Universal)
         env:
           VITE_TAURI_PLATFORM: macos
           TAURI_PLATFORM: macos
+          VITE_TAURI_TARGET: universal-apple-darwin
+          TAURI_TARGET: universal-apple-darwin
           NODE_ENV: production
           RUST_BACKTRACE: 1
           # macOSアプリの署名とバンドル設定
@@ -411,20 +417,45 @@ jobs:
           # 署名なしでビルド（開発用）
           TAURI_BUNDLE_SIGN: false
         run: |
-          echo "=== Building Tauri app for macOS ==="
+          echo "=== Building Tauri app for macOS (Universal) ==="
           echo "VITE_TAURI_PLATFORM: $VITE_TAURI_PLATFORM"
           echo "TAURI_PLATFORM: $TAURI_PLATFORM"
+          echo "VITE_TAURI_TARGET: $VITE_TAURI_TARGET"
+          echo "TAURI_TARGET: $TAURI_TARGET"
           echo "NODE_ENV: $NODE_ENV"
           echo "TAURI_BUNDLE_SIGN: $TAURI_BUNDLE_SIGN"
-          echo "Using simplified script without cross-env"
+          echo "Using universal build script for Intel + Apple Silicon"
           
           # ビルド前の環境確認
           echo "=== Build environment check ==="
           echo "Current directory: $(pwd)"
-          echo "Rust target: $(rustc --print target-list | grep apple)"
+          echo "Available Rust targets:"
+          rustc --print target-list | grep apple
+          echo "Target for universal build: universal-apple-darwin"
           
-          # Tauriビルドの実行
+          # ユニバーサルビルドの実行
+          echo "=== Starting universal build ==="
           yarn tauri:build:universal:macos
+          
+          # ビルド後の確認
+          echo "=== Post-build verification ==="
+          echo "Universal binary info:"
+          if command -v lipo >/dev/null 2>&1; then
+            find src-tauri/target/release -name "*.app" -exec sh -c '
+              for app in "$@"; do
+                if [ -d "$app/Contents/MacOS" ]; then
+                  for exe in "$app/Contents/MacOS"/*; do
+                    if [ -f "$exe" ]; then
+                      echo "  Checking: $(basename "$exe")"
+                      lipo -info "$exe" 2>/dev/null || echo "    Not a universal binary"
+                    fi
+                  done
+                fi
+              done
+            ' sh {} +
+          else
+            echo "  lipo command not available for architecture verification"
+          fi
       
       - name: List Tauri build outputs
         run: |
@@ -496,6 +527,26 @@ jobs:
           echo "Available files:"
           ls -la
           
+          # ユニバーサルビルドの確認
+          echo "=== Universal build verification ==="
+          for app_file in *.app; do
+            if [ -d "$app_file" ]; then
+              echo "Checking universal binary in $app_file:"
+              if [ -d "$app_file/Contents/MacOS" ]; then
+                for exe in "$app_file/Contents/MacOS"/*; do
+                  if [ -f "$exe" ]; then
+                    echo "  Executable: $(basename "$exe")"
+                    if command -v lipo >/dev/null 2>&1; then
+                      lipo -info "$exe" 2>/dev/null || echo "    Architecture info unavailable"
+                    else
+                      echo "    lipo command not available"
+                    fi
+                  fi
+                done
+              fi
+            fi
+          done
+          
           # .appファイルを個別に圧縮（より安全な方法）
           for app_file in *.app; do
             if [ -d "$app_file" ]; then
@@ -539,9 +590,9 @@ jobs:
           done
           
           # 全体を圧縮（より安全な方法）
-          echo "Creating complete bundle archive..."
-          tar --exclude='*.DS_Store' --exclude='__pycache__' -czf macos-bundle.tar.gz .
-          ls -la macos-bundle.tar.gz
+          echo "Creating complete universal bundle archive..."
+          tar --exclude='*.DS_Store' --exclude='__pycache__' -czf macos-universal-bundle.tar.gz .
+          ls -la macos-universal-bundle.tar.gz
           echo "=== Archive sizes ==="
           du -sh *.tar.gz
           
@@ -625,13 +676,13 @@ jobs:
           
           cd ../../../..
       
-      - name: Upload Tauri artifacts (macOS)
+      - name: Upload Tauri artifacts (macOS Universal)
         uses: actions/upload-artifact@v4
         with:
-          name: tauri-build-macos
+          name: tauri-build-macos-universal
           path: |
             src-tauri/target/release/bundle/*.tar.gz
-            src-tauri/target/release/bundle/macos-bundle.tar.gz
+            src-tauri/target/release/bundle/macos-universal-bundle.tar.gz
           retention-days: 90
           if-no-files-found: warn
 
@@ -841,11 +892,11 @@ jobs:
           name: tauri-build-windows
           path: ./tauri-build-windows
       
-      - name: Download Tauri artifacts (macOS)
+      - name: Download Tauri artifacts (macOS Universal)
         uses: actions/download-artifact@v4
         with:
-          name: tauri-build-macos
-          path: ./tauri-build-macos
+          name: tauri-build-macos-universal
+          path: ./tauri-build-macos-universal
       
       - name: Create release archive
         run: |
@@ -861,19 +912,19 @@ jobs:
           cd ..
           ls -la tauri-release-linux-${GITHUB_REF_NAME}.tar.gz
           
-          echo "=== Creating Tauri release archive (macOS) ==="
-          cd tauri-build-macos
+          echo "=== Creating Tauri release archive (macOS Universal) ==="
+          cd tauri-build-macos-universal
           
           # 圧縮されたファイルを確認
           echo "Available files:"
           ls -la
           
           # 個別の圧縮ファイルと全体アーカイブを作成
-          tar -czf ../tauri-release-macos-${GITHUB_REF_NAME}.tar.gz .
+          tar -czf ../tauri-release-macos-universal-${GITHUB_REF_NAME}.tar.gz .
           cd ..
-          ls -la tauri-release-macos-${GITHUB_REF_NAME}.tar.gz
+          ls -la tauri-release-macos-universal-${GITHUB_REF_NAME}.tar.gz
           
-          echo "=== macOS release archive created successfully ==="
+          echo "=== macOS Universal release archive created successfully ==="
           
           echo "=== Creating Tauri release archive (Windows) ==="
           cd tauri-build-windows
@@ -901,14 +952,14 @@ jobs:
           asset_name: tauri-release-linux-${GITHUB_REF_NAME}.tar.gz
           asset_content_type: application/gzip
       
-      - name: Upload Tauri Release (macOS) to Release
+      - name: Upload Tauri Release (macOS Universal) to Release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./tauri-release-macos-${GITHUB_REF_NAME}.tar.gz
-          asset_name: tauri-release-macos-${GITHUB_REF_NAME}.tar.gz
+          asset_path: ./tauri-release-macos-universal-${GITHUB_REF_NAME}.tar.gz
+          asset_name: tauri-release-macos-universal-${GITHUB_REF_NAME}.tar.gz
           asset_content_type: application/gzip
       
       - name: Upload Tauri Release (Windows) to Release

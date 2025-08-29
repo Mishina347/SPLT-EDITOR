@@ -7,6 +7,13 @@ import path from 'path'
 function isTauriBuild(): boolean {
 	// より確実なTauri環境の判定
 	const isTauriEnv =
+		// 環境変数による判定（最も確実）
+		process.env.TAURI_PLATFORM !== undefined ||
+		process.env.VITE_TAURI_PLATFORM !== undefined ||
+		// npm/yarnスクリプト名による判定
+		process.env.npm_lifecycle_script?.includes('tauri') ||
+		process.env.npm_lifecycle_script?.includes('Tauri') ||
+		// ライフサイクルイベントによる判定
 		process.env.npm_lifecycle_event === 'tauri:build' ||
 		process.env.npm_lifecycle_event === 'tauri:dev' ||
 		// スクリプト名の詳細判定

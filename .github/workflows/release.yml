@@ -127,6 +127,14 @@ jobs:
           echo "Proceeding with Tauri build for Linux..."
           echo "=========================================="
       
+      - name: Check package.json scripts
+        run: |
+          echo "=== Checking package.json scripts ==="
+          echo "Using simplified Tauri scripts without cross-env"
+          echo "Scripts: tauri:build, tauri:build:linux, tauri:build:macos, tauri:build:windows"
+          echo "Environment variables set in GitHub Actions workflow"
+          echo "================================================="
+      
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -243,6 +251,7 @@ jobs:
           echo "VITE_TAURI_PLATFORM: $VITE_TAURI_PLATFORM"
           echo "TAURI_PLATFORM: $TAURI_PLATFORM"
           echo "NODE_ENV: $NODE_ENV"
+          echo "Using simplified script without cross-env"
           yarn tauri:build:linux
       
       - name: List Tauri build outputs (Linux)
@@ -286,6 +295,14 @@ jobs:
           echo "Proceeding with Tauri build for macOS..."
           echo "=========================================="
       
+      - name: Check package.json scripts
+        run: |
+          echo "=== Checking package.json scripts ==="
+          echo "Using simplified Tauri scripts without cross-env"
+          echo "Scripts: tauri:build, tauri:build:linux, tauri:build:macos, tauri:build:windows"
+          echo "Environment variables set in GitHub Actions workflow"
+          echo "================================================="
+      
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -325,6 +342,7 @@ jobs:
           echo "VITE_TAURI_PLATFORM: $VITE_TAURI_PLATFORM"
           echo "TAURI_PLATFORM: $TAURI_PLATFORM"
           echo "NODE_ENV: $NODE_ENV"
+          echo "Using simplified script without cross-env"
           yarn tauri:build:macos
       
       - name: List Tauri build outputs
@@ -363,6 +381,14 @@ jobs:
           echo "Web build and deploy job completed successfully"
           echo "Proceeding with Tauri build for Windows..."
           echo "=========================================="
+      
+      - name: Check package.json scripts
+        run: |
+          echo "=== Checking package.json scripts ==="
+          echo "Using simplified Tauri scripts without cross-env"
+          echo "Scripts: tauri:build, tauri:build:linux, tauri:build:macos, tauri:build:windows"
+          echo "Environment variables set in GitHub Actions workflow"
+          echo "================================================="
       
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -403,6 +429,7 @@ jobs:
           echo "VITE_TAURI_PLATFORM: $VITE_TAURI_PLATFORM"
           echo "TAURI_PLATFORM: $TAURI_PLATFORM"
           echo "NODE_ENV: $NODE_ENV"
+          echo "Using simplified script without cross-env"
           yarn tauri:build:windows
       
       - name: List Tauri build outputs

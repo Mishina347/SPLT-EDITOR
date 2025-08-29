@@ -3,14 +3,66 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
+// Tauriビルドの判定関数を直接定義
+function isTauriBuild(): boolean {
+	// より確実なTauri環境の判定
+	const isTauriEnv =
+		process.env.TAURI_PLATFORM !== undefined ||
+		process.env.npm_lifecycle_event === 'tauri:build' ||
+		process.env.npm_lifecycle_event === 'tauri:dev' ||
+		process.argv.includes('--tauri') ||
+		process.argv.includes('tauri') ||
+		process.cwd().includes('tauri') ||
+		// 追加の判定条件
+		(process.env.npm_lifecycle_event === 'build' && process.argv.includes('tauri')) ||
+		(process.env.npm_lifecycle_event === 'build' && process.cwd().includes('tauri')) ||
+		// 実行コマンドの詳細確認
+		process.argv.some(arg => arg.includes('tauri')) ||
+		process.argv.some(arg => arg.includes('Tauri')) ||
+		// プロセスの親プロセス情報
+		process.env.npm_config_user_agent?.includes('tauri') ||
+		process.env.npm_config_user_agent?.includes('Tauri') ||
+		// 環境変数の詳細確認
+		process.env.npm_execpath?.includes('tauri') ||
+		process.env.npm_execpath?.includes('Tauri') ||
+		// スクリプト名の確認
+		process.env.npm_lifecycle_script?.includes('tauri') ||
+		process.env.npm_lifecycle_script?.includes('Tauri')
+
+	console.log('=== TAURI BUILD DETECTION DEBUG ===')
+	console.log('TAURI_PLATFORM:', process.env.TAURI_PLATFORM)
+	console.log('npm_lifecycle_event:', process.env.npm_lifecycle_event)
+	console.log('npm_lifecycle_script:', process.env.npm_lifecycle_script)
+	console.log('npm_execpath:', process.env.npm_execpath)
+	console.log('npm_config_user_agent:', process.env.npm_config_user_agent)
+	console.log('argv:', process.argv)
+	console.log('cwd:', process.cwd())
+	console.log('isTauriEnv:', isTauriEnv)
+	console.log('====================================')
+
+	return isTauriEnv || false
+}
+
 export default defineConfig(({ command, mode }) => {
   const isProduction = command === 'build' || mode === 'production'
+  // Tauriビルドの判定をより確実に
+  const isTauriBuildResult = isTauriBuild()
   
+  console.log('=== VITE CONFIG DEBUG ===')
+  console.log('Vite config - command:', command, 'mode:', mode)
+  console.log('Vite config - isTauriBuild:', isTauriBuildResult)
+  console.log('Vite config - TAURI_PLATFORM:', process.env.TAURI_PLATFORM)
+  console.log('Vite config - npm_lifecycle_event:', process.env.npm_lifecycle_event)
+  console.log('Vite config - argv:', process.argv)
+  console.log('Vite config - cwd:', process.cwd())
+  console.log('Vite config - base path:', isTauriBuildResult ? "/" : (isProduction ? "/SPLT-EDITOR/" : "/"))
+  console.log('========================')
   return {
-    base:isProduction ? "/SPLT-EDITOR/" : "/",
+    base: isTauriBuildResult ? "/" : (isProduction ? "/SPLT-EDITOR/" : "/"),
     plugins: [
       react(),
-      VitePWA({
+      // Tauri環境ではPWAを無効化
+      ...(isTauriBuildResult ? [] : [VitePWA({
         registerType: 'autoUpdate',
         injectRegister: 'auto',
         workbox: {
@@ -37,9 +89,15 @@ export default defineConfig(({ command, mode }) => {
               sizes: '512x512',
               type: 'image/png',
             },
+            // iPad用のアイコンサイズ（既存の152x152を使用）
+            {
+              src: 'images/icons/icon-152x152.png',
+              sizes: '152x152',
+              type: 'image/png',
+            },
           ],
         },
-      }),
+      })]),
     ],
     resolve: {
       alias: {
@@ -48,13 +106,14 @@ export default defineConfig(({ command, mode }) => {
     },
     server: { 
       port: 3000,
-      base: '/SPLT-EDITOR/'
+      base: isTauriBuildResult ? '/' : '/SPLT-EDITOR/'
     },
     build: {
       outDir: 'dist',
       sourcemap: false,
       target: 'esnext',
-      rollupOptions: {
+      // Tauri環境ではchunk分割を無効化（パフォーマンス向上）
+      rollupOptions: isTauriBuildResult ? {} : {
         output: {
           manualChunks: {
             vendor: ['react', 'react-dom'],
@@ -64,7 +123,7 @@ export default defineConfig(({ command, mode }) => {
       }
     },
     optimizeDeps: {
-      include: ['@tauri-apps/api/fs']
+      include: ['@tauri-apps/api', '@tauri-apps/plugin-fs']
     }
   }
 })

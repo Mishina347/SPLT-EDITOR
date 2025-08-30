@@ -2,7 +2,7 @@
  * テキスト検証関連のユーティリティ関数
  */
 
-import { ValidationResult } from '@/types/common'
+import { ValidationResult } from '../types/common'
 
 /**
  * テキストの基本的な検証

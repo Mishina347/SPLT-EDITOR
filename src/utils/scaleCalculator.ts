@@ -2,7 +2,7 @@
  * 要素の倍率を計算するユーティリティ関数
  */
 
-import { ScaleInfo } from '@/types/common'
+import { ScaleInfo } from '../types/common'
 
 /**
  * 要素のCSS倍率を計算

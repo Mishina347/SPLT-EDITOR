@@ -23,6 +23,8 @@ import { DISPLAY_MODE, Settings, TextSnapshot, LayoutConfig, EditorSettings } fr
 import { EditorUIState } from '../../domain'
 import { loadText } from '../../usecases'
 import { editorService } from '../../application'
+import { eventBus, EVENTS } from '../../application/observers/EventBus'
+import { commandManager } from '../../application/commands/CommandManager'
 import { hexToRgba, isMobile, isMobileSize } from '../../utils'
 import styles from './MainLayout.module.css'
 import { SwipeDirection } from '../hooks/useSwipeGesture'
@@ -302,12 +304,22 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 					setLastSavedText(currentNotSavedText)
 					setCurrentSavedText(currentNotSavedText)
 
+					// イベントバスで保存完了を通知
+					eventBus.publish(EVENTS.TEXT_SAVED, {
+						timestamp: Date.now(),
+						contentLength: currentNotSavedText.length,
+					})
+
 					// 手動保存時のスナップショットを追加（空文字でも記録）
 					saveSnapshot(currentNotSavedText, `手動保存 - ${new Date().toLocaleString('ja-JP')}`)
 
 					logger.info('MainLayout', 'Manual save completed successfully')
 				} catch (error) {
 					logger.error('MainLayout', 'Manual save failed', error)
+					eventBus.publish(EVENTS.ERROR_OCCURRED, {
+						error: error instanceof Error ? error.message : String(error),
+						operation: 'manual_save',
+					})
 				}
 			}
 		}

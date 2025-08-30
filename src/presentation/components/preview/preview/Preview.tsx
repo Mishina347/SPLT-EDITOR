@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { usePerformanceOptimization } from '../../../hooks/usePerformanceOptimization'
 import { PaginationService } from '../../../../infra/PaginationService'
 import { LayoutConfig, PREVIEW_CONSTANTS } from '../../../../domain'
 import styles from './Preview.module.css'
@@ -13,6 +14,9 @@ interface Props {
 
 export const Preview = React.memo<Props>(
 	({ text, config, isMaximized, onFocusMode, onPageInfoChange }) => {
+		// パフォーマンス最適化フック
+		const { debounce } = usePerformanceOptimization()
+
 		// ページネーション処理を最適化（テキスト、レイアウト設定、フォント設定の変更時に再実行）
 		const pages = useMemo(() => {
 			// 空のテキストの場合は早期リターン
@@ -24,46 +28,40 @@ export const Preview = React.memo<Props>(
 			return PaginationService.paginate(text, config)
 		}, [text, config])
 
-		// フォント設定変更時のキャッシュクリアと強制再描画（デバウンス処理付き）
-		const fontChangeTimeoutRef = useRef<NodeJS.Timeout>()
+		// フォント設定変更時のキャッシュクリアと強制再描画（最適化版）
+		const debouncedFontUpdate = useMemo(
+			() =>
+				debounce(() => {
+					console.log('[Preview] Font settings changed:', {
+						fontSize: config.fontSize,
+						fontFamily: config.fontFamily,
+					})
+
+					// フォント設定が変更されたらページネーションキャッシュをクリア
+					PaginationService.clearCacheForFontChange()
+
+					// CSSカスタムプロパティを更新
+					if (containerRef.current) {
+						const container = containerRef.current
+						container.style.setProperty('--preview-font-family', config.fontFamily)
+					}
+
+					// 強制再描画をトリガー
+					if (containerRef.current) {
+						// DOM要素を強制的に再描画
+						const container = containerRef.current
+						container.style.display = 'none'
+						// 強制的にリフローを発生させる
+						container.offsetHeight
+						container.style.display = ''
+					}
+				}, 200),
+			[debounce, config.fontSize, config.fontFamily]
+		)
+
 		useEffect(() => {
-			console.log('[Preview] Font settings changed:', {
-				fontSize: config.fontSize,
-				fontFamily: config.fontFamily,
-			})
-
-			// デバウンス処理でパフォーマンスを最適化
-			if (fontChangeTimeoutRef.current) {
-				clearTimeout(fontChangeTimeoutRef.current)
-			}
-
-			fontChangeTimeoutRef.current = setTimeout(() => {
-				// フォント設定が変更されたらページネーションキャッシュをクリア
-				PaginationService.clearCacheForFontChange()
-
-				// CSSカスタムプロパティを更新
-				if (containerRef.current) {
-					const container = containerRef.current
-					container.style.setProperty('--preview-font-family', config.fontFamily)
-				}
-
-				// 強制再描画をトリガー
-				if (containerRef.current) {
-					// DOM要素を強制的に再描画
-					const container = containerRef.current
-					container.style.display = 'none'
-					// 強制的にリフローを発生させる
-					container.offsetHeight
-					container.style.display = ''
-				}
-			}, 200) // 200msのデバウンス
-
-			return () => {
-				if (fontChangeTimeoutRef.current) {
-					clearTimeout(fontChangeTimeoutRef.current)
-				}
-			}
-		}, [config.fontSize, config.fontFamily])
+			debouncedFontUpdate()
+		}, [debouncedFontUpdate])
 
 		// 設定オブジェクト全体の変更を監視（フォールバック）
 		useEffect(() => {

@@ -20,6 +20,19 @@ export { useToolbarOverflow } from './useToolbarOverflow'
 
 export type { PinchZoomState } from './usePinchZoom'
 
+// パフォーマンス最適化フック
+export {
+	usePerformanceOptimization,
+	useVirtualization,
+	useResizeObserver,
+	useMemoizedValue,
+	useRenderOptimization,
+	useEventOptimization,
+	useMemoryOptimization,
+	useAnimationFrame,
+	useBatchUpdate,
+} from './usePerformanceOptimization'
+
 export { usePreviewNavigation } from './usePreviewNavigation'
 export { usePreviewInteraction } from './usePreviewInteraction'
 export { useDiffDisplay, useRightPaneDiff, useHistoryDiff } from './useDiffDisplay'

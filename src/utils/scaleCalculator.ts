@@ -4,8 +4,6 @@
 
 import { ScaleInfo } from '@/types/common'
 
-export { ScaleInfo }
-
 /**
  * 要素のCSS倍率を計算
  * @param element 対象のDOM要素

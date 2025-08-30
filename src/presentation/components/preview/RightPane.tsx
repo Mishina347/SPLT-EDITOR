@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { logger } from '@/utils/logger'
+import {
+	useResizeObserver,
+	usePerformanceOptimization,
+} from '../../hooks/usePerformanceOptimization'
 import { PreviewMode, LayoutConfig, TextSnapshot } from '../../../domain'
 import { Preview } from './preview/Preview'
 import { Diff2HtmlAdapter } from '../../../infra'
 import { useFocusTrap, useOptimizedPreviewLayout } from '../../hooks'
-import {
-	calculateElementScale,
-	calculateScaleWithViewport,
-	ScaleInfo,
-} from '../../../utils/scaleCalculator'
+import { calculateElementScale, calculateScaleWithViewport } from '../../../utils/scaleCalculator'
+import { ScaleInfo } from '@/types/common'
 import { wordCounter, formatNumber } from '@/utils'
 import { html as diff2html, parse as diffParse } from 'diff2html'
 import 'diff2html/bundles/css/diff2html.min.css'
@@ -61,6 +62,9 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	})
 	const containerRef = useRef<HTMLDivElement>(null)
 
+	// パフォーマンス最適化フック
+	const { debounce } = usePerformanceOptimization()
+
 	// 倍率計算のロジック
 	const updateScaleInfo = useCallback(() => {
 		if (containerRef.current) {
@@ -77,19 +81,19 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	// 最適化されたプレビューレイアウト更新フック
 	const { updateLayout, updateLayoutImmediate, cleanup: cleanupLayout } = useOptimizedPreviewLayout()
 
-	// ResizeObserverのデバウンス処理（最適化版）
-	const resizeTimeoutRef = useRef<NodeJS.Timeout>()
-	const debouncedUpdateScaleInfo = useCallback(() => {
-		if (resizeTimeoutRef.current) {
-			clearTimeout(resizeTimeoutRef.current)
-		}
-		resizeTimeoutRef.current = setTimeout(() => {
-			logger.debug('RightPane', 'Debounced update triggered')
-			updateScaleInfo()
-			// レイアウト更新も最適化
-			updateLayout(containerRef.current)
-		}, 100) // 100msのデバウンス
-	}, []) // 依存関係を空配列に変更
+	// 最適化されたResizeObserver
+	const debouncedUpdateScaleInfo = useMemo(
+		() =>
+			debounce(() => {
+				logger.debug('RightPane', 'Debounced update triggered')
+				updateScaleInfo()
+				// レイアウト更新も最適化
+				updateLayout(containerRef.current)
+			}, 100),
+		[debounce, updateScaleInfo, updateLayout]
+	)
+
+	const { observe, unobserve } = useResizeObserver(debouncedUpdateScaleInfo)
 
 	// フォーカスモードハンドラー（最適化版）
 	const handleFocusMode = useCallback(
@@ -127,24 +131,16 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		// 初期倍率を計算
 		updateScaleInfo()
 
-		// ResizeObserverでサイズ変更を監視（デバウンス処理付き）
+		// ResizeObserverでサイズ変更を監視
 		if (containerRef.current) {
-			const resizeObserver = new ResizeObserver(() => {
-				logger.debug('RightPane', 'ResizeObserver triggered')
-				debouncedUpdateScaleInfo()
-			})
+			observe(containerRef.current)
+		}
 
-			resizeObserver.observe(containerRef.current)
-
-			return () => {
-				logger.debug('RightPane', 'Cleaning up ResizeObserver')
-				resizeObserver.disconnect()
-				if (resizeTimeoutRef.current) {
-					clearTimeout(resizeTimeoutRef.current)
-				}
-				// レイアウト更新のクリーンアップ
-				cleanupLayout()
-			}
+		return () => {
+			logger.debug('RightPane', 'Cleaning up ResizeObserver')
+			unobserve()
+			// レイアウト更新のクリーンアップ
+			cleanupLayout()
 		}
 	}, []) // 依存関係を空配列に変更
 

@@ -1,13 +1,14 @@
 import * as monaco from 'monaco-editor'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { logger } from '@/utils/logger'
+import {
+	useResizeObserver,
+	usePerformanceOptimization,
+} from '../../hooks/usePerformanceOptimization'
 import { DEFAULT_SETTING, EditorSettings } from '../../../domain'
 import { getOptimizedEditorOptions } from '../../../utils/editorOptimization'
-import {
-	calculateElementScale,
-	calculateScaleWithViewport,
-	ScaleInfo,
-} from '../../../utils/scaleCalculator'
+import { calculateElementScale, calculateScaleWithViewport } from '../../../utils/scaleCalculator'
+import { ScaleInfo } from '@/types/common'
 
 import styles from './EditorComponent.module.css'
 import buttonStyles from '../../shared/Button/Button.module.css'
@@ -121,6 +122,9 @@ export const EditorComponent = ({
 	// 最適化されたレイアウト更新フック
 	const { updateLayout, updateLayoutImmediate, cleanup: cleanupLayout } = useOptimizedLayout()
 
+	// パフォーマンス最適化フック
+	const { debounce } = usePerformanceOptimization()
+
 	// 倍率計算のロジック
 	const updateScaleInfo = useCallback(() => {
 		if (containerRef.current) {
@@ -134,38 +138,28 @@ export const EditorComponent = ({
 		}
 	}, [])
 
-	// ResizeObserverのデバウンス処理
-	const resizeTimeoutRef = useRef<NodeJS.Timeout>()
-	const debouncedUpdateScaleInfo = useCallback(() => {
-		if (resizeTimeoutRef.current) {
-			clearTimeout(resizeTimeoutRef.current)
-		}
-		resizeTimeoutRef.current = setTimeout(() => {
-			updateScaleInfo()
-		}, 100) // 100msのデバウンス
-	}, [updateScaleInfo])
+	// 最適化されたResizeObserver
+	const debouncedUpdateScaleInfo = useMemo(
+		() => debounce(updateScaleInfo, 100),
+		[debounce, updateScaleInfo]
+	)
+
+	const { observe, unobserve } = useResizeObserver(debouncedUpdateScaleInfo)
 
 	// 倍率計算の初期化と監視
 	useEffect(() => {
 		// 初期倍率を計算
 		updateScaleInfo()
 
-		// ResizeObserverでサイズ変更を監視（デバウンス処理付き）
+		// ResizeObserverでサイズ変更を監視
 		if (containerRef.current) {
-			const resizeObserver = new ResizeObserver(() => {
-				debouncedUpdateScaleInfo()
-			})
-
-			resizeObserver.observe(containerRef.current)
-
-			return () => {
-				resizeObserver.disconnect()
-				if (resizeTimeoutRef.current) {
-					clearTimeout(resizeTimeoutRef.current)
-				}
-			}
+			observe(containerRef.current)
 		}
-	}, [updateScaleInfo, debouncedUpdateScaleInfo])
+
+		return () => {
+			unobserve()
+		}
+	}, [updateScaleInfo, observe, unobserve])
 
 	// 通常のonChange関数
 	const handleChange = useCallback(

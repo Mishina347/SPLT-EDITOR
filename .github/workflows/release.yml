@@ -245,26 +245,63 @@ jobs:
           
           # LINUXDEPLOY_VERSIONが空の場合のフォールバック
           if [ -z "$LINUXDEPLOY_VERSION" ]; then
-            echo "Failed to get linuxdeploy version, using fallback version"
-            LINUXDEPLOY_VERSION="continuous"
+            echo "Failed to get linuxdeploy version, trying alternative methods"
+            
+            # 代替方法1: 最新のリリースを直接取得
+            LINUXDEPLOY_VERSION=$(curl -s https://api.github.com/repos/linuxdeploy/linuxdeploy/releases | grep '"tag_name":' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+            
+            if [ -z "$LINUXDEPLOY_VERSION" ]; then
+              echo "Still failed, using hardcoded fallback version"
+              LINUXDEPLOY_VERSION="continuous"
+            fi
           fi
           
           echo "Using linuxdeploy version: $LINUXDEPLOY_VERSION"
           
           # linuxdeployのインストール
           echo "=== Installing linuxdeploy ==="
-          wget -O linuxdeploy-x86_64.AppImage "https://github.com/linuxdeploy/linuxdeploy/releases/download/$LINUXDEPLOY_VERSION/linuxdeploy-x86_64.AppImage"
           
-          # ダウンロードの確認
-          if [ -f "linuxdeploy-x86_64.AppImage" ]; then
-            echo "linuxdeploy downloaded successfully"
+          # 複数のURLを試行
+          LINUXDEPLOY_DOWNLOADED=false
+          
+          # URL1: 指定されたバージョン
+          echo "Trying URL1: https://github.com/linuxdeploy/linuxdeploy/releases/download/$LINUXDEPLOY_VERSION/linuxdeploy-x86_64.AppImage"
+          if wget -O linuxdeploy-x86_64.AppImage "https://github.com/linuxdeploy/linuxdeploy/releases/download/$LINUXDEPLOY_VERSION/linuxdeploy-x86_64.AppImage" 2>/dev/null; then
+            echo "linuxdeploy downloaded successfully from URL1"
+            LINUXDEPLOY_DOWNLOADED=true
+          else
+            echo "URL1 failed, trying URL2"
+            
+            # URL2: continuous
+            if wget -O linuxdeploy-x86_64.AppImage "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage" 2>/dev/null; then
+              echo "linuxdeploy downloaded successfully from URL2 (continuous)"
+              LINUXDEPLOY_DOWNLOADED=true
+            else
+              echo "URL2 failed, trying URL3"
+              
+              # URL3: 最新のリリースから直接取得
+              LATEST_LINUXDEPLOY_URL=$(curl -s https://api.github.com/repos/linuxdeploy/linuxdeploy/releases/latest | grep '"browser_download_url".*AppImage' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+              if [ -n "$LATEST_LINUXDEPLOY_URL" ]; then
+                echo "Trying URL3: $LATEST_LINUXDEPLOY_URL"
+                if wget -O linuxdeploy-x86_64.AppImage "$LATEST_LINUXDEPLOY_URL" 2>/dev/null; then
+                  echo "linuxdeploy downloaded successfully from URL3 (direct download)"
+                  LINUXDEPLOY_DOWNLOADED=true
+                fi
+              fi
+            fi
+          fi
+          
+          # 最終確認
+          if [ "$LINUXDEPLOY_DOWNLOADED" = true ] && [ -f "linuxdeploy-x86_64.AppImage" ]; then
+            echo "linuxdeploy download completed successfully"
             chmod +x linuxdeploy-x86_64.AppImage
             sudo mv linuxdeploy-x86_64.AppImage /usr/local/bin/linuxdeploy
           else
-            echo "linuxdeploy download failed, trying fallback URL"
-            wget -O linuxdeploy-x86_64.AppImage "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
-            chmod +x linuxdeploy-x86_64.AppImage
-            sudo mv linuxdeploy-x86_64.AppImage /usr/local/bin/linuxdeploy
+            echo "All linuxdeploy download attempts failed"
+            echo "Available releases:"
+            curl -s https://api.github.com/repos/linuxdeploy/linuxdeploy/releases | grep '"tag_name":' | head -5
+            echo "Available assets:"
+            curl -s https://api.github.com/repos/linuxdeploy/linuxdeploy/releases/latest | grep '"browser_download_url"' | head -5
           fi
           
           # linuxdeploy-plugin-appimageの最新リリースを取得
@@ -287,41 +324,101 @@ jobs:
           
           # PLUGIN_VERSIONが空の場合のフォールバック
           if [ -z "$PLUGIN_VERSION" ]; then
-            echo "Failed to get plugin version, using fallback version"
-            PLUGIN_VERSION="continuous"
+            echo "Failed to get plugin version, trying alternative methods"
+            
+            # 代替方法1: 最新のリリースを直接取得
+            PLUGIN_VERSION=$(curl -s https://api.github.com/repos/linuxdeploy/appimage-plugin/releases | grep '"tag_name":' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+            
+            if [ -z "$PLUGIN_VERSION" ]; then
+              echo "Still failed, using hardcoded fallback version"
+              PLUGIN_VERSION="v1.0.0"
+            fi
           fi
           
           echo "Using plugin version: $PLUGIN_VERSION"
           
           # linuxdeploy-plugin-appimageのインストール
           echo "=== Installing linuxdeploy-plugin-appimage ==="
-          wget -O linuxdeploy-plugin-appimage-x86_64.AppImage "https://github.com/linuxdeploy/appimage-plugin/releases/download/$PLUGIN_VERSION/linuxdeploy-plugin-appimage-x86_64.AppImage"
           
-          # ダウンロードの確認
-          if [ -f "linuxdeploy-plugin-appimage-x86_64.AppImage" ]; then
-            echo "Plugin downloaded successfully"
+          # 複数のURLを試行
+          PLUGIN_DOWNLOADED=false
+          
+          # URL1: 指定されたバージョン
+          echo "Trying URL1: https://github.com/linuxdeploy/appimage-plugin/releases/download/$PLUGIN_VERSION/linuxdeploy-plugin-appimage-x86_64.AppImage"
+          if wget -O linuxdeploy-plugin-appimage-x86_64.AppImage "https://github.com/linuxdeploy/appimage-plugin/releases/download/$PLUGIN_VERSION/linuxdeploy-plugin-appimage-x86_64.AppImage" 2>/dev/null; then
+            echo "Plugin downloaded successfully from URL1"
+            PLUGIN_DOWNLOADED=true
+          else
+            echo "URL1 failed, trying URL2"
+            
+            # URL2: continuous
+            if wget -O linuxdeploy-plugin-appimage-x86_64.AppImage "https://github.com/linuxdeploy/appimage-plugin/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage" 2>/dev/null; then
+              echo "Plugin downloaded successfully from URL2 (continuous)"
+              PLUGIN_DOWNLOADED=true
+            else
+              echo "URL2 failed, trying URL3"
+              
+              # URL3: 最新のリリースから直接取得
+              LATEST_PLUGIN_URL=$(curl -s https://api.github.com/repos/linuxdeploy/appimage-plugin/releases/latest | grep '"browser_download_url".*AppImage' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+              if [ -n "$LATEST_PLUGIN_URL" ]; then
+                echo "Trying URL3: $LATEST_PLUGIN_URL"
+                if wget -O linuxdeploy-plugin-appimage-x86_64.AppImage "$LATEST_PLUGIN_URL" 2>/dev/null; then
+                  echo "Plugin downloaded successfully from URL3 (direct download)"
+                  PLUGIN_DOWNLOADED=true
+                fi
+              fi
+            fi
+          fi
+          
+          # 最終確認
+          if [ "$PLUGIN_DOWNLOADED" = true ] && [ -f "linuxdeploy-plugin-appimage-x86_64.AppImage" ]; then
+            echo "Plugin download completed successfully"
             chmod +x linuxdeploy-plugin-appimage-x86_64.AppImage
             sudo mv linuxdeploy-plugin-appimage-x86_64.AppImage /usr/local/bin/linuxdeploy-plugin-appimage
           else
-            echo "Plugin download failed, trying fallback URL"
-            wget -O linuxdeploy-plugin-appimage-x86_64.AppImage "https://github.com/linuxdeploy/appimage-plugin/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage"
-            chmod +x linuxdeploy-plugin-appimage-x86_64.AppImage
-            sudo mv linuxdeploy-plugin-appimage-x86_64.AppImage /usr/local/bin/linuxdeploy-plugin-appimage
+            echo "All download attempts failed"
+            echo "Available releases:"
+            curl -s https://api.github.com/repos/linuxdeploy/appimage-plugin/releases | grep '"tag_name":' | head -5
+            echo "Available assets:"
+            curl -s https://api.github.com/repos/linuxdeploy/appimage-plugin/releases/latest | grep '"browser_download_url"' | head -5
           fi
           
           # インストール確認
-          if linuxdeploy --version && linuxdeploy-plugin-appimage --version; then
+          echo "=== Verifying AppImage tools installation ==="
+          
+          LINUXDEPLOY_AVAILABLE=false
+          PLUGIN_AVAILABLE=false
+          
+          if command -v linuxdeploy >/dev/null 2>&1; then
+            echo "✓ linuxdeploy is available"
+            linuxdeploy --version
+            LINUXDEPLOY_AVAILABLE=true
+          else
+            echo "✗ linuxdeploy is not available"
+          fi
+          
+          if command -v linuxdeploy-plugin-appimage >/dev/null 2>&1; then
+            echo "✓ linuxdeploy-plugin-appimage is available"
+            linuxdeploy-plugin-appimage --version
+            PLUGIN_AVAILABLE=true
+          else
+            echo "✗ linuxdeploy-plugin-appimage is not available"
+          fi
+          
+          if [ "$LINUXDEPLOY_AVAILABLE" = true ] && [ "$PLUGIN_AVAILABLE" = true ]; then
             echo "=== AppImage tools installed successfully ==="
           else
             echo "=== AppImage tools installation failed, using fallback ==="
             echo "Will attempt to build without AppImage support"
             
             # 基本的なツールの確認
+            echo "Available tools:"
             which wget || echo "wget not found"
             which curl || echo "curl not found"
             
             # 代替手段の準備
             echo "Preparing fallback build configuration..."
+            echo "Setting TAURI_BUNDLE_APPIMAGE=false for fallback build"
           fi
       
       - name: Check build environment

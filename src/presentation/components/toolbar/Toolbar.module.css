@@ -12,8 +12,8 @@
 	overflow: hidden; /* オーバーフロー要素を隠す */
 	transition:
 		transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-		opacity 0.3s ease,
-		box-shadow 0.3s ease,
+		opacity 0.4s ease,
+		box-shadow 0.4s ease,
 		height 0.2s ease 0.4s,
 		visibility 0s linear 0.4s;
 }
@@ -33,6 +33,7 @@
 	pointer-events: none;
 	box-shadow: none;
 	border-bottom: none;
+	transition-delay: 0s, 0s, 0s, 0s, 0s;
 }
 
 /* テーマカラー対応 */
@@ -53,11 +54,11 @@
 
 /* アニメーション用のイージング関数 */
 .toolbar.smooth-enter {
-	animation: toolbarSlideIn 0.1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+	animation: toolbarSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .toolbar.smooth-exit {
-	animation: toolbarSlideOut 0.1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+	animation: toolbarSlideOut 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* キーフレームアニメーション */

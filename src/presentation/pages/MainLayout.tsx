@@ -357,6 +357,8 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 				}
 
 				try {
+					console.log('[MainLayout] Manual save triggered with content:', currentNotSavedText)
+
 					// forceSaveを使用してauto saveタイマーをリセット＆即座に保存
 					await forceSave()
 
@@ -366,6 +368,8 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 
 					// 手動保存時のスナップショットを追加（空文字でも記録）
 					saveSnapshot(currentNotSavedText, `手動保存 - ${new Date().toLocaleString('ja-JP')}`)
+
+					console.log('[MainLayout] Manual save completed successfully')
 				} catch (error) {
 					console.error('Manual save failed:', error)
 				}

@@ -40,7 +40,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 	themeColors,
 }) => {
 	// アニメーション状態を管理
-	const [animationState, setAnimationState] = useState<'idle' | 'entering' | 'exiting'>('idle')
+	const [animationState, setAnimationState] = useState<'idle' | 'entering' | 'exiting'>(
+		visible ? 'idle' : 'exiting'
+	)
 	// アニメーション完了後の可視性を管理
 	const [isVisibilityHidden, setIsVisibilityHidden] = useState(!visible)
 	// ファイル入力要素を再利用するためのref
@@ -115,12 +117,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
 	// visibleの変化に応じてアニメーション状態を設定
 	useEffect(() => {
+		console.log('[Toolbar] Animation state change:', { visible, animationState, isVisibilityHidden })
+
 		if (visible) {
 			// 表示開始時：まずvisibility: visibleにしてからアニメーション開始
 			setIsVisibilityHidden(false)
 			setAnimationState('entering')
 			// アニメーション完了後にidleに戻す
-			const timer = setTimeout(() => setAnimationState('idle'), 400)
+			const timer = setTimeout(() => {
+				setAnimationState('idle')
+			}, 400) // CSSのアニメーション時間と合わせる
 			return () => clearTimeout(timer)
 		} else {
 			// 非表示開始時：アニメーション開始
@@ -129,7 +135,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 			const timer = setTimeout(() => {
 				setIsVisibilityHidden(true)
 				setAnimationState('idle')
-			}, 50)
+			}, 400) // CSSのアニメーション時間と合わせる
 			return () => clearTimeout(timer)
 		}
 	}, [visible])

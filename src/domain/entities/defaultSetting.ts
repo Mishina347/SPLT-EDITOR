@@ -72,6 +72,32 @@ export const MOBILE_SETTING: Settings = {
 // デフォルト設定（デスクトップ用）
 export const DEFAULT_SETTING: Settings = DESKTOP_SETTING
 
+// モバイル用の設定値（色味は保持するため、レイアウト関連のみ）
+export const MOBILE_LAYOUT_VALUES = {
+	editor: {
+		fontSize: 12,
+		wordWrapColumn: 30,
+	},
+	preview: {
+		charsPerLine: 26,
+		linesPerPage: 14,
+		fontSize: 14,
+	},
+} as const
+
+// デスクトップ用の設定値（色味は保持するため、レイアウト関連のみ）
+export const DESKTOP_LAYOUT_VALUES = {
+	editor: {
+		fontSize: 16,
+		wordWrapColumn: 60,
+	},
+	preview: {
+		charsPerLine: 30,
+		linesPerPage: 30,
+		fontSize: 16,
+	},
+} as const
+
 // デバイスサイズに応じて設定を動的に取得する関数
 export function getDefaultSettingForDevice(): Settings {
 	// ブラウザ環境でのみ実行
@@ -87,26 +113,12 @@ export const DEFAULT_TEXT = `縦書きエディタへようこそ
 
 このアプリケーションは、日本語の縦書きテキストを編集・プレビューできるツールです。
 
-主な機能：
-• 縦書きテキストの編集
-• リアルタイムプレビュー
-• フォント設定のカスタマイズ
-• 自動保存機能
-• レスポンシブデザイン
-
 使い方：
 1. 左側のエディタでテキストを入力
 2. 右側のプレビューで縦書き表示を確認
 3. ツールバーでフォントやレイアウトを調整
 4. 設定は自動的に保存されます
-
-縦書きの特徴：
-• 右から左へ文字が並びます
-• 改行は上から下へ進みます
-• 日本語の禁則処理に対応
-• ページネーション機能付き
-
-お楽しみください！`
+`
 
 export interface SettingsRepository {
 	loadSettings(): Promise<Settings>

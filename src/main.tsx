@@ -2,12 +2,17 @@ import { useCallback, useEffect, useState } from 'react'
 import { logger } from '@/utils/logger'
 import ReactDOM from 'react-dom/client'
 import App from './App'
-import { Settings, getDefaultSettingForDevice } from './domain/entities/defaultSetting'
+import {
+	Settings,
+	getDefaultSettingForDevice,
+	MOBILE_LAYOUT_VALUES,
+	DESKTOP_LAYOUT_VALUES,
+} from './domain/entities/defaultSetting'
 import { loadEditorSettings } from './usecases/LoadEditorSettings'
 import { serviceFactory } from './infra'
 // manifestのorientation管理
 import { setupManifestOrientationListener } from './utils/manifestManager'
-import { isTauri } from './utils'
+import { isTauri, isMobileSize } from './utils'
 // Monaco Editorのワーカー設定をside-effects importで実行
 import '@/useMonacoWorker'
 
@@ -74,6 +79,7 @@ function Root() {
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [isInitialized, setIsInitialized] = useState(false)
+	const [isFullscreenMode, setIsFullscreenMode] = useState(false)
 
 	// 起動時の初期化処理
 	useEffect(() => {
@@ -92,13 +98,10 @@ function Root() {
 					const loadedSettings = await loadEditorSettings(fileDataRepository)
 					logger.info('App', 'Settings loaded successfully', loadedSettings)
 
-					// 読み込んだ設定と初期設定を比較して、必要に応じて更新
-					const finalSettings = shouldUpdateSettings(loadedSettings, initialSettings)
-						? initialSettings
-						: loadedSettings
-
-					logger.info('App', 'Final settings to use', finalSettings)
-					setSettings(finalSettings)
+					// 読み込んだ設定を現在のデバイスサイズに合わせて部分的に調整
+					const adjustedSettings = updateSettingsForDevice(loadedSettings)
+					logger.info('App', 'Settings adjusted for current device', adjustedSettings)
+					setSettings(adjustedSettings)
 				} catch (error) {
 					logger.error('App', 'Failed to load settings, using initial settings', error)
 					setSettings(initialSettings)
@@ -127,57 +130,86 @@ function Root() {
 		initializeApp()
 	}, [])
 
-	// 設定の更新が必要かどうかを判定する関数
-	const shouldUpdateSettings = useCallback(
-		(currentSettings: Settings, newSettings: Settings): boolean => {
-			// 現在のウィンドウサイズと新しい設定のデバイスタイプが一致しない場合は更新
-			const currentIsMobile = window.innerWidth <= 768 || window.innerHeight <= 768
-			const newIsMobile =
-				newSettings.editor.fontSize === 12 && newSettings.editor.wordWrapColumn === 30
+	// モバイル用の設定を部分的に更新する関数
+	const updateSettingsForDevice = useCallback((currentSettings: Settings): Settings => {
+		const isMobile = isMobileSize()
+		const isCurrentlyMobile =
+			currentSettings.editor.fontSize === MOBILE_LAYOUT_VALUES.editor.fontSize &&
+			currentSettings.editor.wordWrapColumn === MOBILE_LAYOUT_VALUES.editor.wordWrapColumn
 
-			logger.debug('App', 'Settings comparison', {
-				currentIsMobile,
-				newIsMobile,
-				currentFontSize: currentSettings.editor.fontSize,
-				newFontSize: newSettings.editor.fontSize,
-				windowSize: `${window.innerWidth}x${window.innerHeight}`,
-			})
+		// モバイル状態が変わらない場合は設定を変更しない
+		if (isMobile === isCurrentlyMobile) {
+			return currentSettings
+		}
 
-			return currentIsMobile !== newIsMobile
-		},
-		[]
-	)
+		if (isMobile) {
+			// モバイル用設定に変更（色味は保持）
+			return {
+				...currentSettings,
+				editor: {
+					...currentSettings.editor,
+					...MOBILE_LAYOUT_VALUES.editor,
+				},
+				preview: {
+					...currentSettings.preview,
+					...MOBILE_LAYOUT_VALUES.preview,
+				},
+			}
+		} else {
+			// デスクトップ用設定に変更（色味は保持）
+			return {
+				...currentSettings,
+				editor: {
+					...currentSettings.editor,
+					...DESKTOP_LAYOUT_VALUES.editor,
+				},
+				preview: {
+					...currentSettings.preview,
+					...DESKTOP_LAYOUT_VALUES.preview,
+				},
+			}
+		}
+	}, [])
 
 	const handleResize = useCallback(() => {
-		// フルスクリーン状態をチェック
-		const isFullscreen =
-			!!document.fullscreenElement ||
-			!!(document as any).webkitFullscreenElement ||
-			!!(document as any).mozFullScreenElement ||
-			!!(document as any).msFullscreenElement
-
 		// フルスクリーン状態の場合は設定を更新しない
-		if (isFullscreen) {
+		if (isFullscreenMode) {
 			logger.debug('App', 'Resize detected in fullscreen mode, skipping settings update')
 			return
 		}
 
-		const newSettings = getDefaultSettingForDevice()
+		// フルスクリーンから抜けた直後のリサイズも無視する
+		// フルスクリーン解除から一定時間は設定変更を防ぐ
+		const timeSinceLastFullscreen = Date.now() - (window as any).lastFullscreenExitTime || 0
+		if (timeSinceLastFullscreen < 1000) {
+			logger.debug('App', 'Resize detected shortly after fullscreen exit, skipping settings update')
+			return
+		}
 
 		setSettings(prevSettings => {
+			const updatedSettings = updateSettingsForDevice(prevSettings)
+
 			// 設定が変更された場合のみ更新
-			if (JSON.stringify(prevSettings) !== JSON.stringify(newSettings)) {
-				logger.info('App', 'Resize detected, updating settings', {
-					from: prevSettings,
-					to: newSettings,
+			if (JSON.stringify(prevSettings) !== JSON.stringify(updatedSettings)) {
+				logger.info('App', 'Resize detected, updating device-specific settings', {
+					from: {
+						fontSize: prevSettings.editor.fontSize,
+						wordWrapColumn: prevSettings.editor.wordWrapColumn,
+						charsPerLine: prevSettings.preview.charsPerLine,
+					},
+					to: {
+						fontSize: updatedSettings.editor.fontSize,
+						wordWrapColumn: updatedSettings.editor.wordWrapColumn,
+						charsPerLine: updatedSettings.preview.charsPerLine,
+					},
 				})
-				return newSettings
+				return updatedSettings
 			} else {
 				logger.debug('App', 'Settings unchanged, no update needed')
 			}
 			return prevSettings
 		})
-	}, [])
+	}, [isFullscreenMode, updateSettingsForDevice])
 
 	// ウィンドウサイズの変更とフルスクリーン状態の変化を監視
 	useEffect(() => {
@@ -198,13 +230,13 @@ function Root() {
 				!!(document as any).msFullscreenElement
 
 			logger.debug('App', 'Fullscreen state changed', { isFullscreen })
+			setIsFullscreenMode(isFullscreen)
 
-			// フルスクリーンから抜けた時に設定を再評価
+			// フルスクリーンから抜けた時は設定を保持（再評価しない）
 			if (!isFullscreen) {
-				// 少し遅延させてからリサイズ処理を実行
-				setTimeout(() => {
-					handleResize()
-				}, 100)
+				logger.debug('App', 'Exited fullscreen mode, keeping current settings')
+				// フルスクリーン解除時刻を記録
+				;(window as any).lastFullscreenExitTime = Date.now()
 			}
 		}
 

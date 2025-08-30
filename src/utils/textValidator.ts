@@ -2,11 +2,7 @@
  * テキスト検証関連のユーティリティ関数
  */
 
-export interface ValidationResult {
-	isValid: boolean
-	errors: string[]
-	warnings: string[]
-}
+import { ValidationResult } from '@/types/common'
 
 /**
  * テキストの基本的な検証

@@ -1,3 +1,5 @@
+import { EditorTheme } from '../theme/EditorTheme'
+
 export type Note = {
 	id: string
 	title: string

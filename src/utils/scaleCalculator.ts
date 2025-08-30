@@ -2,12 +2,9 @@
  * 要素の倍率を計算するユーティリティ関数
  */
 
-export interface ScaleInfo {
-	zoom: number
-	transformScale: number
-	totalScale: number
-	viewportScale: number
-}
+import { ScaleInfo } from '@/types/common'
+
+export { ScaleInfo }
 
 /**
  * 要素のCSS倍率を計算

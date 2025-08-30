@@ -1,9 +1,15 @@
-type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+import { LogLevel, LoggerConfig } from '@/types/common'
 
-interface LoggerConfig {
-	level: LogLevel
-	enableDebug: boolean
-	enableConsole: boolean
+// Vite環境変数の型定義
+declare global {
+	interface ImportMetaEnv {
+		readonly DEV: boolean
+		readonly VITE_TAURI_PLATFORM: string | undefined
+	}
+
+	interface ImportMeta {
+		readonly env: ImportMetaEnv
+	}
 }
 
 class Logger {

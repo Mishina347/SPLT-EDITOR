@@ -304,7 +304,6 @@ export const EditorComponent = ({
 		if (imeFloatRef.current) {
 			imeFloatRef.current.remove()
 			imeFloatRef.current = null
-			console.log('IMEフロート削除')
 		}
 	}, [])
 
@@ -416,8 +415,6 @@ export const EditorComponent = ({
 				ripple.parentNode.removeChild(ripple)
 			}
 		}, 1200)
-
-		console.log('独立した波紋効果を作成')
 	}, [fontSize, textColor])
 
 	// キャレットアニメーションを実行する関数
@@ -447,8 +444,6 @@ export const EditorComponent = ({
 			setTimeout(() => {
 				caretElement.classList.remove(animationClass)
 			}, duration)
-
-			console.log(`キャレットアニメーション実行: ${type}`)
 		},
 		[createRippleEffect]
 	)
@@ -480,8 +475,6 @@ export const EditorComponent = ({
 				border-bottom: 1px solid ${transparentColor} !important;
 			}
 		`
-
-		console.log(`行デコレーション追加: 色: ${transparentColor}`)
 	}, [textColor])
 
 	// エディタの初期化（設定変更時のみ再作成）
@@ -605,7 +598,6 @@ export const EditorComponent = ({
 				}
 			`
 			document.head.appendChild(currentLineStyle)
-			console.log(`現在行 ${position.lineNumber} のワードラップを無効化`)
 		}
 
 		// クリーンアップ関数
@@ -622,7 +614,6 @@ export const EditorComponent = ({
 
 			// IME入力中は状態更新を抑制
 			if (imeCompositionRef.current) {
-				console.log('IME入力中: エディタ状態更新を抑制')
 				return
 			}
 
@@ -654,7 +645,6 @@ export const EditorComponent = ({
 						currentPosition.column !== startPosition.column)
 				) {
 					editor.setPosition(startPosition)
-					console.log('IME入力中: カーソル位置を固定')
 					return
 				}
 			}
@@ -676,7 +666,6 @@ export const EditorComponent = ({
 						imeStartValueRef.current = editorRef.current.getValue()
 						imeStartPositionRef.current = editorRef.current.getPosition()
 						imeStartSelectionRef.current = editorRef.current.getSelection()
-						console.log('IME入力開始: エディタ状態保存（内容+位置+選択）')
 					}
 
 					// IME開始時にwordWrapを無効化
@@ -700,7 +689,6 @@ export const EditorComponent = ({
 
 						// IME入力中の文字をフロート内容更新
 						updateIMEFloatContent(imeCompositionTextRef.current)
-						console.log(`IME更新: "${imeCompositionTextRef.current}" (エディタ状態強制固定)`)
 					}
 				}
 
@@ -781,8 +769,6 @@ export const EditorComponent = ({
 							// IME終了時にwordWrapを再有効化
 							updateWordWrapColumn()
 
-							console.log('IME入力完了: ソフトラップ再有効化')
-
 							// 状態更新
 							const currentValue = editorRef.current.getValue()
 							if (currentValue !== textData) {
@@ -798,7 +784,6 @@ export const EditorComponent = ({
 					if (imeCompositionRef.current) {
 						e.preventDefault()
 						e.stopPropagation()
-						console.log('IME入力中: inputイベントを抑制')
 						return false
 					}
 				}
@@ -1098,7 +1083,6 @@ export const EditorComponent = ({
 					onMaximize()
 				}}
 				onTouchEnd={e => {
-					console.log('RightPane maximize button touch end')
 					e.preventDefault()
 					e.stopPropagation() // 長押しリサイズとの競合を防ぐ
 					onMaximize()

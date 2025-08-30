@@ -1,5 +1,6 @@
 import * as monaco from 'monaco-editor'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { logger } from '@/utils/logger'
 import { DEFAULT_SETTING, EditorSettings } from '../../../domain'
 import { getOptimizedEditorOptions } from '../../../utils/editorOptimization'
 import {
@@ -126,7 +127,7 @@ export const EditorComponent = ({
 			const newScaleInfo = calculateScaleWithViewport(containerRef.current)
 			setScaleInfo(newScaleInfo)
 
-			console.log('[EditorComponent] Scale info updated:', {
+			logger.debug('EditorComponent', 'Scale info updated', {
 				element: 'Editor',
 				...newScaleInfo,
 			})

@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
+import { logger } from '@/utils/logger'
+import { useMainLayoutState } from '../hooks/useMainLayoutState'
 import {
 	Toolbar,
 	SwipeIndicator,
@@ -30,86 +32,68 @@ interface EditorPageProps {
 }
 
 export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
-	const [editorSettings, setEditorSettings] = useState<EditorSettings>(initSettings.editor)
-	const [previewSettings, setPreviewSettings] = useState<LayoutConfig>(initSettings.preview)
+	// カスタムフックで状態管理
+	const {
+		// 状態
+		editorSettings,
+		previewSettings,
+		viewMode,
+		focusedPane,
+		isEditorMaximized,
+		isPreviewMaximized,
+		uiState,
+		isDraggableMode,
+		focusedContainer,
+		editorPosition,
+		editorSize,
+		previewPosition,
+		previewSize,
+		showThemeEditDialog,
+		showExportDialog,
+		pageInfo,
+		currentSavedText,
+		initialText,
+		lastSavedText,
+		toolbarDisplayMode,
+		currentEditorSize,
+		lastDraggableEditorSize,
+		lastDraggablePreviewSize,
 
-	// initSettingsの変更を監視して設定を更新
-	useEffect(() => {
-		console.log('[EditorPage] Settings updated:', initSettings)
-		setEditorSettings(initSettings.editor)
-		setPreviewSettings(initSettings.preview)
-	}, [initSettings])
-	// 最大化状態の詳細管理
-	const [viewMode, setViewMode] = useState<DISPLAY_MODE>(DISPLAY_MODE.BOTH)
-	const [focusedPane, setFocusedPane] = useState<DISPLAY_MODE>(DISPLAY_MODE.BOTH)
+		// セッター
+		setEditorSettings,
+		setPreviewSettings,
+		setViewMode,
+		setFocusedPane,
+		setIsEditorMaximized,
+		setIsPreviewMaximized,
+		setUIState,
+		setIsDraggableMode,
+		setFocusedContainer,
+		setEditorPosition,
+		setEditorSize,
+		setPreviewPosition,
+		setPreviewSize,
+		setShowThemeEditDialog,
+		setShowExportDialog,
+		setPageInfo,
+		setCurrentSavedText,
+		setInitialText,
+		setLastSavedText,
+		setToolbarDisplayMode,
+		setCurrentEditorSize,
+		setLastDraggableEditorSize,
+		setLastDraggablePreviewSize,
 
-	// 各コンポーネントの最大化状態を個別に管理
-	const [isEditorMaximized, setIsEditorMaximized] = useState(false)
-	const [isPreviewMaximized, setIsPreviewMaximized] = useState(false)
+		// ハンドラー
+		handleMaximize,
+		resetMaximizedState,
+		getMaximizedState,
+		getZIndex,
+		handlePageInfoChange,
+	} = useMainLayoutState({ initSettings })
 
 	// 初期化状態の管理
 	const [isInitialized, setIsInitialized] = useState(false)
-
-	// 最大化状態の詳細管理（パフォーマンス最適化版）
-	const handleMaximize = useCallback(
-		(target: DISPLAY_MODE) => {
-			// 状態更新をバッチ化してパフォーマンスを向上
-			React.startTransition(() => {
-				if (target === DISPLAY_MODE.EDITOR) {
-					if (isEditorMaximized) {
-						// エディタの最大化を解除
-						setIsEditorMaximized(false)
-						setViewMode(DISPLAY_MODE.BOTH)
-					} else {
-						// エディタを最大化
-						setIsEditorMaximized(true)
-						setIsPreviewMaximized(false)
-						setViewMode(DISPLAY_MODE.EDITOR)
-					}
-				} else if (target === DISPLAY_MODE.PREVIEW) {
-					if (isPreviewMaximized) {
-						// プレビューの最大化を解除
-						setIsPreviewMaximized(false)
-						setViewMode(DISPLAY_MODE.BOTH)
-					} else {
-						// プレビューを最大化
-						setIsPreviewMaximized(true)
-						setIsEditorMaximized(false)
-						setViewMode(DISPLAY_MODE.PREVIEW)
-					}
-				}
-			})
-		},
-		[isEditorMaximized, isPreviewMaximized]
-	)
-
-	// 最大化状態のリセット
-	const resetMaximizedState = useCallback(() => {
-		setIsEditorMaximized(false)
-		setIsPreviewMaximized(false)
-		setViewMode(DISPLAY_MODE.BOTH)
-	}, [])
-
-	// 現在の最大化状態を取得
-	const getMaximizedState = useCallback(
-		(target: DISPLAY_MODE) => {
-			if (target === DISPLAY_MODE.EDITOR) {
-				return isEditorMaximized
-			} else if (target === DISPLAY_MODE.PREVIEW) {
-				return isPreviewMaximized
-			}
-			return false
-		},
-		[isEditorMaximized, isPreviewMaximized]
-	)
-
-	const [uiState, setUIState] = useState<EditorUIState>({
-		showToolbar: true,
-		showPreview: true,
-	})
-
-	// ドラッグ可能レイアウトモードの状態
-	const [isDraggableMode, setIsDraggableMode] = useState(false)
 
 	// スマホサイズの場合はドラッグ可能モードを無効化
 	useEffect(() => {
@@ -128,39 +112,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		return () => {
 			window.removeEventListener('resize', handleResize)
 		}
-	}, [])
-
-	// z-index管理（最後にフォーカスしたコンポーネントを上に表示）
-	const [focusedContainer, setFocusedContainer] = useState<'editor' | 'preview'>('preview')
-
-	// z-indexを計算する関数
-	const getZIndex = useCallback(
-		(containerType: 'editor' | 'preview') => {
-			// ドラッグ終了したコンテナが上に来るように調整
-			const unfocusedZIndex = 50 // フォーカスされていないコンテナ
-			const focusedZIndex = 100 // フォーカスされているコンテナ（ドラッグ終了したもの）
-			return focusedContainer === containerType ? focusedZIndex : unfocusedZIndex
-		},
-		[focusedContainer]
-	)
-	const [editorPosition, setEditorPosition] = useState({ x: 20, y: 200 })
-	const [editorSize, setEditorSize] = useState({ width: 800, height: 600 })
-	const [previewPosition, setPreviewPosition] = useState({ x: 620, y: 200 })
-	const [previewSize, setPreviewSize] = useState({ width: 600, height: 400 })
-
-	// テーマ編集ダイアログの表示状態
-	const [showThemeEditDialog, setShowThemeEditDialog] = useState(false)
-
-	// 書き出しダイアログの表示状態
-	const [showExportDialog, setShowExportDialog] = useState(false)
-
-	// プレビューのページ情報
-	const [pageInfo, setPageInfo] = useState({ currentPage: 1, totalPages: 1 })
-
-	// ページ情報更新のコールバック
-	const handlePageInfoChange = useCallback((currentPage: number, totalPages: number) => {
-		setPageInfo({ currentPage, totalPages })
-	}, [])
+	}, [setIsDraggableMode])
 
 	// 初期化時にCSS変数を設定
 	useEffect(() => {
@@ -169,19 +121,6 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		const bgColorAlpha = hexToRgba(editorSettings.backgroundColor, 0.15)
 		document.documentElement.style.setProperty('--app-bg-color-alpha', bgColorAlpha)
 	}, [editorSettings.backgroundColor, editorSettings.textColor])
-
-	// ツールバーの表示状態を管理（input操作中は固定）
-	const [toolbarDisplayMode, setToolbarDisplayMode] = useState<DISPLAY_MODE>(DISPLAY_MODE.BOTH)
-
-	// エディターサイズの初期化
-	const [currentEditorSize, setCurrentEditorSize] = useState(75)
-
-	// draggableモードでのサイズ変更を追跡
-	const [lastDraggableEditorSize, setLastDraggableEditorSize] = useState({ width: 800, height: 600 })
-	const [lastDraggablePreviewSize, setLastDraggablePreviewSize] = useState({
-		width: 600,
-		height: 400,
-	})
 
 	// draggableモードの変更を監視してサイズを復元
 	useEffect(() => {
@@ -230,9 +169,6 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		[focusedPane]
 	)
 
-	const [currentSavedText, setCurrentSavedText] = useState('')
-	const [initialText, setInitialText] = useState('')
-	const [lastSavedText, setLastSavedText] = useState('')
 	const { currentNotSavedText, charCount, updateText } = useCharCount()
 	const { history, saveSnapshot, getLatestSnapshot, getPreviousSnapshot } = useTextHistory(20)
 
@@ -357,7 +293,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 				}
 
 				try {
-					console.log('[MainLayout] Manual save triggered with content:', currentNotSavedText)
+					logger.info('MainLayout', 'Manual save triggered with content', currentNotSavedText)
 
 					// forceSaveを使用してauto saveタイマーをリセット＆即座に保存
 					await forceSave()
@@ -369,9 +305,9 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 					// 手動保存時のスナップショットを追加（空文字でも記録）
 					saveSnapshot(currentNotSavedText, `手動保存 - ${new Date().toLocaleString('ja-JP')}`)
 
-					console.log('[MainLayout] Manual save completed successfully')
+					logger.info('MainLayout', 'Manual save completed successfully')
 				} catch (error) {
-					console.error('Manual save failed:', error)
+					logger.error('MainLayout', 'Manual save failed', error)
 				}
 			}
 		}
@@ -395,7 +331,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 			// mobileの場合、テキストが変更されるたびにcurrentSaveTextを更新
 			// デバウンス処理でパフォーマンスを最適化
 			const timeoutId = setTimeout(() => {
-				console.log('[MainLayout] Mobile auto-save: updating currentSaveText')
+				logger.info('MainLayout', 'Mobile auto-save: updating currentSaveText')
 				setCurrentSavedText(currentNotSavedText)
 			}, 300) // 300msのデバウンス
 

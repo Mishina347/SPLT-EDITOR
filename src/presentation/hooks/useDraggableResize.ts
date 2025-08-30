@@ -581,8 +581,6 @@ export const useDraggableResize = (options: UseDraggableResizeOptions) => {
 						parentPaddingTop + parentBorderTop,
 						Math.min(newY, maxY + parentPaddingTop + parentBorderTop)
 					)
-					console.log('adjustedPoint.x : ', constrainedX)
-					console.log('adjustedPoint.y : ', constrainedY)
 
 					// CSS transformを考慮した位置調整
 					if (parentTransformMatrix) {
@@ -592,8 +590,6 @@ export const useDraggableResize = (options: UseDraggableResizeOptions) => {
 							const adjustedPoint = inverseMatrix.transformPoint({ x: constrainedX, y: constrainedY })
 							constrainedX = adjustedPoint.x
 							constrainedY = adjustedPoint.y
-							console.log('adjustedPoint.x : ', adjustedPoint.x)
-							console.log('adjustedPoint.y : ', adjustedPoint.y)
 						} catch (error) {
 							console.warn('[DraggableResize] Failed to apply transform inverse for constraints:', error)
 						}

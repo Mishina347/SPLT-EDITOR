@@ -226,22 +226,88 @@ jobs:
           echo "Checking available versions..."
           
           # linuxdeployの最新リリースを取得
-          LINUXDEPLOY_VERSION=$(curl -s https://api.github.com/repos/linuxdeploy/linuxdeploy/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-          echo "Latest linuxdeploy version: $LINUXDEPLOY_VERSION"
+          echo "=== Fetching latest linuxdeploy version ==="
+          
+          # GitHub APIのレスポンスを確認
+          LINUXDEPLOY_RESPONSE=$(curl -s -w "%{http_code}" https://api.github.com/repos/linuxdeploy/linuxdeploy/releases/latest)
+          LINUXDEPLOY_HTTP_CODE="${LINUXDEPLOY_RESPONSE: -3}"
+          LINUXDEPLOY_CONTENT="${LINUXDEPLOY_RESPONSE%???}"
+          
+          echo "HTTP response code: $LINUXDEPLOY_HTTP_CODE"
+          
+          if [ "$LINUXDEPLOY_HTTP_CODE" = "200" ]; then
+            LINUXDEPLOY_VERSION=$(echo "$LINUXDEPLOY_CONTENT" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+            echo "Latest linuxdeploy version: $LINUXDEPLOY_VERSION"
+          else
+            echo "Failed to fetch linuxdeploy version (HTTP $LINUXDEPLOY_HTTP_CODE)"
+            LINUXDEPLOY_VERSION=""
+          fi
+          
+          # LINUXDEPLOY_VERSIONが空の場合のフォールバック
+          if [ -z "$LINUXDEPLOY_VERSION" ]; then
+            echo "Failed to get linuxdeploy version, using fallback version"
+            LINUXDEPLOY_VERSION="continuous"
+          fi
+          
+          echo "Using linuxdeploy version: $LINUXDEPLOY_VERSION"
           
           # linuxdeployのインストール
+          echo "=== Installing linuxdeploy ==="
           wget -O linuxdeploy-x86_64.AppImage "https://github.com/linuxdeploy/linuxdeploy/releases/download/$LINUXDEPLOY_VERSION/linuxdeploy-x86_64.AppImage"
-          chmod +x linuxdeploy-x86_64.AppImage
-          sudo mv linuxdeploy-x86_64.AppImage /usr/local/bin/linuxdeploy
+          
+          # ダウンロードの確認
+          if [ -f "linuxdeploy-x86_64.AppImage" ]; then
+            echo "linuxdeploy downloaded successfully"
+            chmod +x linuxdeploy-x86_64.AppImage
+            sudo mv linuxdeploy-x86_64.AppImage /usr/local/bin/linuxdeploy
+          else
+            echo "linuxdeploy download failed, trying fallback URL"
+            wget -O linuxdeploy-x86_64.AppImage "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+            chmod +x linuxdeploy-x86_64.AppImage
+            sudo mv linuxdeploy-x86_64.AppImage /usr/local/bin/linuxdeploy
+          fi
           
           # linuxdeploy-plugin-appimageの最新リリースを取得
-          PLUGIN_VERSION=$(curl -s https://api.github.com/repos/linuxdeploy/appimage-plugin/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-          echo "Latest plugin version: $PLUGIN_VERSION"
+          echo "=== Fetching latest plugin version ==="
+          
+          # GitHub APIのレスポンスを確認
+          PLUGIN_RESPONSE=$(curl -s -w "%{http_code}" https://api.github.com/repos/linuxdeploy/appimage-plugin/releases/latest)
+          PLUGIN_HTTP_CODE="${PLUGIN_RESPONSE: -3}"
+          PLUGIN_CONTENT="${PLUGIN_RESPONSE%???}"
+          
+          echo "Plugin HTTP response code: $PLUGIN_HTTP_CODE"
+          
+          if [ "$PLUGIN_HTTP_CODE" = "200" ]; then
+            PLUGIN_VERSION=$(echo "$PLUGIN_CONTENT" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+            echo "Latest plugin version: $PLUGIN_VERSION"
+          else
+            echo "Failed to fetch plugin version (HTTP $PLUGIN_HTTP_CODE)"
+            PLUGIN_VERSION=""
+          fi
+          
+          # PLUGIN_VERSIONが空の場合のフォールバック
+          if [ -z "$PLUGIN_VERSION" ]; then
+            echo "Failed to get plugin version, using fallback version"
+            PLUGIN_VERSION="continuous"
+          fi
+          
+          echo "Using plugin version: $PLUGIN_VERSION"
           
           # linuxdeploy-plugin-appimageのインストール
-          wget -O linuxdeploy-plugin-appimage-x86_64.AppImage "https://github.com/linuxdeploy/appimage-plugin/releases/download/linuxdeploy-plugin-appimage-x86_64.AppImage"
-          chmod +x linuxdeploy-plugin-appimage-x86_64.AppImage
-          sudo mv linuxdeploy-plugin-appimage-x86_64.AppImage /usr/local/bin/linuxdeploy-plugin-appimage
+          echo "=== Installing linuxdeploy-plugin-appimage ==="
+          wget -O linuxdeploy-plugin-appimage-x86_64.AppImage "https://github.com/linuxdeploy/appimage-plugin/releases/download/$PLUGIN_VERSION/linuxdeploy-plugin-appimage-x86_64.AppImage"
+          
+          # ダウンロードの確認
+          if [ -f "linuxdeploy-plugin-appimage-x86_64.AppImage" ]; then
+            echo "Plugin downloaded successfully"
+            chmod +x linuxdeploy-plugin-appimage-x86_64.AppImage
+            sudo mv linuxdeploy-plugin-appimage-x86_64.AppImage /usr/local/bin/linuxdeploy-plugin-appimage
+          else
+            echo "Plugin download failed, trying fallback URL"
+            wget -O linuxdeploy-plugin-appimage-x86_64.AppImage "https://github.com/linuxdeploy/appimage-plugin/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage"
+            chmod +x linuxdeploy-plugin-appimage-x86_64.AppImage
+            sudo mv linuxdeploy-plugin-appimage-x86_64.AppImage /usr/local/bin/linuxdeploy-plugin-appimage
+          fi
           
           # インストール確認
           if linuxdeploy --version && linuxdeploy-plugin-appimage --version; then
@@ -440,8 +506,22 @@ jobs:
           # ビルド後の確認
           echo "=== Post-build verification ==="
           echo "Universal binary info:"
+          
+          # 正しいディレクトリを特定
+          TARGET_DIR=""
+          if [ -d "src-tauri/target/release" ]; then
+            TARGET_DIR="src-tauri/target/release"
+          elif [ -d "src-tauri/target/universal-apple-darwin" ]; then
+            TARGET_DIR="src-tauri/target/universal-apple-darwin"
+          else
+            echo "  Target directory not found"
+            exit 1
+          fi
+          
+          echo "  Using target directory: $TARGET_DIR"
+          
           if command -v lipo >/dev/null 2>&1; then
-            find src-tauri/target/release -name "*.app" -exec sh -c '
+            find "$TARGET_DIR" -name "*.app" -exec sh -c '
               for app in "$@"; do
                 if [ -d "$app/Contents/MacOS" ]; then
                   for exe in "$app/Contents/MacOS"/*; do
@@ -460,17 +540,80 @@ jobs:
       - name: List Tauri build outputs
         run: |
           echo "=== Tauri build outputs ==="
-          ls -la src-tauri/target/release/
-          echo "=== Tauri bundle outputs ==="
-          ls -la src-tauri/target/release/bundle/
+          echo "Checking target directory structure..."
+          
+          # 基本的なtargetディレクトリの確認
+          if [ -d "src-tauri/target" ]; then
+            echo "✓ src-tauri/target exists"
+            ls -la src-tauri/target/
+            
+            # releaseディレクトリの確認
+            if [ -d "src-tauri/target/release" ]; then
+              echo "✓ src-tauri/target/release exists"
+              ls -la src-tauri/target/release/
+            else
+              echo "✗ src-tauri/target/release does not exist"
+            fi
+            
+            # universal-apple-darwinディレクトリの確認
+            if [ -d "src-tauri/target/universal-apple-darwin" ]; then
+              echo "✓ src-tauri/target/universal-apple-darwin exists"
+              ls -la src-tauri/target/universal-apple-darwin/
+            else
+              echo "✗ src-tauri/target/universal-apple-darwin does not exist"
+            fi
+            
+            # その他の可能性のあるディレクトリを確認
+            echo "=== Checking all possible target directories ==="
+            find src-tauri/target -type d -name "*apple*" -o -name "*darwin*" -o -name "*bundle*" 2>/dev/null | head -10
+            
+          else
+            echo "✗ src-tauri/target does not exist"
+          fi
+          
+          echo "=== Tauri bundle outputs (if exists) ==="
+          if [ -d "src-tauri/target/release/bundle" ]; then
+            ls -la src-tauri/target/release/bundle/
+          elif [ -d "src-tauri/target/universal-apple-darwin/release/bundle" ]; then
+            ls -la src-tauri/target/universal-apple-darwin/release/bundle/
+          else
+            echo "Bundle directory not found in expected locations"
+            echo "Searching for bundle directories..."
+            find src-tauri/target -name "bundle" -type d 2>/dev/null
+          fi
+          
           echo "=== Tauri build size ==="
-          du -sh src-tauri/target/release/
+          if [ -d "src-tauri/target/release" ]; then
+            du -sh src-tauri/target/release/
+          elif [ -d "src-tauri/target/universal-apple-darwin" ]; then
+            du -sh src-tauri/target/universal-apple-darwin/
+          fi
+          
           echo "=== Tauri bundle size ==="
-          du -sh src-tauri/target/release/bundle/
+          if [ -d "src-tauri/target/release/bundle" ]; then
+            du -sh src-tauri/target/release/bundle/
+          elif [ -d "src-tauri/target/universal-apple-darwin/release/bundle" ]; then
+            du -sh src-tauri/target/universal-apple-darwin/release/bundle/
+          fi
           
           # ファイルの整合性を確認
           echo "=== File integrity check ==="
-          cd src-tauri/target/release/bundle
+          
+          # 正しいbundleディレクトリを特定
+          BUNDLE_DIR=""
+          if [ -d "src-tauri/target/release/bundle" ]; then
+            BUNDLE_DIR="src-tauri/target/release/bundle"
+          elif [ -d "src-tauri/target/universal-apple-darwin/release/bundle" ]; then
+            BUNDLE_DIR="src-tauri/target/universal-apple-darwin/release/bundle"
+          else
+            echo "✗ Bundle directory not found"
+            echo "Available bundle directories:"
+            find src-tauri/target -name "bundle" -type d 2>/dev/null
+            exit 1
+          fi
+          
+          echo "Using bundle directory: $BUNDLE_DIR"
+          cd "$BUNDLE_DIR"
           
           # .appファイルの確認
           for app_file in *.app; do
@@ -521,7 +664,22 @@ jobs:
       - name: Create macOS bundle archive
         run: |
           echo "=== Creating macOS bundle archive ==="
-          cd src-tauri/target/release/bundle
+          
+          # 正しいbundleディレクトリを特定
+          BUNDLE_DIR=""
+          if [ -d "src-tauri/target/release/bundle" ]; then
+            BUNDLE_DIR="src-tauri/target/release/bundle"
+          elif [ -d "src-tauri/target/universal-apple-darwin/release/bundle" ]; then
+            BUNDLE_DIR="src-tauri/target/universal-apple-darwin/release/bundle"
+          else
+            echo "✗ Bundle directory not found"
+            echo "Available bundle directories:"
+            find src-tauri/target -name "bundle" -type d 2>/dev/null
+            exit 1
+          fi
+          
+          echo "Using bundle directory: $BUNDLE_DIR"
+          cd "$BUNDLE_DIR"
           
           # 利用可能なファイルを確認
           echo "Available files:"
@@ -612,7 +770,22 @@ jobs:
       - name: Repair and validate macOS bundles
         run: |
           echo "=== Repairing and validating macOS bundles ==="
-          cd src-tauri/target/release/bundle
+          
+          # 正しいbundleディレクトリを特定
+          BUNDLE_DIR=""
+          if [ -d "src-tauri/target/release/bundle" ]; then
+            BUNDLE_DIR="src-tauri/target/release/bundle"
+          elif [ -d "src-tauri/target/universal-apple-darwin/release/bundle" ]; then
+            BUNDLE_DIR="src-tauri/target/universal-apple-darwin/release/bundle"
+          else
+            echo "✗ Bundle directory not found"
+            echo "Available bundle directories:"
+            find src-tauri/target -name "bundle" -type d 2>/dev/null
+            exit 1
+          fi
+          
+          echo "Using bundle directory: $BUNDLE_DIR"
+          cd "$BUNDLE_DIR"
           
           # 破損したアプリバンドルの修復を試行
           for app_file in *.app; do
@@ -653,7 +826,22 @@ jobs:
       - name: Final integrity check before upload
         run: |
           echo "=== Final integrity check before upload ==="
-          cd src-tauri/target/release/bundle
+          
+          # 正しいbundleディレクトリを特定
+          BUNDLE_DIR=""
+          if [ -d "src-tauri/target/release/bundle" ]; then
+            BUNDLE_DIR="src-tauri/target/release/bundle"
+          elif [ -d "src-tauri/target/universal-apple-darwin/release/bundle" ]; then
+            BUNDLE_DIR="src-tauri/target/universal-apple-darwin/release/bundle"
+          else
+            echo "✗ Bundle directory not found"
+            echo "Available bundle directories:"
+            find src-tauri/target -name "bundle" -type d 2>/dev/null
+            exit 1
+          fi
+          
+          echo "Using bundle directory: $BUNDLE_DIR"
+          cd "$BUNDLE_DIR"
           
           # 作成されたアーカイブの最終確認
           echo "Created archives:"
@@ -683,6 +871,8 @@ jobs:
           path: |
             src-tauri/target/release/bundle/*.tar.gz
             src-tauri/target/release/bundle/macos-universal-bundle.tar.gz
+            src-tauri/target/universal-apple-darwin/release/bundle/*.tar.gz
+            src-tauri/target/universal-apple-darwin/release/bundle/macos-universal-bundle.tar.gz
           retention-days: 90
           if-no-files-found: warn
 

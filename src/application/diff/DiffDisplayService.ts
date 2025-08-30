@@ -108,7 +108,7 @@ export class DiffDisplayService {
 			let deletions = 0
 			let changes = 0
 
-			lines.forEach(line => {
+			lines.forEach((line: any) => {
 				if (line.startsWith('+') && !line.startsWith('+++')) {
 					additions++
 				} else if (line.startsWith('-') && !line.startsWith('---')) {

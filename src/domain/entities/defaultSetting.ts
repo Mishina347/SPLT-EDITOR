@@ -1,4 +1,4 @@
-import { isMobileSize } from '@/utils'
+import { isMobileSize } from '../../utils'
 import { EditorSettings, FONT_FAMILIES } from '../editor/EditorSetting'
 import { LayoutConfig } from '../preview/pdf/TextContent'
 import { EditorTheme } from '../theme/EditorTheme'

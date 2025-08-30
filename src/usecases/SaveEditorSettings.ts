@@ -1,10 +1,10 @@
 // src/usecases/SaveEditorSettings.ts
 import { FileDataRepository } from '../adapters'
-import { EditorSettings } from '../domain'
+import { Settings } from '../domain'
 
 export async function saveEditorSettings(
 	repo: FileDataRepository,
-	settings: EditorSettings
+	settings: Settings
 ): Promise<void> {
 	await repo.save(settings)
 }

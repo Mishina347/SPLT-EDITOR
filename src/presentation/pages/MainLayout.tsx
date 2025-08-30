@@ -23,6 +23,10 @@ import { DISPLAY_MODE, Settings, TextSnapshot, LayoutConfig, EditorSettings } fr
 import { EditorUIState } from '../../domain'
 import { loadText } from '../../usecases'
 import { editorService } from '../../application'
+import { eventBus, EVENTS } from '../../application/observers/EventBus'
+import { commandManager } from '../../application/commands/CommandManager'
+import { saveEditorSettings } from '../../usecases/SaveEditorSettings'
+import { serviceFactory } from '../../infra'
 import { hexToRgba, isMobile, isMobileSize } from '../../utils'
 import styles from './MainLayout.module.css'
 import { SwipeDirection } from '../hooks/useSwipeGesture'
@@ -281,6 +285,28 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		onChangeToolbarDisplayMode(focusedPane)
 	}, [focusedPane])
 
+	// 設定の自動保存
+	useEffect(() => {
+		const saveSettings = async () => {
+			try {
+				const fileDataRepository = serviceFactory.getFileDataRepository()
+				const fullSettings = {
+					editor: editorSettings,
+					preview: previewSettings,
+				}
+				await saveEditorSettings(fileDataRepository, fullSettings)
+				logger.debug('MainLayout', 'Settings auto-saved successfully')
+			} catch (error) {
+				logger.error('MainLayout', 'Failed to auto-save settings', error)
+			}
+		}
+
+		// 初期化完了後にのみ自動保存を有効化
+		if (isInitialized) {
+			saveSettings()
+		}
+	}, [editorSettings, previewSettings, isInitialized])
+
 	//手動保存機能（Cmd+S / Ctrl+S）
 	useEffect(() => {
 		const handleKeyDown = async (e: KeyboardEvent) => {
@@ -302,12 +328,22 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 					setLastSavedText(currentNotSavedText)
 					setCurrentSavedText(currentNotSavedText)
 
+					// イベントバスで保存完了を通知
+					eventBus.publish(EVENTS.TEXT_SAVED, {
+						timestamp: Date.now(),
+						contentLength: currentNotSavedText.length,
+					})
+
 					// 手動保存時のスナップショットを追加（空文字でも記録）
 					saveSnapshot(currentNotSavedText, `手動保存 - ${new Date().toLocaleString('ja-JP')}`)
 
 					logger.info('MainLayout', 'Manual save completed successfully')
 				} catch (error) {
 					logger.error('MainLayout', 'Manual save failed', error)
+					eventBus.publish(EVENTS.ERROR_OCCURRED, {
+						error: error instanceof Error ? error.message : String(error),
+						operation: 'manual_save',
+					})
 				}
 			}
 		}

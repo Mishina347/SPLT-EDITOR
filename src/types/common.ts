@@ -107,6 +107,7 @@ export interface ValidationRule<T> {
 export interface ValidationResult {
 	isValid: boolean
 	errors: string[]
+	warnings?: string[]
 }
 
 // ログ設定
@@ -131,3 +132,119 @@ export interface CacheConfig {
 	ttl: number
 	strategy: 'lru' | 'fifo' | 'lfu'
 }
+
+// 状態管理型
+export interface BaseState {
+	id: string
+	timestamp: number
+}
+
+export interface UIState extends BaseState {
+	isVisible: boolean
+	isEnabled: boolean
+	isLoading: boolean
+}
+
+export interface ComponentState extends UIState {
+	className?: string
+	style?: React.CSSProperties
+}
+
+export interface AnimationState extends BaseState {
+	isAnimating: boolean
+	progress: number
+	duration: number
+}
+
+export interface GestureState extends BaseState {
+	isActive: boolean
+	startPosition: Position
+	currentPosition: Position
+	delta: Position
+}
+
+export interface ResizeState extends BaseState {
+	width: number
+	height: number
+	previousSize: Size
+	delta: Size
+}
+
+export interface DragState extends BaseState {
+	isDragging: boolean
+	startPosition: Position
+	currentPosition: Position
+	delta: Position
+	element: HTMLElement | null
+}
+
+// Props型
+export interface BaseProps {
+	id?: string
+	className?: string
+	style?: React.CSSProperties
+	children?: React.ReactNode
+}
+
+export interface ClickableProps extends BaseProps {
+	onClick?: MouseEventHandler
+	onDoubleClick?: MouseEventHandler
+	disabled?: boolean
+}
+
+export interface InputProps extends BaseProps {
+	value?: string
+	onChange?: (value: string) => void
+	onBlur?: () => void
+	onFocus?: () => void
+	placeholder?: string
+	required?: boolean
+}
+
+export interface FormProps extends BaseProps {
+	onSubmit?: (data: any) => void
+	onReset?: () => void
+}
+
+export interface ModalProps extends BaseProps {
+	isOpen: boolean
+	onClose: () => void
+	title?: string
+	closeOnOverlayClick?: boolean
+}
+
+export interface TooltipProps extends BaseProps {
+	content: string
+	position?: 'top' | 'bottom' | 'left' | 'right'
+	show?: boolean
+}
+
+// ユーティリティ型
+export type Nullable<T> = T | null
+export type Optional<T> = T | undefined
+export type ReadonlyType<T> = Readonly<T>
+export type Mutable<T> = { -readonly [P in keyof T]: T[P] }
+
+export type ArrayElement<T> = T extends readonly (infer U)[] ? U : never
+export type TupleToUnion<T> = T extends readonly any[] ? T[number] : never
+
+export type ExtractProps<T> = T extends React.ComponentType<infer P> ? P : never
+
+export type ComponentProps<T> = T extends React.ComponentType<infer P> ? P : never
+export type HookReturn<T> = T extends (...args: any[]) => infer R ? R : never
+
+export type EventMap = {
+	click: MouseEvent
+	change: Event
+	submit: Event
+	keydown: KeyboardEvent
+	keyup: KeyboardEvent
+	mouseenter: MouseEvent
+	mouseleave: MouseEvent
+	touchstart: TouchEvent
+	touchend: TouchEvent
+	touchmove: TouchEvent
+}
+
+export type EventName = keyof EventMap
+export type EventHandlerMap = { [K in EventName]: EventHandler<EventMap[K]> }

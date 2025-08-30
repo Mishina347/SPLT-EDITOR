@@ -8,13 +8,6 @@
 import { TextSnapshot, LayoutConfig, EditorSettings } from '../domain'
 import { FontFamily } from '../domain'
 
-// Jest関連の型定義（TypeScript環境で使用する場合）
-declare global {
-	const jest: any
-	const beforeEach: any
-	const afterEach: any
-}
-
 /**
  * テスト用のファクトリー関数
  */
@@ -33,6 +26,8 @@ export const createMockLayoutConfig = (overrides: Partial<LayoutConfig> = {}): L
 	return {
 		charsPerLine: 40,
 		linesPerPage: 20,
+		fontSize: 14,
+		fontFamily: 'UD Digi Kyokasho N-R' as FontFamily,
 		...overrides,
 	}
 }
@@ -46,6 +41,17 @@ export const createMockEditorSettings = (
 		fontFamily: 'UD Digi Kyokasho N-R' as FontFamily,
 		backgroundColor: '#ffffff',
 		textColor: '#000000',
+		theme: {
+			background: '#ffffff',
+			foreground: '#000000',
+			keyword: '#0000ff',
+			string: '#008000',
+			comment: '#808080',
+		},
+		autoSave: {
+			enabled: true,
+			delay: 1000,
+		},
 		...overrides,
 	}
 }

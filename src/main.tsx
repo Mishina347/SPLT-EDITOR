@@ -3,7 +3,8 @@ import { logger } from '@/utils/logger'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import { Settings, getDefaultSettingForDevice } from './domain/entities/defaultSetting'
-import { loadSettings } from './usecases/settingsUseCase'
+import { loadEditorSettings } from './usecases/LoadEditorSettings'
+import { serviceFactory } from './infra'
 // manifestのorientation管理
 import { setupManifestOrientationListener } from './utils/manifestManager'
 import { isTauri } from './utils'
@@ -87,7 +88,8 @@ function Root() {
 
 				// 設定を読み込み（失敗した場合は初期設定を使用）
 				try {
-					const loadedSettings = await loadSettings()
+					const fileDataRepository = serviceFactory.getFileDataRepository()
+					const loadedSettings = await loadEditorSettings(fileDataRepository)
 					logger.info('App', 'Settings loaded successfully', loadedSettings)
 
 					// 読み込んだ設定と初期設定を比較して、必要に応じて更新
@@ -147,6 +149,19 @@ function Root() {
 	)
 
 	const handleResize = useCallback(() => {
+		// フルスクリーン状態をチェック
+		const isFullscreen =
+			!!document.fullscreenElement ||
+			!!(document as any).webkitFullscreenElement ||
+			!!(document as any).mozFullScreenElement ||
+			!!(document as any).msFullscreenElement
+
+		// フルスクリーン状態の場合は設定を更新しない
+		if (isFullscreen) {
+			logger.debug('App', 'Resize detected in fullscreen mode, skipping settings update')
+			return
+		}
+
 		const newSettings = getDefaultSettingForDevice()
 
 		setSettings(prevSettings => {
@@ -164,14 +179,47 @@ function Root() {
 		})
 	}, [])
 
-	// ウィンドウサイズの変更を監視して設定を動的に更新
+	// ウィンドウサイズの変更とフルスクリーン状態の変化を監視
 	useEffect(() => {
-		// 初期化完了後にのみリサイズリスナーを設定
+		// 初期化完了後にのみリスナーを設定
 		if (!isInitialized) return
 
-		logger.info('App', 'Setting up resize listener...')
+		logger.info('App', 'Setting up resize and fullscreen listeners...')
+
+		// リサイズイベントリスナー
 		window.addEventListener('resize', handleResize)
-		return () => window.removeEventListener('resize', handleResize)
+
+		// フルスクリーン状態変化リスナー
+		const handleFullscreenChange = () => {
+			const isFullscreen =
+				!!document.fullscreenElement ||
+				!!(document as any).webkitFullscreenElement ||
+				!!(document as any).mozFullScreenElement ||
+				!!(document as any).msFullscreenElement
+
+			logger.debug('App', 'Fullscreen state changed', { isFullscreen })
+
+			// フルスクリーンから抜けた時に設定を再評価
+			if (!isFullscreen) {
+				// 少し遅延させてからリサイズ処理を実行
+				setTimeout(() => {
+					handleResize()
+				}, 100)
+			}
+		}
+
+		document.addEventListener('fullscreenchange', handleFullscreenChange)
+		document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+		document.addEventListener('mozfullscreenchange', handleFullscreenChange)
+		document.addEventListener('MSFullscreenChange', handleFullscreenChange)
+
+		return () => {
+			window.removeEventListener('resize', handleResize)
+			document.removeEventListener('fullscreenchange', handleFullscreenChange)
+			document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
+			document.removeEventListener('mozfullscreenchange', handleFullscreenChange)
+			document.removeEventListener('MSFullscreenChange', handleFullscreenChange)
+		}
 	}, [isInitialized, handleResize])
 
 	if (isLoading) {

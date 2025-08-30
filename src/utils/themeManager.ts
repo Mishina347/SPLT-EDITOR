@@ -13,7 +13,6 @@ export async function saveThemeSettings(theme: EditorTheme): Promise<void> {
 		try {
 			currentSettings = await loadSettings()
 		} catch (error) {
-			console.log('[ThemeManager] Failed to load current settings, using default:', error)
 			currentSettings = { ...DEFAULT_SETTING }
 		}
 
@@ -21,7 +20,6 @@ export async function saveThemeSettings(theme: EditorTheme): Promise<void> {
 		if (currentSettings) {
 			currentSettings.editor.theme = theme
 			await saveSettings(currentSettings)
-			console.log('[ThemeManager] Theme settings saved successfully')
 		}
 	} catch (error) {
 		console.error('[ThemeManager] Failed to save theme settings:', error)

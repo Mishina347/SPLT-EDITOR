@@ -1,9 +1,15 @@
-type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+import { LogLevel, LoggerConfig } from '../types/common'
 
-interface LoggerConfig {
-	level: LogLevel
-	enableDebug: boolean
-	enableConsole: boolean
+// Vite環境変数の型定義
+declare global {
+	interface ImportMetaEnv {
+		readonly DEV: boolean
+		readonly VITE_TAURI_PLATFORM: string | undefined
+	}
+
+	interface ImportMeta {
+		readonly env: ImportMetaEnv
+	}
 }
 
 class Logger {
@@ -73,8 +79,17 @@ class Logger {
 }
 
 // 環境に応じた設定
-const isDevelopment = import.meta.env.DEV
-const isTauri = import.meta.env.VITE_TAURI_PLATFORM === 'desktop'
+// 環境変数の安全な取得
+const getEnvVar = (key: string): string | undefined => {
+	try {
+		return (globalThis as any).import?.meta?.env?.[key] || process?.env?.[key]
+	} catch {
+		return undefined
+	}
+}
+
+const isDevelopment = getEnvVar('DEV') === 'true' || getEnvVar('NODE_ENV') === 'development'
+const isTauri = getEnvVar('VITE_TAURI_PLATFORM') === 'desktop'
 
 export const logger = new Logger({
 	level: isDevelopment ? 'debug' : 'warn',

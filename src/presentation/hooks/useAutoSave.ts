@@ -23,8 +23,9 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 				return
 			}
 
-			// 内容が変更されていない場合はスキップ（ただし空文字の場合は保存を許可）
-			if (textContent === lastSavedContentRef.current) {
+			// 手動保存の場合は内容が同じでも保存を実行
+			if (!isManualSave && textContent === lastSavedContentRef.current) {
+				console.log('[DEBUG] Auto-save skipped: content unchanged')
 				return
 			}
 
@@ -35,11 +36,14 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 				await saveText(fileName, textContent)
 				lastSavedContentRef.current = textContent
 
+				console.log(`[DEBUG] ${isManualSave ? 'Manual' : 'Auto'}-save completed successfully`)
+
 				// 手動保存の場合はonSaveコールバックを呼び出さない
 				// （呼び出し元で個別にスナップショットを作成するため）
 				if (!isManualSave) {
 					onSave?.(textContent)
 				} else {
+					console.log(`[DEBUG] Manual save: skipping onSave callback`)
 				}
 			} catch (error) {
 				console.error(isManualSave ? 'Manual save failed:' : 'Auto save failed:', error)
@@ -65,10 +69,10 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 			return
 		}
 
-		// 内容が変更されていない場合もスキップ（空文字も含む）
+		// 内容が変更されていない場合は自動保存タイマーをスキップ
 		if (content === lastSavedContentRef.current) {
 			console.log(
-				`[DEBUG] Skipping timer setup - content unchanged: "${content}" === "${lastSavedContentRef.current}"`
+				`[DEBUG] Skipping auto-save timer setup - content unchanged: "${content}" === "${lastSavedContentRef.current}"`
 			)
 			return
 		}
@@ -102,7 +106,7 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 
 	// 手動保存（即座に実行）
 	const forceSave = useCallback(async () => {
-		console.log(`[DEBUG] forceSave called`)
+		console.log(`[DEBUG] forceSave called with content: "${content}"`)
 
 		// 既存のタイマーをクリア（自動保存を停止）
 		if (timeoutRef.current) {
@@ -113,7 +117,7 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 			console.log(`[DEBUG] No existing timer to clear`)
 		}
 
-		// 手動保存として実行
+		// 手動保存として実行（内容が同じでも保存）
 		await performAutoSave(content, true)
 	}, [content, performAutoSave])
 

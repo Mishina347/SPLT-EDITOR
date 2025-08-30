@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { logger } from '@/utils/logger'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import { Settings, getDefaultSettingForDevice } from './domain/entities/defaultSetting'
@@ -28,7 +29,7 @@ if (!isTauri()) {
 		// vite-plugin-pwa/clientのrequireを削除（ESモジュール環境では動作しない）
 		require('./utils/swDebug')
 	} catch (error) {
-		console.log('[App] PWA imports skipped:', error)
+		logger.warn('App', 'PWA imports skipped', error)
 	}
 }
 
@@ -36,17 +37,17 @@ if (!isTauri()) {
 function debugServiceWorker() {
 	// Tauri環境ではService Workerを無効化
 	if (isTauri()) {
-		console.log('[SW Debug] Service Worker disabled in Tauri environment')
+		logger.info('SW Debug', 'Service Worker disabled in Tauri environment')
 		return
 	}
 
 	if ('serviceWorker' in navigator) {
-		console.log('[SW Debug] Service Worker API is available')
+		logger.info('SW Debug', 'Service Worker API is available')
 
 		navigator.serviceWorker.getRegistrations().then(registrations => {
-			console.log('[SW Debug] Current registrations:', registrations.length)
+			logger.info('SW Debug', 'Current registrations', registrations.length)
 			registrations.forEach((registration, index) => {
-				console.log(`[SW Debug] Registration ${index}:`, {
+				logger.debug('SW Debug', `Registration ${index}`, {
 					scope: registration.scope,
 					active: !!registration.active,
 					installing: !!registration.installing,
@@ -56,14 +57,14 @@ function debugServiceWorker() {
 		})
 
 		navigator.serviceWorker.addEventListener('message', event => {
-			console.log('[SW Debug] Message from SW:', event.data)
+			logger.debug('SW Debug', 'Message from SW', event.data)
 		})
 
 		navigator.serviceWorker.addEventListener('error', event => {
-			console.error('[SW Debug] SW Error:', (event as any).error)
+			logger.error('SW Debug', 'SW Error', (event as any).error)
 		})
 	} else {
-		console.log('[SW Debug] Service Worker API is not available')
+		logger.info('SW Debug', 'Service Worker API is not available')
 	}
 }
 
@@ -77,47 +78,47 @@ function Root() {
 	useEffect(() => {
 		const initializeApp = async () => {
 			try {
-				console.log('[App] Starting app initialization...')
-				console.log('[App] Initial window size:', window.innerWidth, 'x', window.innerHeight)
+				logger.info('App', 'Starting app initialization...')
+				logger.info('App', 'Initial window size', `${window.innerWidth} x ${window.innerHeight}`)
 
 				// 起動時のウィンドウサイズを元に初期設定を決定
 				const initialSettings = getDefaultSettingForDevice()
-				console.log('[App] Initial settings based on window size:', initialSettings)
+				logger.info('App', 'Initial settings based on window size', initialSettings)
 
 				// 設定を読み込み（失敗した場合は初期設定を使用）
 				try {
 					const loadedSettings = await loadSettings()
-					console.log('[App] Settings loaded successfully:', loadedSettings)
+					logger.info('App', 'Settings loaded successfully', loadedSettings)
 
 					// 読み込んだ設定と初期設定を比較して、必要に応じて更新
 					const finalSettings = shouldUpdateSettings(loadedSettings, initialSettings)
 						? initialSettings
 						: loadedSettings
 
-					console.log('[App] Final settings to use:', finalSettings)
+					logger.info('App', 'Final settings to use', finalSettings)
 					setSettings(finalSettings)
 				} catch (error) {
-					console.error('[App] Failed to load settings, using initial settings:', error)
+					logger.error('App', 'Failed to load settings, using initial settings', error)
 					setSettings(initialSettings)
 				}
 
 				// manifestのorientation管理を初期化
 				try {
 					const cleanup = setupManifestOrientationListener()
-					console.log('[App] Manifest orientation listener setup completed')
+					logger.info('App', 'Manifest orientation listener setup completed')
 					// クリーンアップ関数を返す（undefinedの場合は何もしない）
 					return cleanup || (() => {})
 				} catch (error) {
-					console.error('[App] Failed to setup manifest orientation listener:', error)
+					logger.error('App', 'Failed to setup manifest orientation listener', error)
 					return () => {}
 				}
 			} catch (error) {
-				console.error('[App] Initialization failed:', error)
+				logger.error('App', 'Initialization failed', error)
 				setError((error as any).toString())
 			} finally {
 				setIsLoading(false)
 				setIsInitialized(true)
-				console.log('[App] App initialization completed')
+				logger.info('App', 'App initialization completed')
 			}
 		}
 
@@ -132,7 +133,7 @@ function Root() {
 			const newIsMobile =
 				newSettings.editor.fontSize === 12 && newSettings.editor.wordWrapColumn === 30
 
-			console.log('[App] Settings comparison:', {
+			logger.debug('App', 'Settings comparison', {
 				currentIsMobile,
 				newIsMobile,
 				currentFontSize: currentSettings.editor.fontSize,
@@ -151,10 +152,13 @@ function Root() {
 		setSettings(prevSettings => {
 			// 設定が変更された場合のみ更新
 			if (JSON.stringify(prevSettings) !== JSON.stringify(newSettings)) {
-				console.log('[App] Resize detected, updating settings from:', prevSettings, 'to:', newSettings)
+				logger.info('App', 'Resize detected, updating settings', {
+					from: prevSettings,
+					to: newSettings,
+				})
 				return newSettings
 			} else {
-				console.log('[App] Settings unchanged, no update needed')
+				logger.debug('App', 'Settings unchanged, no update needed')
 			}
 			return prevSettings
 		})
@@ -165,13 +169,13 @@ function Root() {
 		// 初期化完了後にのみリサイズリスナーを設定
 		if (!isInitialized) return
 
-		console.log('[App] Setting up resize listener...')
+		logger.info('App', 'Setting up resize listener...')
 		window.addEventListener('resize', handleResize)
 		return () => window.removeEventListener('resize', handleResize)
 	}, [isInitialized, handleResize])
 
 	if (isLoading) {
-		console.log('[App] Rendering loading state...')
+		logger.info('App', 'Rendering loading state...')
 		return (
 			<div style={{ margin: 'auto', padding: '20px', textAlign: 'center' }}>
 				<div>Loading settings...</div>
@@ -193,7 +197,7 @@ function Root() {
 	}
 
 	if (error) {
-		console.log('[App] Rendering error state...')
+		logger.info('App', 'Rendering error state...')
 		return (
 			<div style={{ margin: 'auto', padding: '20px', textAlign: 'center', color: 'red' }}>
 				<div>Error: {error}</div>
@@ -215,7 +219,7 @@ function Root() {
 	}
 	// Appコンポーネントの存在確認
 	if (typeof App === 'undefined') {
-		console.error('[App] App component is undefined!')
+		logger.error('App', 'App component is undefined!')
 		return (
 			<div style={{ margin: 'auto', padding: '20px', color: 'red' }}>App component not found</div>
 		)
@@ -230,26 +234,26 @@ if (!isTauri()) {
 		const swRegistration = registerSW({
 			immediate: true,
 			onNeedRefresh() {
-				console.log('[SW] Update available')
+				logger.info('SW', 'Update available')
 			},
 			onOfflineReady() {
-				console.log('[SW] App ready to work offline')
+				logger.info('SW', 'App ready to work offline')
 			},
 			onRegistered(registration: any) {
-				console.log('[SW] Service Worker registered:', registration)
+				logger.info('SW', 'Service Worker registered', registration)
 				debugServiceWorker()
 			},
 			onRegisterError(error: any) {
-				console.error('[SW] Registration error:', error)
+				logger.error('SW', 'Registration error', error)
 			},
 		})
 
 		swRegistration()
 	} catch (error) {
-		console.log('[App] Service Worker registration skipped:', error)
+		logger.warn('App', 'Service Worker registration skipped', error)
 	}
 } else {
-	console.log('[App] Service Worker registration disabled in Tauri environment')
+	logger.info('App', 'Service Worker registration disabled in Tauri environment')
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<Root />)

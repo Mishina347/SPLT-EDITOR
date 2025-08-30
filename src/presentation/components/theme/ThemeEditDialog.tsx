@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
+import { logger } from '@/utils/logger'
 import { Dialog } from '../../shared'
 import styles from './ThemeEditDialog.module.css'
 import buttonStyles from '../../shared/Button/Button.module.css'
@@ -29,7 +30,7 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 	// ダイアログが開いたときのみ初期化
 	useEffect(() => {
 		if (isOpen && !isInitialized) {
-			console.log('Dialog opened, initializing colors:', themeColors)
+			logger.debug('ThemeEditDialog', 'Dialog opened, initializing colors', themeColors)
 			setTempBackgroundColor(themeColors?.backgroundColor || '#ffffff')
 			setTempTextColor(themeColors?.textColor || '#000000')
 			setIsInitialized(true)
@@ -41,14 +42,14 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 
 	const handleBackgroundColorChange = useCallback(
 		(newColor: string) => {
-			console.log('Background color changed to:', newColor)
+			logger.debug('ThemeEditDialog', 'Background color changed to', newColor)
 			setTempBackgroundColor(newColor)
 		},
 		[hexToRgba]
 	)
 
 	const handleTextColorChange = useCallback((newColor: string) => {
-		console.log('Text color changed to:', newColor)
+		logger.debug('ThemeEditDialog', 'Text color changed to', newColor)
 		setTempTextColor(newColor)
 		// リアルタイムでCSS変数を更新
 	}, [])
@@ -72,8 +73,11 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 	}, [onClose])
 
 	const handleSave = useCallback(() => {
-		console.log('Theme save button clicked', { tempBackgroundColor, tempTextColor })
-		console.log('Current themeColors before save:', themeColors)
+		logger.info('ThemeEditDialog', 'Theme save button clicked', {
+			tempBackgroundColor,
+			tempTextColor,
+		})
+		logger.debug('ThemeEditDialog', 'Current themeColors before save', themeColors)
 		onThemeUpdate(tempBackgroundColor, tempTextColor)
 		onClose()
 	}, [onThemeUpdate, tempBackgroundColor, tempTextColor, onClose, themeColors])
@@ -123,7 +127,7 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 								value={tempBackgroundColor}
 								onChange={e => handleBackgroundColorChange(e.target.value)}
 								onBlur={e => {
-									console.log('Background color input blur:', e.target.value)
+									logger.debug('ThemeEditDialog', 'Background color input blur', e.target.value)
 									// ブラー時に値を再確認
 									if (e.target.value !== tempBackgroundColor) {
 										handleBackgroundColorChange(e.target.value)
@@ -140,7 +144,7 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 								value={tempBackgroundColor}
 								onChange={e => handleBackgroundColorChange(e.target.value)}
 								onBlur={e => {
-									console.log('Background color text input blur:', e.target.value)
+									logger.debug('ThemeEditDialog', 'Background color text input blur', e.target.value)
 									// ブラー時に値を再確認
 									if (e.target.value !== tempBackgroundColor) {
 										handleBackgroundColorChange(e.target.value)
@@ -163,7 +167,7 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 								value={tempTextColor}
 								onChange={e => handleTextColorChange(e.target.value)}
 								onBlur={e => {
-									console.log('Text color input blur:', e.target.value)
+									logger.debug('ThemeEditDialog', 'Text color input blur', e.target.value)
 									// ブラー時に値を再確認
 									if (e.target.value !== tempTextColor) {
 										handleTextColorChange(e.target.value)
@@ -180,7 +184,7 @@ export const ThemeEditDialog: React.FC<ThemeEditDialogProps> = ({
 								value={tempTextColor}
 								onChange={e => handleTextColorChange(e.target.value)}
 								onBlur={e => {
-									console.log('Text color text input blur:', e.target.value)
+									logger.debug('ThemeEditDialog', 'Text color text input blur', e.target.value)
 									// ブラー時に値を再確認
 									if (e.target.value !== tempTextColor) {
 										handleTextColorChange(e.target.value)

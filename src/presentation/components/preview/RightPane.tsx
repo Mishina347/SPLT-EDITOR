@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { logger } from '@/utils/logger'
 import { PreviewMode, LayoutConfig, TextSnapshot } from '../../../domain'
 import { Preview } from './preview/Preview'
 import { Diff2HtmlAdapter } from '../../../infra'
@@ -66,7 +67,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 			const newScaleInfo = calculateScaleWithViewport(containerRef.current)
 			setScaleInfo(newScaleInfo)
 
-			console.log('[RightPane] Scale info updated:', {
+			logger.debug('RightPane', 'Scale info updated', {
 				element: 'RightPane',
 				...newScaleInfo,
 			})
@@ -83,7 +84,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 			clearTimeout(resizeTimeoutRef.current)
 		}
 		resizeTimeoutRef.current = setTimeout(() => {
-			console.log('[RightPane] Debounced update triggered')
+			logger.debug('RightPane', 'Debounced update triggered')
 			updateScaleInfo()
 			// レイアウト更新も最適化
 			updateLayout(containerRef.current)
@@ -121,7 +122,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 
 	// 倍率計算の初期化と監視（最適化版）
 	useEffect(() => {
-		console.log('[RightPane] Setting up ResizeObserver')
+		logger.debug('RightPane', 'Setting up ResizeObserver')
 
 		// 初期倍率を計算
 		updateScaleInfo()
@@ -129,14 +130,14 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		// ResizeObserverでサイズ変更を監視（デバウンス処理付き）
 		if (containerRef.current) {
 			const resizeObserver = new ResizeObserver(() => {
-				console.log('[RightPane] ResizeObserver triggered')
+				logger.debug('RightPane', 'ResizeObserver triggered')
 				debouncedUpdateScaleInfo()
 			})
 
 			resizeObserver.observe(containerRef.current)
 
 			return () => {
-				console.log('[RightPane] Cleaning up ResizeObserver')
+				logger.debug('RightPane', 'Cleaning up ResizeObserver')
 				resizeObserver.disconnect()
 				if (resizeTimeoutRef.current) {
 					clearTimeout(resizeTimeoutRef.current)
@@ -150,7 +151,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	// 最大化状態の変更を監視してレイアウトを更新（最適化版）
 	useEffect(() => {
 		if (isMaximized && containerRef.current) {
-			console.log('[RightPane] Maximized state changed, updating layout')
+			logger.debug('RightPane', 'Maximized state changed, updating layout')
 			// 最大化時に最適化されたレイアウト更新
 			requestAnimationFrame(() => {
 				updateScaleInfo()
@@ -400,7 +401,6 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 					}
 				}}
 				onTouchEnd={e => {
-					console.log('RightPane maximize button touch end')
 					e.preventDefault()
 					e.stopPropagation() // 長押しリサイズとの競合を防ぐ
 					onMaximize()

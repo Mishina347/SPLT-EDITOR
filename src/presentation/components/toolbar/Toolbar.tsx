@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
+import { logger } from '@/utils/logger'
 import { EditorSettingsPanel } from './editorCongig/EditorSettingsPanel'
 import { PreviewSettingsPanel } from './previewConfig/PreviewSettingsPanel'
 
@@ -113,7 +114,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
 	// visibleの変化に応じて可視性を設定
 	useEffect(() => {
-		console.log('[Toolbar] Visibility change:', { visible, isVisibilityHidden })
+		logger.debug('Toolbar', 'Visibility change', { visible, isVisibilityHidden })
 		setIsVisibilityHidden(!visible)
 	}, [visible])
 
@@ -175,7 +176,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 		const hiddenClass = isVisibilityHidden ? styles.collapsed : ''
 
 		const className = `${baseClass} ${visibilityClass} ${hiddenClass}`.trim()
-		console.log('[Toolbar] ClassName updated:', {
+		logger.debug('Toolbar', 'ClassName updated', {
 			visible,
 			isVisibilityHidden,
 			className,

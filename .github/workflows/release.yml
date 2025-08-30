@@ -296,6 +296,23 @@ jobs:
             echo "linuxdeploy download completed successfully"
             chmod +x linuxdeploy-x86_64.AppImage
             sudo mv linuxdeploy-x86_64.AppImage /usr/local/bin/linuxdeploy
+            
+            # インストール後の確認
+            echo "=== Post-installation verification ==="
+            if [ -f "/usr/local/bin/linuxdeploy" ]; then
+              echo "✓ linuxdeploy file exists at /usr/local/bin/linuxdeploy"
+              ls -la /usr/local/bin/linuxdeploy
+              
+              # 実行権限の確認
+              if [ -x "/usr/local/bin/linuxdeploy" ]; then
+                echo "✓ linuxdeploy has execute permissions"
+              else
+                echo "✗ linuxdeploy does not have execute permissions"
+                sudo chmod +x /usr/local/bin/linuxdeploy
+              fi
+            else
+              echo "✗ linuxdeploy file not found at /usr/local/bin/linuxdeploy"
+            fi
           else
             echo "All linuxdeploy download attempts failed"
             echo "Available releases:"
@@ -375,6 +392,23 @@ jobs:
             echo "Plugin download completed successfully"
             chmod +x linuxdeploy-plugin-appimage-x86_64.AppImage
             sudo mv linuxdeploy-plugin-appimage-x86_64.AppImage /usr/local/bin/linuxdeploy-plugin-appimage
+            
+            # インストール後の確認
+            echo "=== Post-installation verification ==="
+            if [ -f "/usr/local/bin/linuxdeploy-plugin-appimage" ]; then
+              echo "✓ Plugin file exists at /usr/local/bin/linuxdeploy-plugin-appimage"
+              ls -la /usr/local/bin/linuxdeploy-plugin-appimage
+              
+              # 実行権限の確認
+              if [ -x "/usr/local/bin/linuxdeploy-plugin-appimage" ]; then
+                echo "✓ Plugin has execute permissions"
+              else
+                echo "✗ Plugin does not have execute permissions"
+                sudo chmod +x /usr/local/bin/linuxdeploy-plugin-appimage
+              fi
+            else
+              echo "✗ Plugin file not found at /usr/local/bin/linuxdeploy-plugin-appimage"
+            fi
           else
             echo "All download attempts failed"
             echo "Available releases:"
@@ -419,6 +453,10 @@ jobs:
             # 代替手段の準備
             echo "Preparing fallback build configuration..."
             echo "Setting TAURI_BUNDLE_APPIMAGE=false for fallback build"
+            
+            # 環境変数の設定
+            export TAURI_BUNDLE_APPIMAGE=false
+            echo "TAURI_BUNDLE_APPIMAGE set to false"
           fi
       
       - name: Check build environment
@@ -464,18 +502,72 @@ jobs:
           echo "LINUXDEPLOY_PLUGIN_APPIMAGE: $LINUXDEPLOY_PLUGIN_APPIMAGE"
           echo "Using simplified script without cross-env"
           
-          # AppImage作成ツールの確認
-          which linuxdeploy
-          which linuxdeploy-plugin-appimage
+          # AppImage作成ツールの詳細確認
+          echo "=== Detailed AppImage tools verification ==="
+          
+          LINUXDEPLOY_AVAILABLE=false
+          PLUGIN_AVAILABLE=false
+          
+          # linuxdeployの確認
+          if command -v linuxdeploy >/dev/null 2>&1; then
+            echo "✓ linuxdeploy found at: $(which linuxdeploy)"
+            echo "linuxdeploy file info:"
+            ls -la /usr/local/bin/linuxdeploy
+            echo "linuxdeploy version:"
+            if linuxdeploy --version 2>&1; then
+              echo "✓ linuxdeploy version check successful"
+              LINUXDEPLOY_AVAILABLE=true
+            else
+              echo "✗ linuxdeploy version check failed"
+            fi
+          else
+            echo "✗ linuxdeploy not found in PATH"
+          fi
+          
+          # linuxdeploy-plugin-appimageの確認
+          if command -v linuxdeploy-plugin-appimage >/dev/null 2>&1; then
+            echo "✓ linuxdeploy-plugin-appimage found at: $(which linuxdeploy-plugin-appimage)"
+            echo "plugin file info:"
+            ls -la /usr/local/bin/linuxdeploy-plugin-appimage
+            echo "plugin version:"
+            if linuxdeploy-plugin-appimage --version 2>&1; then
+              echo "✓ plugin version check successful"
+              PLUGIN_AVAILABLE=true
+            else
+              echo "✗ plugin version check failed"
+            fi
+          else
+            echo "✗ linuxdeploy-plugin-appimage not found in PATH"
+          fi
+          
+          # システムの依存関係確認
+          echo "=== System dependencies check ==="
+          echo "FUSE support:"
+          lsmod | grep fuse || echo "FUSE module not loaded"
+          echo "FUSE packages:"
+          dpkg -l | grep fuse || echo "No FUSE packages found"
           
           # Tauriビルドの実行
-          if command -v linuxdeploy >/dev/null 2>&1 && command -v linuxdeploy-plugin-appimage >/dev/null 2>&1; then
+          if [ "$LINUXDEPLOY_AVAILABLE" = true ] && [ "$PLUGIN_AVAILABLE" = true ]; then
             echo "=== AppImage tools available, building with AppImage support ==="
+            
+            # AppImage作成のテスト
+            echo "=== Testing AppImage creation tools ==="
+            if linuxdeploy --help >/dev/null 2>&1; then
+              echo "✓ linuxdeploy help command successful"
+            else
+              echo "✗ linuxdeploy help command failed"
+            fi
+            
+            # AppImage作成を有効にしてビルド
+            export TAURI_BUNDLE_APPIMAGE=true
+            echo "TAURI_BUNDLE_APPIMAGE set to true"
             yarn tauri:build:linux
           else
             echo "=== AppImage tools not available, building without AppImage ==="
             echo "Setting TAURI_BUNDLE_APPIMAGE=false"
             export TAURI_BUNDLE_APPIMAGE=false
+            echo "TAURI_BUNDLE_APPIMAGE set to false"
             yarn tauri:build:linux
           fi
       

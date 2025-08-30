@@ -83,11 +83,12 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 			clearTimeout(resizeTimeoutRef.current)
 		}
 		resizeTimeoutRef.current = setTimeout(() => {
+			console.log('[RightPane] Debounced update triggered')
 			updateScaleInfo()
 			// レイアウト更新も最適化
 			updateLayout(containerRef.current)
 		}, 100) // 100msのデバウンス
-	}, [updateScaleInfo, updateLayout])
+	}, []) // 依存関係を空配列に変更
 
 	// フォーカスモードハンドラー（最適化版）
 	const handleFocusMode = useCallback(
@@ -120,18 +121,22 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 
 	// 倍率計算の初期化と監視（最適化版）
 	useEffect(() => {
+		console.log('[RightPane] Setting up ResizeObserver')
+
 		// 初期倍率を計算
 		updateScaleInfo()
 
 		// ResizeObserverでサイズ変更を監視（デバウンス処理付き）
 		if (containerRef.current) {
 			const resizeObserver = new ResizeObserver(() => {
+				console.log('[RightPane] ResizeObserver triggered')
 				debouncedUpdateScaleInfo()
 			})
 
 			resizeObserver.observe(containerRef.current)
 
 			return () => {
+				console.log('[RightPane] Cleaning up ResizeObserver')
 				resizeObserver.disconnect()
 				if (resizeTimeoutRef.current) {
 					clearTimeout(resizeTimeoutRef.current)
@@ -140,18 +145,19 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 				cleanupLayout()
 			}
 		}
-	}, [updateScaleInfo, debouncedUpdateScaleInfo, cleanupLayout])
+	}, []) // 依存関係を空配列に変更
 
 	// 最大化状態の変更を監視してレイアウトを更新（最適化版）
 	useEffect(() => {
 		if (isMaximized && containerRef.current) {
+			console.log('[RightPane] Maximized state changed, updating layout')
 			// 最大化時に最適化されたレイアウト更新
 			requestAnimationFrame(() => {
 				updateScaleInfo()
 				updateLayoutImmediate(containerRef.current)
 			})
 		}
-	}, [isMaximized, updateScaleInfo, updateLayoutImmediate])
+	}, [isMaximized]) // 依存関係をisMaximizedのみに変更
 
 	// 差分計算を遅延実行（DIFFモードが選択された時のみ）
 	const [diffHtml, setDiffHtml] = useState('')

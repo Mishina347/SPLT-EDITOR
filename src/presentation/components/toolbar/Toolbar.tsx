@@ -39,11 +39,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 	onExportOpen,
 	themeColors,
 }) => {
-	// アニメーション状態を管理
-	const [animationState, setAnimationState] = useState<'idle' | 'entering' | 'exiting'>(
-		visible ? 'idle' : 'exiting'
-	)
-	// アニメーション完了後の可視性を管理
+	// 可視性を管理
 	const [isVisibilityHidden, setIsVisibilityHidden] = useState(!visible)
 	// ファイル入力要素を再利用するためのref
 	const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -115,29 +111,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 		return () => clearTimeout(timer)
 	}, [activePane, isPanelOverflowing, scrollToMakePanelVisible])
 
-	// visibleの変化に応じてアニメーション状態を設定
+	// visibleの変化に応じて可視性を設定
 	useEffect(() => {
-		console.log('[Toolbar] Animation state change:', { visible, animationState, isVisibilityHidden })
-
-		if (visible) {
-			// 表示開始時：まずvisibility: visibleにしてからアニメーション開始
-			setIsVisibilityHidden(false)
-			setAnimationState('entering')
-			// アニメーション完了後にidleに戻す
-			const timer = setTimeout(() => {
-				setAnimationState('idle')
-			}, 400) // CSSのアニメーション時間と合わせる
-			return () => clearTimeout(timer)
-		} else {
-			// 非表示開始時：アニメーション開始
-			setAnimationState('exiting')
-			// アニメーション完了後にvisibility: hiddenにしてidleに戻す
-			const timer = setTimeout(() => {
-				setIsVisibilityHidden(true)
-				setAnimationState('idle')
-			}, 400) // CSSのアニメーション時間と合わせる
-			return () => clearTimeout(timer)
-		}
+		console.log('[Toolbar] Visibility change:', { visible, isVisibilityHidden })
+		setIsVisibilityHidden(!visible)
 	}, [visible])
 
 	const handleThemeEdit = useCallback(() => {
@@ -195,16 +172,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 	const toolbarClassName = useMemo(() => {
 		const baseClass = styles.toolbar
 		const visibilityClass = visible ? styles.visible : styles.hidden
-		const animationClass =
-			animationState === 'entering'
-				? styles['smooth-enter']
-				: animationState === 'exiting'
-					? styles['smooth-exit']
-					: ''
 		const hiddenClass = isVisibilityHidden ? styles.collapsed : ''
 
-		return `${baseClass} ${visibilityClass} ${animationClass} ${hiddenClass}`.trim()
-	}, [visible, animationState, isVisibilityHidden])
+		const className = `${baseClass} ${visibilityClass} ${hiddenClass}`.trim()
+		console.log('[Toolbar] ClassName updated:', {
+			visible,
+			isVisibilityHidden,
+			className,
+		})
+		return className
+	}, [visible, isVisibilityHidden])
 
 	// ツールバーアイテムのリストを動的に取得
 	const toolbarItems = useMemo(() => {

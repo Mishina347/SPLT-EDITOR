@@ -1,6 +1,6 @@
-import { EditorSettings } from '../domain'
+import { Settings } from '../domain'
 
 export interface FileDataRepository {
-	load(): Promise<EditorSettings | null>
-	save(settings: EditorSettings): Promise<void>
+	load(): Promise<Settings | null>
+	save(settings: Settings): Promise<void>
 }

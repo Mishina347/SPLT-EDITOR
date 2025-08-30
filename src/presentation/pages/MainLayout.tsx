@@ -25,6 +25,8 @@ import { loadText } from '../../usecases'
 import { editorService } from '../../application'
 import { eventBus, EVENTS } from '../../application/observers/EventBus'
 import { commandManager } from '../../application/commands/CommandManager'
+import { saveEditorSettings } from '../../usecases/SaveEditorSettings'
+import { serviceFactory } from '../../infra'
 import { hexToRgba, isMobile, isMobileSize } from '../../utils'
 import styles from './MainLayout.module.css'
 import { SwipeDirection } from '../hooks/useSwipeGesture'
@@ -282,6 +284,28 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	useEffect(() => {
 		onChangeToolbarDisplayMode(focusedPane)
 	}, [focusedPane])
+
+	// 設定の自動保存
+	useEffect(() => {
+		const saveSettings = async () => {
+			try {
+				const fileDataRepository = serviceFactory.getFileDataRepository()
+				const fullSettings = {
+					editor: editorSettings,
+					preview: previewSettings,
+				}
+				await saveEditorSettings(fileDataRepository, fullSettings)
+				logger.debug('MainLayout', 'Settings auto-saved successfully')
+			} catch (error) {
+				logger.error('MainLayout', 'Failed to auto-save settings', error)
+			}
+		}
+
+		// 初期化完了後にのみ自動保存を有効化
+		if (isInitialized) {
+			saveSettings()
+		}
+	}, [editorSettings, previewSettings, isInitialized])
 
 	//手動保存機能（Cmd+S / Ctrl+S）
 	useEffect(() => {

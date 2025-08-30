@@ -3,7 +3,8 @@ import { logger } from '@/utils/logger'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import { Settings, getDefaultSettingForDevice } from './domain/entities/defaultSetting'
-import { loadSettings } from './usecases/settingsUseCase'
+import { loadEditorSettings } from './usecases/LoadEditorSettings'
+import { serviceFactory } from './infra'
 // manifestのorientation管理
 import { setupManifestOrientationListener } from './utils/manifestManager'
 import { isTauri } from './utils'
@@ -87,7 +88,8 @@ function Root() {
 
 				// 設定を読み込み（失敗した場合は初期設定を使用）
 				try {
-					const loadedSettings = await loadSettings()
+					const fileDataRepository = serviceFactory.getFileDataRepository()
+					const loadedSettings = await loadEditorSettings(fileDataRepository)
 					logger.info('App', 'Settings loaded successfully', loadedSettings)
 
 					// 読み込んだ設定と初期設定を比較して、必要に応じて更新

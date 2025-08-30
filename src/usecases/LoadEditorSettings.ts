@@ -1,8 +1,8 @@
 import { FileDataRepository } from '../adapters'
-import { EditorSettings } from '../domain'
-import { defaultEditorSettings } from '../domain/editor/EditorState'
+import { Settings } from '../domain'
+import { getDefaultSettingForDevice } from '../domain/entities/defaultSetting'
 
-export async function loadEditorSettings(repo: FileDataRepository): Promise<EditorSettings> {
+export async function loadEditorSettings(repo: FileDataRepository): Promise<Settings> {
 	const saved = await repo.load()
-	return saved ?? defaultEditorSettings()
+	return saved ?? getDefaultSettingForDevice()
 }

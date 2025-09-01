@@ -1,6 +1,6 @@
 import { readTextFile, writeFile, BaseDirectory } from '@tauri-apps/plugin-fs'
-import { DEFAULT_SETTING } from '../domain'
-import { isTauri } from '../utils'
+import { DEFAULT_SETTING } from '../../domain'
+import { isTauri } from '../../utils'
 
 const SETTINGS_FILE = 'settings.json'
 

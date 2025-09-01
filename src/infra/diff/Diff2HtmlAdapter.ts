@@ -1,5 +1,5 @@
 import { createTwoFilesPatch } from 'diff'
-import { DiffService } from '../domain/preview/diff/DiffService'
+import { DiffService } from '../../domain/preview/diff/DiffService'
 
 export class Diff2HtmlAdapter implements DiffService {
 	generateUnifiedDiff(

@@ -1,8 +1,8 @@
 import { logger } from '@/utils/logger'
 import { container } from '../di/Container'
-import { FileDataRepositoryImpl } from '../../adapters/FileDataRepositoryImpl'
+import { FileDataRepositoryImpl } from '../../adapters/filesystem/FileDataRepositoryImpl'
 import { FilesystemNoteRepository } from '../../adapters/filesystem/FilesystemNoteRepository'
-import { PaginationService } from '../PaginationService'
+import { PaginationService } from '../pagenation/PaginationService'
 import { DiffDisplayService } from '../../application/diff/DiffDisplayService'
 import { MonacoEditorService } from '../../application/editor/MonacoEditorService'
 

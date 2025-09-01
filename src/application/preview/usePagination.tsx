@@ -1,5 +1,5 @@
 import { LayoutConfig } from '../../domain/preview/pdf/TextContent'
-import { PaginationService } from '../../infra/PaginationService'
+import { PaginationService } from '../../infra/pagenation/PaginationService'
 import { TxtWriter } from '../../infra/plainText/TxtWriter'
 
 export class ExportTxtUseCase {

@@ -1,4 +1,4 @@
-import { applyKinsoku, LayoutConfig } from '../domain/preview/pdf/TextContent'
+import { applyKinsoku, LayoutConfig } from '../../domain/preview/pdf/TextContent'
 
 export class PaginationService {
 	// キャッシュ用のMap（メモリリークを防ぐためWeakMapは使用しない）

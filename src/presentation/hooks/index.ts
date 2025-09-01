@@ -46,3 +46,11 @@ export { useHamburgerMenu } from './useHamburgerMenu'
 export { useMenuPosition } from './useMenuPosition'
 export { useMenuKeyboard } from './useMenuKeyboard'
 export { usePWAMenu } from './usePWAMenu'
+
+// RightPane関連のフック
+export { useDiffCalculation } from './useDiffCalculation'
+export { usePreviewMode } from './usePreviewMode'
+export { usePreviewScale } from './usePreviewScale'
+export { usePreviewHistory } from './usePreviewHistory'
+export { usePreviewPagination } from './usePreviewPagination'
+export { useRightPane } from './useRightPane'

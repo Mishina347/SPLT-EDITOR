@@ -1,19 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { logger } from '@/utils/logger'
-import {
-	useResizeObserver,
-	usePerformanceOptimization,
-} from '../../hooks/usePerformanceOptimization'
+import React, { useCallback } from 'react'
 import { PreviewMode, LayoutConfig, TextSnapshot } from '../../../domain'
 import { Preview } from './preview/Preview'
-import { Diff2HtmlAdapter } from '../../../infra'
-import { useFocusTrap, useOptimizedPreviewLayout } from '../../hooks'
-import { calculateElementScale, calculateScaleWithViewport } from '../../../utils/scaleCalculator'
-import { ScaleInfo } from '@/types/common'
-import { wordCounter, formatNumber } from '@/utils'
-import { html as diff2html, parse as diffParse } from 'diff2html'
-import 'diff2html/bundles/css/diff2html.min.css'
-import { TabPanel, TabItem } from '../'
+import { useRightPane } from '../../hooks'
+import { TabPanel } from '../'
 import { TextHistoryTimeline, HistoryDetailDialog } from './'
 import styles from './RightPane.module.css'
 import buttonStyles from '../../shared/Button/Button.module.css'
@@ -47,261 +36,46 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	onRestoreHistory,
 	onPageInfoChange,
 }) => {
-	const [mode, setMode] = useState<PreviewMode>(PreviewMode.VERTICAL)
-	const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | undefined>()
-	const [showHistoryDetailDialog, setShowHistoryDetailDialog] = useState(false)
-	const [isFocusMode, setIsFocusMode] = useState(false)
-	const [currentPageInfo, setCurrentPageInfo] = useState({ currentPage: 1, totalPages: 1 })
+	// すべてのロジックを統合したhook
+	const {
+		// refs
+		containerRef,
+		diffFocusTrapRef,
 
-	// 倍率計算の状態
-	const [scaleInfo, setScaleInfo] = useState<ScaleInfo>({
-		zoom: 1,
-		transformScale: 1,
-		totalScale: 1,
-		viewportScale: 1,
+		// state
+		mode,
+		isFocusMode,
+		diffHtml,
+		currentPageInfo,
+		selectedSnapshotId,
+		showHistoryDetailDialog,
+
+		// config
+		tabs,
+		previewConfig,
+
+		// handlers
+		handleTabChange,
+		optimizedHandleFocusMode,
+		handleInternalPageInfoChange,
+		handleSnapshotSelect,
+		handleCloseHistoryDialog,
+		setIsFocusMode,
+	} = useRightPane({
+		currentSavedText,
+		currentNotSavedText,
+		initialText,
+		setInitialText,
+		previewSetting,
+		textHistory,
+		isMaximized,
+		onRestoreHistory,
+		onPageInfoChange,
 	})
-	const containerRef = useRef<HTMLDivElement>(null)
-
-	// パフォーマンス最適化フック
-	const { debounce } = usePerformanceOptimization()
-
-	// 倍率計算のロジック
-	const updateScaleInfo = useCallback(() => {
-		if (containerRef.current) {
-			const newScaleInfo = calculateScaleWithViewport(containerRef.current)
-			setScaleInfo(newScaleInfo)
-
-			logger.debug('RightPane', 'Scale info updated', {
-				element: 'RightPane',
-				...newScaleInfo,
-			})
-		}
-	}, [])
-
-	// 最適化されたプレビューレイアウト更新フック
-	const { updateLayout, updateLayoutImmediate, cleanup: cleanupLayout } = useOptimizedPreviewLayout()
-
-	// 最適化されたResizeObserver
-	const debouncedUpdateScaleInfo = useMemo(
-		() =>
-			debounce(() => {
-				logger.debug('RightPane', 'Debounced update triggered')
-				updateScaleInfo()
-				// レイアウト更新も最適化
-				updateLayout(containerRef.current)
-			}, 100),
-		[debounce, updateScaleInfo, updateLayout]
-	)
-
-	const { observe, unobserve } = useResizeObserver(debouncedUpdateScaleInfo)
-
-	// フォーカスモードハンドラー（最適化版）
-	const handleFocusMode = useCallback(
-		(focused: boolean) => {
-			setIsFocusMode(focused)
-
-			// フォーカス時にレイアウトを最適化
-			if (focused && containerRef.current) {
-				updateLayout(containerRef.current)
-			}
-		},
-		[updateLayout]
-	)
-
-	// ページ情報更新ハンドラー
-	const handleInternalPageInfoChange = useCallback(
-		(currentPage: number, totalPages: number) => {
-			setCurrentPageInfo({ currentPage, totalPages })
-			// 外部にも通知
-			onPageInfoChange?.(currentPage, totalPages)
-		},
-		[onPageInfoChange]
-	)
-
-	// 差分表示モードでのフォーカストラップ
-	const diffFocusTrapRef = useFocusTrap(mode === PreviewMode.DIFF)
-
-	// 差分計算を最適化（DIFFモードが選択された時のみ計算）
-	const diffService = useMemo(() => new Diff2HtmlAdapter(), [])
-
-	// 倍率計算の初期化と監視（最適化版）
-	useEffect(() => {
-		logger.debug('RightPane', 'Setting up ResizeObserver')
-
-		// 初期倍率を計算
-		updateScaleInfo()
-
-		// ResizeObserverでサイズ変更を監視
-		if (containerRef.current) {
-			observe(containerRef.current)
-		}
-
-		return () => {
-			logger.debug('RightPane', 'Cleaning up ResizeObserver')
-			unobserve()
-			// レイアウト更新のクリーンアップ
-			cleanupLayout()
-		}
-	}, []) // 依存関係を空配列に変更
-
-	// 最大化状態の変更を監視してレイアウトを更新（最適化版）
-	useEffect(() => {
-		if (isMaximized && containerRef.current) {
-			logger.debug('RightPane', 'Maximized state changed, updating layout')
-			// 最大化時に最適化されたレイアウト更新
-			requestAnimationFrame(() => {
-				updateScaleInfo()
-				updateLayoutImmediate(containerRef.current)
-			})
-		}
-	}, [isMaximized]) // 依存関係をisMaximizedのみに変更
-
-	// 差分計算を遅延実行（DIFFモードが選択された時のみ）
-	const [diffHtml, setDiffHtml] = useState('')
-	const diffCalculationTimeoutRef = useRef<NodeJS.Timeout>()
-
-	// DIFFモードが選択された時のみ差分を計算（デバウンス処理付き）
-	useEffect(() => {
-		if (mode === PreviewMode.DIFF) {
-			// デバウンス処理でパフォーマンスを最適化
-			if (diffCalculationTimeoutRef.current) {
-				clearTimeout(diffCalculationTimeoutRef.current)
-			}
-
-			diffCalculationTimeoutRef.current = setTimeout(() => {
-				try {
-					// 初回起動時やファイルが存在しない場合
-					if (!initialText || !currentNotSavedText) {
-						setDiffHtml(`
-							<div class="no-diff">
-								<p>比較対象がありません</p>
-							</div>
-						`)
-						return
-					}
-
-					// 差分計算を実行
-					const unifiedDiff = diffService.generateUnifiedDiff(
-						'initial',
-						'current',
-						initialText,
-						currentNotSavedText
-					)
-
-					// 差分があるかチェック
-					if (unifiedDiff) {
-						// 変更がある場合
-						const beforeStats = wordCounter(initialText || '')
-						const afterStats = wordCounter(currentNotSavedText || '')
-
-						// diff2htmlでHTMLを生成
-						const diffJson = diffParse(unifiedDiff)
-						const diffHtmlResult = diff2html(diffJson, {
-							drawFileList: false,
-							matching: 'lines',
-							outputFormat: 'line-by-line',
-						})
-
-						setDiffHtml(`
-							<div class="diff-container">
-								<div class="diff-header">
-									<div class="diff-info">
-										<span className=${styles.beforeText}>
-											修正前: ${formatNumber(beforeStats.characterCount)}文字
-										</span>
-										<span className=${styles.afterText}>
-											修正後: ${formatNumber(afterStats.characterCount)}文字
-										</span>
-										<span className=${styles.changeCount}>
-											変更: ${formatNumber(Math.abs(afterStats.characterCount - beforeStats.characterCount))}文字
-										</span>
-									</div>
-								</div>
-								${diffHtmlResult}
-							</div>
-						`)
-					} else {
-						// 変更がない場合
-						const currentStats = wordCounter(currentNotSavedText || '')
-						setDiffHtml(`
-							<div class="no-diff">
-								<p>変更はありません。</p>
-								<p>現在の文字数: ${formatNumber(currentStats.characterCount)}文字</p>
-							</div>
-						`)
-					}
-				} catch (error) {
-					console.error('差分計算エラー:', error)
-					setDiffHtml(`
-						<div class="error-message">
-							<p>差分の計算中にエラーが発生しました</p>
-						</div>
-					`)
-				}
-			}, 100) // 300msのデバウンス
-
-			return () => {
-				if (diffCalculationTimeoutRef.current) {
-					clearTimeout(diffCalculationTimeoutRef.current)
-				}
-			}
-		}
-	}, [mode, initialText, currentNotSavedText, diffService, wordCounter, formatNumber])
-
-	const charsPerLine = useMemo(() => {
-		return previewSetting.charsPerLine
-	}, [previewSetting])
-
-	const linesPerPage = useMemo(() => {
-		return previewSetting.linesPerPage
-	}, [previewSetting])
-
-	const fontFamily = useMemo(() => {
-		return previewSetting.fontFamily
-	}, [previewSetting])
-
-	const fontSize = useMemo(() => {
-		return previewSetting.fontSize
-	}, [previewSetting])
-
-	// タブ設定
-	const tabs: TabItem[] = useMemo(
-		() => [
-			{
-				id: PreviewMode.VERTICAL,
-				label: 'プレビュー',
-				ariaLabel: 'テキストのプレビュー表示',
-			},
-			{
-				id: PreviewMode.DIFF,
-				label: '差分表示',
-				ariaLabel: '変更前後の差分表示',
-			},
-			{
-				id: PreviewMode.HISTORY,
-				label: '履歴',
-				ariaLabel: 'テキストの編集履歴',
-			},
-		],
-		[]
-	)
-
-	const handleTabChange = useCallback(
-		(tabId: string) => {
-			setMode(tabId as PreviewMode)
-			// モード切替時にフォーカスモードを解除
-			if (isFocusMode) {
-				setIsFocusMode(false)
-			}
-		},
-		[isFocusMode]
-	)
 
 	// タブコンテンツのレンダリング
 	const renderTabContent = useCallback(() => {
 		if (mode === PreviewMode.DIFF) {
-			// 修正前後のテキスト情報を計算
-
 			return (
 				<div className={styles.diffContainer}>
 					{/* 差分情報ヘッダー */}
@@ -335,10 +109,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 					<TextHistoryTimeline
 						snapshots={textHistory}
 						selectedSnapshotId={selectedSnapshotId}
-						onSnapshotSelect={snapshot => {
-							setSelectedSnapshotId(snapshot.id)
-							setShowHistoryDetailDialog(true)
-						}}
+						onSnapshotSelect={handleSnapshotSelect}
 					/>
 				</div>
 			)
@@ -347,8 +118,8 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 				<Preview
 					text={currentSavedText || ''}
 					isMaximized={isMaximized}
-					config={{ charsPerLine, linesPerPage, fontSize, fontFamily }}
-					onFocusMode={handleFocusMode}
+					config={previewConfig}
+					onFocusMode={optimizedHandleFocusMode}
 					onPageInfoChange={handleInternalPageInfoChange}
 				/>
 			)
@@ -360,15 +131,13 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		textHistory,
 		selectedSnapshotId,
 		isMaximized,
-		fontFamily,
-		fontSize,
-		charsPerLine,
-		linesPerPage,
-		handleFocusMode,
+		previewConfig,
+		optimizedHandleFocusMode,
 		handleInternalPageInfoChange,
 		initialText,
 		currentNotSavedText,
 		setInitialText,
+		handleSnapshotSelect,
 	])
 
 	return (
@@ -439,7 +208,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 			{/* 履歴詳細ダイアログ */}
 			<HistoryDetailDialog
 				isOpen={showHistoryDetailDialog}
-				onClose={() => setShowHistoryDetailDialog(false)}
+				onClose={handleCloseHistoryDialog}
 				selectedSnapshotId={selectedSnapshotId}
 				textHistory={textHistory}
 				onRestore={onRestoreHistory}

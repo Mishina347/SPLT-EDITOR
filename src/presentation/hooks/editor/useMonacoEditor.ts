@@ -1,10 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react'
 import * as monaco from 'monaco-editor'
-import {
-	MonacoEditorService,
-	MonacoEditorConfig,
-} from '../../application/editor/MonacoEditorService'
-import { FontFamily } from '../../domain'
+import { FontFamily } from '@/domain'
+import { MonacoEditorConfig, MonacoEditorService } from '@/application/editor/MonacoEditorService'
 
 interface UseMonacoEditorProps {
 	fontSize: number

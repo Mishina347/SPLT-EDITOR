@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 import styles from './NumberStepper.module.css'
 import buttonStyles from '../Button/Button.module.css'
 import { useNumberStepper } from './useNumberStepper'
-import { usePerformanceMonitor } from '../../hooks/usePerformanceMonitor'
+import { usePerformanceMonitor } from '../../hooks'
 
 export interface NumberStepperProps {
 	label: string

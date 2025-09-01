@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { Diff2HtmlAdapter } from '../../infra'
-import { wordCounter, formatNumber } from '../../utils'
+import { Diff2HtmlAdapter } from '@/infra'
+import { wordCounter, formatNumber } from '@/utils'
 import { html as diff2html, parse as diffParse } from 'diff2html'
 
 interface UseDiffCalculationProps {

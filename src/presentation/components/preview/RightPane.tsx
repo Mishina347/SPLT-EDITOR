@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react'
-import { PreviewMode, LayoutConfig, TextSnapshot } from '../../../domain'
+import { PreviewMode, LayoutConfig, TextSnapshot } from '@/domain'
 import { Preview } from './preview/Preview'
 import { useRightPane } from '../../hooks'
 import { TabPanel } from '../'

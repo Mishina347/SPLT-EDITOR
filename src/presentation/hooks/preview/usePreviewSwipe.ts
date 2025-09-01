@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { PREVIEW_CONSTANTS } from '../../domain'
+import { PREVIEW_CONSTANTS } from '@/domain'
 
 interface UsePreviewSwipeProps {
 	notInitPage: boolean

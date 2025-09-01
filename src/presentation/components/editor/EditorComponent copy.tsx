@@ -1,7 +1,7 @@
 import * as monaco from 'monaco-editor'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { DEFAULT_SETTING, EditorSettings } from '../../../domain'
-import { getOptimizedEditorOptions } from '../../../utils/editorOptimization'
+import { getOptimizedEditorOptions } from '../@/utils/editorOptimization'
 
 import styles from './EditorComponent.module.css'
 import buttonStyles from '../../shared/Button/Button.module.css'

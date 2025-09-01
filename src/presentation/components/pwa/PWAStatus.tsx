@@ -1,5 +1,5 @@
 import React from 'react'
-import { usePWA } from '../../hooks/usePWA'
+import { usePWA } from '../../hooks'
 import styles from './PWAStatus.module.css'
 
 interface PWAStatusProps {

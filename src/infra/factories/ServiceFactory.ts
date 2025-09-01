@@ -1,4 +1,4 @@
-import { logger } from '../../utils/logger'
+import { logger } from '@/utils/logger'
 import { container } from '../di/Container'
 import { FileDataRepositoryImpl } from '../../adapters/FileDataRepositoryImpl'
 import { FilesystemNoteRepository } from '../../adapters/filesystem/FilesystemNoteRepository'

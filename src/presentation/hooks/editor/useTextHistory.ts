@@ -1,11 +1,10 @@
 import { useState, useCallback, useMemo } from 'react'
 import {
 	TextHistory,
-	TextSnapshot,
 	createTextHistory,
 	addSnapshot,
 	getSnapshotById,
-} from '../../domain/entities/TextHistory'
+} from '@/domain/entities/TextHistory'
 
 export function useTextHistory(maxSnapshots: number = 10) {
 	const [history, setHistory] = useState<TextHistory>(() => createTextHistory(maxSnapshots))

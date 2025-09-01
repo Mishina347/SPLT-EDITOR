@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from 'react'
-import { calculateElementScale, calculateScaleWithViewport } from '../../utils/scaleCalculator'
-import { UI_CONSTANTS } from '@/utils'
+import { calculateScaleWithViewport } from '@/utils'
 
 export interface DraggableResizeState {
 	position: { x: number; y: number }

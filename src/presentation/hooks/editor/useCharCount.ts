@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
-import { calculateCharCount } from '../../domain/text/calculateCharCount'
-import { DEFAULT_TEXT } from '../../domain/entities/defaultSetting'
+import { calculateCharCount } from '@/domain/text/calculateCharCount'
 
 export function useCharCount() {
 	const [currentNotSavedText, setCurrentNotSavedText] = useState('')

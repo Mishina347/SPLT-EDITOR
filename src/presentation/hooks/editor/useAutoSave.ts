@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { saveText } from '../../usecases/file/saveText'
+import { saveText } from '@/usecases/file/saveText'
 import logger from '@/utils/logger'
 
 interface UseAutoSaveOptions {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { diffDisplayService, DiffOptions } from '../../application/diff/DiffDisplayService'
+import { diffDisplayService, DiffOptions } from '@/application/diff/DiffDisplayService'
 
 interface UseDiffDisplayProps {
 	oldText: string

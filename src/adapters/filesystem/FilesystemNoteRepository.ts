@@ -1,7 +1,7 @@
 import type { Note } from '../../domain/editor/EditorSetting'
 import type { NoteRepository } from '../../gateways/NoteRepository'
 import { invoke } from '@tauri-apps/api/core'
-import { isTauri } from '../../utils'
+import { isTauri } from '@/utils'
 
 export class FilesystemNoteRepository implements NoteRepository {
 	async save(note: Note): Promise<void> {

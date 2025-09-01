@@ -1,9 +1,9 @@
 import React, { ReactNode, useCallback, useEffect, useState, useRef } from 'react'
-import { useDraggableResize, ResizeDirection } from '../../hooks/useDraggableResize'
-import { usePinchZoom } from '../../hooks/usePinchZoom'
+import { useDraggableResize, usePinchZoom } from '../../hooks'
 import { ResizeHandle } from './ResizeHandle'
-import { UI_CONSTANTS } from '../../../utils'
+import { UI_CONSTANTS } from '@/utils'
 import styles from './DraggableContainer.module.css'
+import { ResizeDirection } from '@/presentation/hooks/layout/useDraggableResize'
 
 // ネイティブTouchからReact.Touchへの変換型定義
 interface ReactTouchEvent extends Partial<React.TouchEvent> {

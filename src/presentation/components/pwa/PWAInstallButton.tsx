@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { usePWA } from '../../hooks/usePWA'
+import { usePWA } from '../../hooks'
 import styles from './PWAInstallButton.module.css'
 
 interface PWAInstallButtonProps {

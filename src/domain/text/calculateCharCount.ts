@@ -1,4 +1,4 @@
-import { wordCounter } from '../../utils/wordCounter'
+import { wordCounter } from '@/utils/wordCounter'
 
 export function calculateCharCount(text: string): {
 	characterCount: number

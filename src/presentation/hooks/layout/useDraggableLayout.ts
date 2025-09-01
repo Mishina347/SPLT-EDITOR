@@ -1,8 +1,9 @@
 import React, { useCallback, useMemo } from 'react'
-import { DISPLAY_MODE } from '../../domain'
-import { useViewportSize } from './useViewportSize'
-import { formatNumber, UI_CONSTANTS } from '../../utils'
-import { LayoutType } from '../components/layout/LayoutRenderer'
+import { DISPLAY_MODE } from '@/domain'
+
+import { formatNumber, UI_CONSTANTS } from '@/utils'
+import { LayoutType } from '../../components/layout/LayoutRenderer'
+import { useViewportSize } from '../common'
 
 export interface ContainerConfig {
 	title: string

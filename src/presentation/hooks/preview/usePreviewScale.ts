@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect, useMemo, RefObject } from 'react'
-import { logger } from '@/utils/logger'
 import { ScaleInfo } from '@/types/common'
-import { calculateScaleWithViewport } from '../../utils/scaleCalculator'
-import { useResizeObserver, usePerformanceOptimization } from './usePerformanceOptimization'
-import { useOptimizedPreviewLayout } from './useOptimizedPreviewLayout'
+import { usePerformanceOptimization, useResizeObserver } from '../common'
+import { calculateScaleWithViewport } from '@/utils'
+import { logger } from '@/utils/logger'
+import { useOptimizedPreviewLayout } from '../layout'
 
 interface UsePreviewScaleProps {
 	containerRef: RefObject<HTMLDivElement>

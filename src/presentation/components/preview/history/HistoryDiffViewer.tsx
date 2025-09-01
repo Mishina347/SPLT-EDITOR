@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { html as diff2html, parse as diffParse } from 'diff2html'
-import 'diff2html/bundles/css/diff2html.min.css'
-import { TextSnapshot } from '../../../../domain'
-import { Diff2HtmlAdapter } from '../../../../infra'
+import { TextSnapshot } from '@/domain'
+import { Diff2HtmlAdapter } from '@/infra'
+import { formatNumber, formatTimestamp } from '@/utils'
 import styles from './HistoryDiffViewer.module.css'
-import { formatNumber, formatTimestamp } from '../../../../utils'
+import 'diff2html/bundles/css/diff2html.min.css'
 
 interface HistoryDiffViewerProps {
 	oldSnapshot: TextSnapshot

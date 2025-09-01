@@ -1,5 +1,5 @@
 import { appDataDir } from '@tauri-apps/api/path'
-import { isTauri } from '../../utils'
+import { isTauri } from '@/utils'
 
 export const loadText = async (fileName: string): Promise<string> => {
 	if (isTauri()) {

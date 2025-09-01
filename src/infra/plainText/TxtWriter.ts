@@ -1,4 +1,4 @@
-import { isAndroid, isIOS } from '../../utils/deviceDetection'
+import { isAndroid, isIOS } from '@/utils/deviceDetection'
 
 export class TxtWriter {
 	async write(pages: string[][]) {

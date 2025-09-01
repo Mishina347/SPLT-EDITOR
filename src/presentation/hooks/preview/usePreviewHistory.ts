@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { TextSnapshot } from '../../domain'
+import { TextSnapshot } from '@/domain'
 
 interface UsePreviewHistoryProps {
 	textHistory: TextSnapshot[]

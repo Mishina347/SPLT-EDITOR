@@ -1,5 +1,5 @@
 import { EditorTheme } from '../domain/theme/EditorTheme'
-import { saveSettings, loadSettings } from '../usecases/settingsUseCase'
+import { saveSettings, loadSettings } from '../usecases/file/settingsUseCase'
 import { DEFAULT_SETTING } from '../domain'
 
 /**

@@ -3,5 +3,5 @@ export { ExportManuscriptController } from './controllers/ExportManuscriptContro
 
 // Repositories
 export { FilesystemNoteRepository } from './filesystem/FilesystemNoteRepository'
-export type { FileDataRepository } from './FileDataRepository'
-export { FileDataRepositoryImpl } from './FileDataRepositoryImpl'
+export type { FileDataRepository } from './filesystem/FileDataRepository'
+export { FileDataRepositoryImpl } from './filesystem/FileDataRepositoryImpl'

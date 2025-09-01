@@ -2,7 +2,7 @@
  * 差分計算用のWeb Worker
  */
 
-import { Diff2HtmlAdapter } from '../infra/Diff2HtmlAdapter'
+import { Diff2HtmlAdapter } from '../infra/diff/Diff2HtmlAdapter'
 
 export interface DiffWorkerInput {
 	id: string

@@ -8,13 +8,13 @@ import {
 	MOBILE_LAYOUT_VALUES,
 	DESKTOP_LAYOUT_VALUES,
 } from './domain/entities/defaultSetting'
-import { loadEditorSettings } from './usecases/LoadEditorSettings'
+import { loadEditorSettings } from './usecases/editor/LoadEditorSettings'
 import { serviceFactory } from './infra'
 // manifestのorientation管理
 import { setupManifestOrientationListener } from './utils/manifestManager'
 import { isTauri, isMobileSize } from './utils'
 // Monaco Editorのワーカー設定をside-effects importで実行
-import '@/useMonacoWorker'
+import '@/workers/useMonacoWorker'
 
 // PWA関連のインポート（Tauri環境では無効化）
 let registerSW: any = null

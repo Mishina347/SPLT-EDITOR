@@ -1,7 +1,7 @@
-import { Settings } from '../domain'
+import { Settings } from '../../domain'
 import { FileDataRepository } from './FileDataRepository'
-import { logger } from '../utils/logger'
-import { isTauri } from '../utils'
+import { logger } from '../../utils/logger'
+import { isTauri } from '../../utils'
 import { readTextFile, writeFile, BaseDirectory } from '@tauri-apps/plugin-fs'
 
 const SETTINGS_FILE = 'settings.json'

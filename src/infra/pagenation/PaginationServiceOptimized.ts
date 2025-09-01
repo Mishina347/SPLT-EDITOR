@@ -1,5 +1,5 @@
-import { LayoutConfig } from '../domain'
-import { ComputationCache, TextProcessor } from '../utils/performanceOptimizer'
+import { LayoutConfig } from '../../domain'
+import { ComputationCache, TextProcessor } from '../../utils/performanceOptimizer'
 
 /**
  * 最適化されたページネーションサービス

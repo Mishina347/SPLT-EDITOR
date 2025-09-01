@@ -1,4 +1,4 @@
-import { Settings } from '../domain'
+import { Settings } from '../../domain'
 
 export interface FileDataRepository {
 	load(): Promise<Settings | null>

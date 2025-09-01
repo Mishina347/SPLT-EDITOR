@@ -19,9 +19,15 @@ export const useHamburgerMenu = ({
 
 	// メニュー外クリックで閉じる
 	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+		const handleClickOutside = (e: MouseEvent) => {
+			// ハンバーガーボタン自体のクリックは除外
+			if (buttonRef.current && buttonRef.current.contains(e.target as Node)) {
+				return
+			}
+
+			if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
 				setIsOpen(false)
+				console.log('close')
 			}
 		}
 
@@ -62,15 +68,23 @@ export const useHamburgerMenu = ({
 		setShowPWASection(!showPWASection)
 	}, [showPWASection])
 
-	const toggleMenu = useCallback(() => {
-		setIsOpen(prev => {
-			const newIsOpen = !prev
-			if (!newIsOpen) {
-				setShowPWASection(false) // メニューを開く時にPWAセクションをリセット
+	const toggleMenu = useCallback(
+		(e?: React.MouseEvent<HTMLButtonElement>) => {
+			if (e) {
+				e.preventDefault()
+				e.stopPropagation()
 			}
-			return newIsOpen
-		})
-	}, [])
+			setIsOpen(prev => {
+				const newIsOpen = !prev
+				if (!newIsOpen) {
+					setShowPWASection(false) // メニューを開く時にPWAセクションをリセット
+				}
+				console.log(newIsOpen)
+				return newIsOpen
+			})
+		},
+		[setIsOpen]
+	)
 
 	return {
 		isOpen,

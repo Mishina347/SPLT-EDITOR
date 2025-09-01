@@ -78,7 +78,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 			<button
 				ref={buttonRef}
 				className={styles.hamburgerButton}
-				onClick={toggleMenu}
+				onClick={e => toggleMenu(e)}
 				aria-expanded={isOpen}
 				aria-pressed={isOpen}
 				aria-haspopup="true"

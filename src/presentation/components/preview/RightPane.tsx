@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { PreviewMode, LayoutConfig, TextSnapshot } from '../../../domain'
 import { Preview } from './preview/Preview'
 import { useRightPane } from '../../hooks'
@@ -21,6 +21,8 @@ interface PreviewPaneProps {
 	onFocusPane: () => void
 	onRestoreHistory?: (snapshot: TextSnapshot) => void
 	onPageInfoChange?: (currentPage: number, totalPages: number) => void
+	// ページ情報を直接受け取る
+	currentPageInfo?: { currentPage: number; totalPages: number }
 }
 
 export const RightPane: React.FC<PreviewPaneProps> = ({
@@ -35,6 +37,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	onFocusPane,
 	onRestoreHistory,
 	onPageInfoChange,
+	currentPageInfo: externalPageInfo,
 }) => {
 	// すべてのロジックを統合したhook
 	const {
@@ -46,7 +49,6 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		mode,
 		isFocusMode,
 		diffHtml,
-		currentPageInfo,
 		selectedSnapshotId,
 		showHistoryDetailDialog,
 
@@ -72,6 +74,11 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		onRestoreHistory,
 		onPageInfoChange,
 	})
+
+	// ページ情報を外部から渡されたものと内部のものを組み合わせ
+	const currentPageInfo = useMemo(() => {
+		return externalPageInfo || { currentPage: 1, totalPages: 1 }
+	}, [externalPageInfo])
 
 	// タブコンテンツのレンダリング
 	const renderTabContent = useCallback(() => {

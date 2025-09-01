@@ -36,6 +36,17 @@ export const useRightPane = ({
 	const { mode, isFocusMode, tabs, handleTabChange, handleFocusMode, setIsFocusMode } =
 		usePreviewMode()
 
+	// プレビュー設定のメモ化
+	const previewConfig = useMemo(
+		() => ({
+			charsPerLine: previewSetting.charsPerLine,
+			linesPerPage: previewSetting.linesPerPage,
+			fontSize: previewSetting.fontSize,
+			fontFamily: previewSetting.fontFamily,
+		}),
+		[previewSetting]
+	)
+
 	// スケール計算管理
 	const { scaleInfo, updateLayout } = usePreviewScale({
 		containerRef,
@@ -60,22 +71,17 @@ export const useRightPane = ({
 		onRestoreHistory,
 	})
 
-	// ページネーション管理
-	const { currentPageInfo, handleInternalPageInfoChange } = usePreviewPagination(onPageInfoChange)
+	// ページネーション管理（Preview.tsxから渡された情報を使用）
+	const currentPageInfo = { currentPage: 1, totalPages: 1 } // デフォルト値
+	const handleInternalPageInfoChange = useCallback(
+		(currentPage: number, totalPages: number) => {
+			onPageInfoChange?.(currentPage, totalPages)
+		},
+		[onPageInfoChange]
+	)
 
 	// 差分表示モードでのフォーカストラップ
 	const diffFocusTrapRef = useFocusTrap(mode === PreviewMode.DIFF)
-
-	// プレビュー設定のメモ化
-	const previewConfig = useMemo(
-		() => ({
-			charsPerLine: previewSetting.charsPerLine,
-			linesPerPage: previewSetting.linesPerPage,
-			fontSize: previewSetting.fontSize,
-			fontFamily: previewSetting.fontFamily,
-		}),
-		[previewSetting]
-	)
 
 	// フォーカスモードハンドラー（最適化版）
 	const optimizedHandleFocusMode = useCallback(

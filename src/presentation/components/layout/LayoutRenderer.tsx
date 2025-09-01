@@ -32,6 +32,7 @@ interface CommonProps {
 
 	// ページ情報関連
 	onPageInfoChange?: (currentPage: number, totalPages: number) => void
+	currentPageInfo?: { currentPage: number; totalPages: number }
 
 	// 最大化状態管理
 	editorMaximized?: boolean
@@ -75,6 +76,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 		currentEditorSize,
 		isDragging,
 		onPageInfoChange,
+		currentPageInfo,
 		editorMaximized = false,
 		previewMaximized = false,
 	} = props
@@ -105,6 +107,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 		onFocusPane: onFocusPreview,
 		onRestoreHistory,
 		onPageInfoChange,
+		currentPageInfo,
 	}
 
 	// 固定レイアウトの場合

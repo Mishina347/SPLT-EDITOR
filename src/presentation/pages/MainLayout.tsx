@@ -571,6 +571,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						currentEditorSize={currentEditorSize}
 						isDragging={isDragging}
 						onPageInfoChange={handlePageInfoChange}
+						currentPageInfo={pageInfo}
 						// 最大化状態を明示的に渡す
 						editorMaximized={isEditorMaximized}
 						previewMaximized={isPreviewMaximized}
@@ -626,6 +627,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						currentEditorSize={currentEditorSize}
 						isDragging={isDragging}
 						onPageInfoChange={handlePageInfoChange}
+						currentPageInfo={pageInfo}
 						// 最大化状態を明示的に渡す
 						editorMaximized={isEditorMaximized}
 						previewMaximized={isPreviewMaximized}
@@ -667,6 +669,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						currentEditorSize={currentEditorSize}
 						isDragging={isDragging}
 						onPageInfoChange={handlePageInfoChange}
+						currentPageInfo={pageInfo}
 						// 最大化状態を明示的に渡す
 						editorMaximized={isEditorMaximized}
 						previewMaximized={isPreviewMaximized}

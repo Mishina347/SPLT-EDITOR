@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { isMobile } from '../../../utils/deviceDetection'
+import { isMobile } from '@/utils/deviceDetection'
 import styles from './SwipeIndicator.module.css'
 
 interface SwipeIndicatorProps {

@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
-import { isTauri } from '../../utils'
+import { isTauri } from '@/utils'
 
 export interface LoadedFile {
 	content: string

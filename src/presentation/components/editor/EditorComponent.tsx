@@ -1,13 +1,17 @@
 import * as monaco from 'monaco-editor'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { logger } from '@/utils/logger'
+
 import {
 	useResizeObserver,
 	usePerformanceOptimization,
-} from '../../hooks/usePerformanceOptimization'
-import { DEFAULT_SETTING, EditorSettings } from '../../../domain'
-import { getOptimizedEditorOptions } from '../../../utils/editorOptimization'
-import { calculateElementScale, calculateScaleWithViewport } from '../../../utils/scaleCalculator'
+	usePerformanceMonitor,
+	useViewportSize,
+	useOptimizedLayout,
+} from '../../hooks'
+import { DEFAULT_SETTING, EditorSettings } from '@/domain'
+import { getOptimizedEditorOptions } from '@/utils/editorOptimization'
+import { calculateScaleWithViewport } from '@/utils/scaleCalculator'
+import { logger } from '@/utils/logger'
 import { ScaleInfo } from '@/types/common'
 
 import styles from './EditorComponent.module.css'
@@ -15,10 +19,7 @@ import buttonStyles from '../../shared/Button/Button.module.css'
 
 import { useCaretAnimation, useIMEFloat, useLineDecorations } from './components'
 import { Counter } from './components/Counter/Counter'
-import { usePerformanceMonitor } from '../../hooks/usePerformanceMonitor'
-import { MonacoThemeService } from '../../../infra/MonacoThemeService'
-import { useViewportSize, useOptimizedLayout } from '../../hooks'
-import { isMobileSize, isPortrait } from '../../../utils/deviceDetection'
+import { isMobileSize, isPortrait } from '@/utils/deviceDetection'
 
 type Props = {
 	textData: string
@@ -120,7 +121,7 @@ export const EditorComponent = ({
 	})
 
 	// 最適化されたレイアウト更新フック
-	const { updateLayout, updateLayoutImmediate, cleanup: cleanupLayout } = useOptimizedLayout()
+	const { updateLayout, cleanup: cleanupLayout } = useOptimizedLayout()
 
 	// パフォーマンス最適化フック
 	const { debounce } = usePerformanceOptimization()

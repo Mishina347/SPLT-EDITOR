@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { logger } from '@/utils/logger'
-import { useMainLayoutState } from '../hooks/useMainLayoutState'
+import { useMainLayoutState } from '../hooks'
 import {
 	Toolbar,
 	SwipeIndicator,
@@ -18,18 +18,16 @@ import {
 	useResizable,
 	useDraggableLayout,
 } from '../hooks'
-import { DISPLAY_MODE, Settings, TextSnapshot, LayoutConfig, EditorSettings } from '../../domain'
+import { DISPLAY_MODE, Settings, TextSnapshot } from '@/domain'
 
-import { EditorUIState } from '../../domain'
 import { loadText } from '../../usecases'
 import { editorService } from '../../application'
 import { eventBus, EVENTS } from '../../application/observers/EventBus'
-import { commandManager } from '../../application/commands/CommandManager'
 import { saveEditorSettings } from '../../usecases/SaveEditorSettings'
-import { serviceFactory } from '../../infra'
-import { hexToRgba, isMobile, isMobileSize } from '../../utils'
+import { serviceFactory } from '@/infra'
+import { hexToRgba, isMobile, isMobileSize } from '@/utils'
 import styles from './MainLayout.module.css'
-import { SwipeDirection } from '../hooks/useSwipeGesture'
+import { SwipeDirection } from '../hooks/common/useSwipeGesture'
 
 interface EditorPageProps {
 	initSettings: Settings

@@ -1,11 +1,11 @@
-import { FontFamily } from '@/domain'
-import { ExportTxtUseCase } from '../../../../application/preview/usePagination'
-import { TxtWriter } from '../../../../infra/plainText/TxtWriter'
-import buttonStyles from '../../../shared/Button/Button.module.css'
-import { Selector } from '../../../shared/Selector/Selector'
-import { isAndroid, isIOS } from '../../../../utils/deviceDetection'
 import { useState } from 'react'
+import { FontFamily } from '@/domain'
+import { ExportTxtUseCase } from '@/application/preview/usePagination'
+import { TxtWriter } from '@/infra/plainText/TxtWriter'
+import { isAndroid, isIOS } from '@/utils'
 import styles from './TxtExportButton.module.css'
+import { Selector } from '@/presentation/shared'
+import buttonStyles from '@/presentation/shared/Button/Button.module.css'
 
 type Props = {
 	text: string
@@ -26,12 +26,6 @@ export function TxtExportButton({
 }: Props) {
 	const [showEncodingOptions, setShowEncodingOptions] = useState(false)
 	const [selectedEncoding, setSelectedEncoding] = useState<'utf8' | 'shift_jis'>('utf8')
-
-	const handleExport = async () => {
-		const usecase = new ExportTxtUseCase(new TxtWriter())
-		await usecase.execute(text, { charsPerLine, linesPerPage, fontSize, fontFamily }).then(() => {})
-		onExport?.()
-	}
 
 	const handleExportWithEncoding = async () => {
 		const txtWriter = new TxtWriter()
@@ -73,7 +67,7 @@ export function TxtExportButton({
 									{ value: 'shift_jis', label: 'Shift_JIS (日本語環境)' },
 								]}
 								ignoreTheme={true}
-								onChange={value => setSelectedEncoding(value as 'utf8' | 'shift_jis')}
+								onChange={e => setSelectedEncoding(e as 'utf8' | 'shift_jis')}
 							/>
 						</div>
 					</div>

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react'
-import { PreviewMode } from '../../domain'
-import { TabItem } from '../components'
+import { PreviewMode } from '@/domain'
+import { TabItem } from '@/presentation/components'
 
 export const usePreviewMode = () => {
 	const [mode, setMode] = useState<PreviewMode>(PreviewMode.VERTICAL)

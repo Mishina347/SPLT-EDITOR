@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef } from 'react'
-import { wordCounter } from '../../utils/wordCounter'
-import { useDebounce, useThrottledCallback } from './useDebounce'
+import { wordCounter } from '@/utils/wordCounter'
+import { useDebounce, useThrottledCallback } from '../common'
 
 interface CharCountResult {
 	characterCount: number

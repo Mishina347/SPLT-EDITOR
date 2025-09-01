@@ -1,11 +1,11 @@
-import { useRef, useMemo, useCallback, RefObject } from 'react'
-import { PreviewMode, LayoutConfig, TextSnapshot } from '../../domain'
-import { useFocusTrap } from './useFocusTrap'
+import { useRef, useMemo, useCallback } from 'react'
+import { PreviewMode, LayoutConfig, TextSnapshot } from '@/domain'
+
 import { useDiffCalculation } from './useDiffCalculation'
 import { usePreviewMode } from './usePreviewMode'
 import { usePreviewScale } from './usePreviewScale'
 import { usePreviewHistory } from './usePreviewHistory'
-import { usePreviewPagination } from './usePreviewPagination'
+import { useFocusTrap } from '../common'
 
 interface UseRightPaneProps {
 	currentSavedText: string

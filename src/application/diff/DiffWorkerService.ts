@@ -1,5 +1,5 @@
 import { DiffWorkerInput, DiffWorkerOutput } from '../../workers/diffWorker'
-import { ComputationCache } from '../../utils/performanceOptimizer'
+import { ComputationCache } from '@/utils/performanceOptimizer'
 
 /**
  * Web Workerを使った高性能差分計算サービス

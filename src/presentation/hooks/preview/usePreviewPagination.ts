@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { PaginationService } from '../../infra/PaginationService'
-import { LayoutConfig } from '../../domain'
+import { PaginationService } from '@/infra'
+import { LayoutConfig } from '@/domain'
 
 interface UsePreviewPaginationProps {
 	text: string

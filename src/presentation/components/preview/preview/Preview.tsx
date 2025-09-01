@@ -1,6 +1,6 @@
 import React from 'react'
 import { usePreview } from '../../../hooks'
-import { LayoutConfig } from '../../../../domain'
+import { LayoutConfig } from '@/domain'
 import styles from './Preview.module.css'
 
 interface Props {
@@ -25,7 +25,6 @@ export const Preview = React.memo<Props>(
 			currentPage,
 			notInitPage,
 			notLastPage,
-			isFocusMode,
 			isSwipping,
 			mousePosition,
 

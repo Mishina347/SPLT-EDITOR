@@ -1,4 +1,4 @@
-import { logger } from '../../utils/logger'
+import { logger } from '@/utils/logger'
 
 // イベントハンドラー型
 export type EventHandler<T = any> = (data: T) => void | Promise<void>

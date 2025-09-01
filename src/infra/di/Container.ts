@@ -1,4 +1,4 @@
-import { logger } from '../../utils/logger'
+import { logger } from '@/utils/logger'
 
 // 依存性注入コンテナ
 export class Container {

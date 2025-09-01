@@ -1,9 +1,9 @@
 import React from 'react'
 import { RightPane } from '../preview/RightPane'
 import { LayoutContainer } from './LayoutContainer'
-import { EditorSettings, LayoutConfig, TextSnapshot } from '../../../domain'
+import { EditorSettings, LayoutConfig, TextSnapshot } from '@/domain'
 import { EditorComponent } from '..'
-import { ContainerConfig } from '../../hooks/useDraggableLayout'
+import { ContainerConfig } from '@/presentation/hooks/layout/useDraggableLayout'
 
 export type LayoutType = 'fixed' | 'draggable-dual' | 'draggable-editor' | 'draggable-preview'
 

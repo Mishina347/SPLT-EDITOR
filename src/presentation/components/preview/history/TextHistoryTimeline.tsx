@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
-import { TextSnapshot } from '../../../../domain/entities/TextHistory'
+import { TextSnapshot } from '@/domain/entities/TextHistory'
 import styles from './TextHistoryTimeline.module.css'
-import { formatTimestamp } from '../../../../utils'
+import { formatTimestamp } from '@/utils'
 
 interface TextHistoryTimelineProps {
 	snapshots: TextSnapshot[]

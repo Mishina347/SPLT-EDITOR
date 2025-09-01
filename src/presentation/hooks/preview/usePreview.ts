@@ -1,12 +1,12 @@
 import { useRef, useMemo, useEffect } from 'react'
-import { usePerformanceOptimization } from './usePerformanceOptimization'
-import { PaginationService } from '../../infra/PaginationService'
-import { LayoutConfig } from '../../domain'
 import { usePreviewPagination } from './usePreviewPagination'
 import { usePreviewSwipe } from './usePreviewSwipe'
 import { usePreviewKeyboard } from './usePreviewKeyboard'
 import { usePreviewMouse } from './usePreviewMouse'
 import { usePreviewFocusMode } from './usePreviewFocusMode'
+import { LayoutConfig } from '@/domain'
+import { usePerformanceOptimization } from '../common'
+import { PaginationService } from '@/infra'
 
 interface UsePreviewProps {
 	text: string
@@ -16,13 +16,7 @@ interface UsePreviewProps {
 	onPageInfoChange: (currentPage: number, totalPages: number) => void
 }
 
-export const usePreview = ({
-	text,
-	config,
-	isMaximized,
-	onFocusMode,
-	onPageInfoChange,
-}: UsePreviewProps) => {
+export const usePreview = ({ text, config, onFocusMode, onPageInfoChange }: UsePreviewProps) => {
 	const containerRef = useRef<HTMLDivElement>(null)
 	const previewRef = useRef<HTMLDivElement>(null)
 

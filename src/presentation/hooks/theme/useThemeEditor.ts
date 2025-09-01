@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { logger } from '../../utils/logger'
+import { logger } from '@/utils/logger'
 
 interface ThemeColors {
 	backgroundColor: string

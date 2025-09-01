@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { Diff2HtmlAdapter } from '../../infra'
 import { wordCounter, formatNumber } from '../../utils'
 import { html as diff2html, parse as diffParse } from 'diff2html'
-import styles from '../components/preview/RightPane.module.css'
 
 interface UseDiffCalculationProps {
 	isDiffMode: boolean
@@ -65,13 +64,13 @@ export const useDiffCalculation = ({
 							<div class="diff-container">
 								<div class="diff-header">
 									<div class="diff-info">
-										<span className=${styles.beforeText}>
+										<span class="before-text">
 											修正前: ${formatNumber(beforeStats.characterCount)}文字
 										</span>
-										<span className=${styles.afterText}>
+										<span class="after-text">
 											修正後: ${formatNumber(afterStats.characterCount)}文字
 										</span>
-										<span className=${styles.changeCount}>
+										<span class="change-count">
 											変更: ${formatNumber(Math.abs(afterStats.characterCount - beforeStats.characterCount))}文字
 										</span>
 									</div>

@@ -54,3 +54,9 @@ export { usePreviewScale } from './usePreviewScale'
 export { usePreviewHistory } from './usePreviewHistory'
 export { usePreviewPagination } from './usePreviewPagination'
 export { useRightPane } from './useRightPane'
+
+// ThemeEditDialog関連のフック
+export { useThemeEditor } from './useThemeEditor'
+export { useColorValidation } from './useColorValidation'
+export { useThemePresets } from './useThemePresets'
+export { useThemeEditDialog } from './useThemeEditDialog'

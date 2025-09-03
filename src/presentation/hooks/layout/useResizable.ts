@@ -5,6 +5,7 @@ interface UseResizableOptions {
 	minSize?: number // 最小サイズ（%）
 	maxSize?: number // 最大サイズ（%）
 	onResize?: (size: number) => void
+	onSaveRatio?: (ratio: number) => void // 比率保存コールバック
 	step?: number // キーボード操作時のステップ（%）
 	label?: string // アクセシビリティ用ラベル
 }
@@ -15,7 +16,8 @@ export const useResizable = (options: UseResizableOptions = {}) => {
 		minSize = 20,
 		maxSize = 80,
 		onResize,
-		step = 5,
+		onSaveRatio,
+		step = 2,
 		label = 'パネルサイズ調整',
 	} = options
 
@@ -54,6 +56,11 @@ export const useResizable = (options: UseResizableOptions = {}) => {
 			setSize(clampedSize)
 			onResize?.(clampedSize)
 
+			// 比率を保存（ドラッグ終了時またはキーボード操作時）
+			if (!isFromDrag || !isDragging) {
+				onSaveRatio?.(clampedSize)
+			}
+
 			// スクリーンリーダー向けアナウンス
 			const editorPercent = Math.round(clampedSize)
 			const previewPercent = Math.round(100 - clampedSize)
@@ -78,7 +85,7 @@ export const useResizable = (options: UseResizableOptions = {}) => {
 
 			return clampedSize
 		},
-		[minSize, maxSize, onResize, announceWithDebounce]
+		[minSize, maxSize, onResize, onSaveRatio, isDragging, announceWithDebounce]
 	)
 
 	const startResize = useCallback(
@@ -190,9 +197,11 @@ export const useResizable = (options: UseResizableOptions = {}) => {
 			if (isDragging) {
 				setIsDragging(false)
 				setAnnounceText('ドラッグモード終了')
+				// ドラッグ終了時に比率を保存
+				onSaveRatio?.(size)
 			}
 		},
-		[isDragging]
+		[isDragging, size, onSaveRatio]
 	)
 
 	// フォーカスイベント
@@ -213,6 +222,8 @@ export const useResizable = (options: UseResizableOptions = {}) => {
 
 			const currentMouseUp = () => {
 				setIsDragging(false)
+				// ドラッグ終了時に比率を保存
+				onSaveRatio?.(size)
 			}
 
 			const currentTouchMove = (e: TouchEvent) => {
@@ -223,6 +234,8 @@ export const useResizable = (options: UseResizableOptions = {}) => {
 
 			const currentTouchEnd = () => {
 				setIsDragging(false)
+				// ドラッグ終了時に比率を保存
+				onSaveRatio?.(size)
 			}
 
 			document.addEventListener('mousemove', currentMouseMove)

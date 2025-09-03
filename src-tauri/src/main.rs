@@ -12,6 +12,7 @@ struct EditorSettings {
     textColor: String,
     fontFamily: String,
     autoSave: AutoSaveSettings,
+    resizerRatio: Option<u32>, // エディタとプレビューの比率（%）
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -32,6 +33,7 @@ impl Default for EditorSettings {
                 enabled: true,
                 interval: 10,
             },
+            resizerRatio: Some(50), // デフォルトは50%
         }
     }
 }

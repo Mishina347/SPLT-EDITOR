@@ -1,6 +1,6 @@
 import React from 'react'
-import { ResizeDirection } from '../../hooks/useDraggableResize'
 import styles from './ResizeHandle.module.css'
+import { ResizeDirection } from '@/presentation/hooks/layout/useDraggableResize'
 
 interface ResizeHandleProps {
 	direction: ResizeDirection

@@ -45,7 +45,6 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		isPreviewMaximized,
 		uiState,
 		isDraggableMode,
-		focusedContainer,
 		editorPosition,
 		editorSize,
 		previewPosition,
@@ -64,10 +63,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		// セッター
 		setEditorSettings,
 		setPreviewSettings,
-		setViewMode,
 		setFocusedPane,
-		setIsEditorMaximized,
-		setIsPreviewMaximized,
 		setUIState,
 		setIsDraggableMode,
 		setFocusedContainer,
@@ -411,24 +407,32 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	})
 
 	// リサイザーを初期化
-	const {
-		isDragging,
-		isKeyboardMode,
-		announceText,
-		containerRef,
-		resizerRef,
-		resizerProps,
-		setSize,
-	} = useResizable({
-		initialSize: 50, // 50%で開始
-		minSize: 20, // 最小20%
-		maxSize: 80, // 最大80%
-		step: 5, // キーボード操作時のステップ
-		label: 'エディタとプレビューのサイズ調整',
-		onResize: newSize => {
-			setCurrentEditorSize(newSize)
-		},
-	})
+	const { isDragging, isKeyboardMode, announceText, containerRef, resizerRef, resizerProps } =
+		useResizable({
+			initialSize: initSettings.resizerRatio || 60, // 保存された比率または60%で開始
+			minSize: 20, // 最小20%
+			maxSize: 80, // 最大80%
+			step: 2, // キーボード操作時のステップ
+			label: 'エディタとプレビューのサイズ調整',
+			onResize: newSize => {
+				setCurrentEditorSize(newSize)
+			},
+			onSaveRatio: async (ratio: number) => {
+				// 比率を設定に保存
+				try {
+					const fileDataRepository = serviceFactory.getFileDataRepository()
+					const fullSettings = {
+						editor: editorSettings,
+						preview: previewSettings,
+						resizerRatio: ratio,
+					}
+					await saveEditorSettings(fileDataRepository, fullSettings)
+					logger.debug('MainLayout', `Resizer ratio saved: ${ratio}%`)
+				} catch (error) {
+					logger.error('MainLayout', 'Failed to save resizer ratio', error)
+				}
+			},
+		})
 
 	// ドラッグ可能レイアウトの設定
 	const { layoutType, getEditorContainerConfig, getPreviewContainerConfig } = useDraggableLayout(

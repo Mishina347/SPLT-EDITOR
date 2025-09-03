@@ -27,6 +27,7 @@ export class TauriSettingsRepository implements SettingsRepository {
 					fontSize: 16,
 					fontFamily: FONT_FAMILIES.UD_DIGITAL,
 				},
+				resizerRatio: 60, // デフォルトのresizer比率
 			}
 			await this.saveSettings(defaultSettings)
 			return defaultSettings

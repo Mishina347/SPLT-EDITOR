@@ -6,6 +6,7 @@ import { EditorTheme } from '../theme/EditorTheme'
 export type Settings = {
 	editor: EditorSettings
 	preview: LayoutConfig
+	resizerRatio?: number // エディタとプレビューの比率（%）
 }
 
 export enum DISPLAY_MODE {
@@ -44,6 +45,7 @@ export const DESKTOP_SETTING: Settings = {
 		fontSize: 16,
 		fontFamily: FONT_FAMILIES.NOTO_SERIF,
 	},
+	resizerRatio: 60,
 }
 
 // モバイル用のデフォルト設定
@@ -67,6 +69,7 @@ export const MOBILE_SETTING: Settings = {
 		fontSize: 14,
 		fontFamily: FONT_FAMILIES.NOTO_SERIF,
 	},
+	resizerRatio: 70,
 }
 
 // デフォルト設定（デスクトップ用）

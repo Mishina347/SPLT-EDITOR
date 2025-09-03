@@ -7,6 +7,7 @@ interface UseMainLayoutStateProps {
 	initSettings: {
 		editor: EditorSettings
 		preview: LayoutConfig
+		resizerRatio?: number
 	}
 }
 
@@ -20,6 +21,10 @@ export const useMainLayoutState = ({ initSettings }: UseMainLayoutStateProps) =>
 		logger.info('EditorPage', 'Settings updated', initSettings)
 		setEditorSettings(initSettings.editor)
 		setPreviewSettings(initSettings.preview)
+		// resizerRatioも更新
+		if (initSettings.resizerRatio !== undefined) {
+			setCurrentEditorSize(initSettings.resizerRatio)
+		}
 	}, [initSettings])
 
 	// 表示モード
@@ -64,7 +69,7 @@ export const useMainLayoutState = ({ initSettings }: UseMainLayoutStateProps) =>
 	const [toolbarDisplayMode, setToolbarDisplayMode] = useState<DISPLAY_MODE>(DISPLAY_MODE.BOTH)
 
 	// エディタサイズ
-	const [currentEditorSize, setCurrentEditorSize] = useState(75)
+	const [currentEditorSize, setCurrentEditorSize] = useState(initSettings.resizerRatio || 60)
 
 	// ドラッグ可能サイズ
 	const [lastDraggableEditorSize, setLastDraggableEditorSize] = useState({ width: 800, height: 600 })

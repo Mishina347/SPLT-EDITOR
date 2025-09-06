@@ -7,6 +7,7 @@ import {
 	usePerformanceMonitor,
 	useViewportSize,
 	useOptimizedLayout,
+	useSelectionCharCount,
 } from '../../hooks'
 import { DEFAULT_SETTING, EditorSettings } from '@/domain'
 import { getOptimizedEditorOptions } from '@/utils/editorOptimization'
@@ -30,6 +31,12 @@ type Props = {
 	onChange: (v: string) => void
 	onMaximize: () => void
 	onFocusPane: () => void
+	onSelectionChange?: (selectionCharCount: {
+		selectedText: string
+		characterCount: number
+		lineCount: number
+		pageCount: number
+	}) => void
 }
 
 export const EditorComponent = ({
@@ -41,6 +48,7 @@ export const EditorComponent = ({
 	isMaximized,
 	onMaximize,
 	onFocusPane,
+	onSelectionChange,
 }: Props) => {
 	// パフォーマンス監視
 	const performanceMonitor = usePerformanceMonitor('EditorComponent')
@@ -84,6 +92,17 @@ export const EditorComponent = ({
 	)
 
 	const cellSize = useMemo(() => fontSize * 1.6, [fontSize])
+
+	// 選択範囲の文字数取得
+	const selectionCounts = useSelectionCharCount(editorRef)
+
+	// 選択範囲の変更を親に通知
+	useEffect(() => {
+		if (onSelectionChange) {
+			logger.debug('EditorComponent', `Selection changed: ${selectionCounts.characterCount} chars`)
+			onSelectionChange(selectionCounts)
+		}
+	}, [selectionCounts, onSelectionChange])
 
 	// 分離されたコンポーネントを使用
 	const { triggerCaretAnimation, addCaretAnimationStyles, createRippleEffect } = useCaretAnimation({
@@ -414,6 +433,9 @@ export const EditorComponent = ({
 			multiCursorModifier: 'alt', // モバイルでのマルチカーソル操作をaltキーに変更
 		})
 		editorRef.current = editor
+
+		// エディタの準備完了を通知
+		logger.debug('EditorComponent', 'Monaco Editor initialized')
 
 		// Monaco Editor内でのTabキー処理を設定
 		editor.addCommand(monaco.KeyCode.Tab, () => {
@@ -1070,7 +1092,7 @@ export const EditorComponent = ({
 						<p>Enterキーで編集開始 • Escapeキーで編集終了 • Ctrl+Tabでフォーカス移動</p>
 					</div>
 					<div className={styles.counterInfoBar} role="status" aria-live="polite">
-						<Counter text={textData} />
+						<Counter text={textData} editorRef={editorRef} />
 					</div>
 				</div>
 			</main>

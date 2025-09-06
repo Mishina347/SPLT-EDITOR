@@ -37,6 +37,14 @@ interface CommonProps {
 	// 最大化状態管理
 	editorMaximized?: boolean
 	previewMaximized?: boolean
+
+	// 選択範囲の文字数変更
+	onSelectionChange?: (selectionCharCount: {
+		selectedText: string
+		characterCount: number
+		lineCount: number
+		pageCount: number
+	}) => void
 }
 
 interface FixedLayoutProps extends CommonProps {
@@ -79,6 +87,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 		currentPageInfo,
 		editorMaximized = false,
 		previewMaximized = false,
+		onSelectionChange,
 	} = props
 
 	// エディターコンポーネントの共通props
@@ -90,6 +99,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 		onFocusPane: onFocusEditor,
 		isDragging: layoutType === 'fixed' ? isDragging : false,
 		isMaximized: editorMaximized,
+		onSelectionChange,
 	}
 
 	// プレビューコンポーネントの共通props

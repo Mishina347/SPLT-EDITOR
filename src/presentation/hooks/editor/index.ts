@@ -5,6 +5,7 @@ export { useMonacoEditor } from './useMonacoEditor'
 export { useTextHistory } from './useTextHistory'
 export { useCharCount } from './useCharCount'
 export { useOptimizedCharCount } from './useOptimizedCharCount'
+export { useSelectionCharCount } from './useSelectionCharCount'
 
 // 自動保存
 export { useAutoSave } from './useAutoSave'

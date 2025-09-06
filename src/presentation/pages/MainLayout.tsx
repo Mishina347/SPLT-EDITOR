@@ -85,13 +85,40 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		// ハンドラー
 		handleMaximize,
 		resetMaximizedState,
-		getMaximizedState,
 		getZIndex,
 		handlePageInfoChange,
 	} = useMainLayoutState({ initSettings })
 
 	// 初期化状態の管理
 	const [isInitialized, setIsInitialized] = useState(false)
+
+	// 選択範囲の文字数情報
+	const [selectionCharCount, setSelectionCharCount] = useState<
+		| {
+				selectedText: string
+				characterCount: number
+				lineCount: number
+				pageCount: number
+		  }
+		| undefined
+	>(undefined)
+
+	// 選択範囲の変更ハンドラー
+	const handleSelectionChange = useCallback(
+		(selectionCharCount: {
+			selectedText: string
+			characterCount: number
+			lineCount: number
+			pageCount: number
+		}) => {
+			logger.debug(
+				'MainLayout',
+				`Selection change received: ${selectionCharCount.characterCount} chars`
+			)
+			setSelectionCharCount(selectionCharCount)
+		},
+		[]
+	)
 
 	// スマホサイズの場合はドラッグ可能モードを無効化
 	useEffect(() => {
@@ -462,7 +489,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 				}
 			},
 		},
-		{ isDraggableMode, viewMode, charCount, pageInfo }
+		{ isDraggableMode, viewMode, charCount, pageInfo, selectionCharCount }
 	)
 
 	// 共通のハンドラー関数
@@ -574,6 +601,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						isDragging={isDragging}
 						onPageInfoChange={handlePageInfoChange}
 						currentPageInfo={pageInfo}
+						onSelectionChange={handleSelectionChange}
 						// 最大化状態を明示的に渡す
 						editorMaximized={isEditorMaximized}
 						previewMaximized={isPreviewMaximized}
@@ -630,6 +658,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						isDragging={isDragging}
 						onPageInfoChange={handlePageInfoChange}
 						currentPageInfo={pageInfo}
+						onSelectionChange={handleSelectionChange}
 						// 最大化状態を明示的に渡す
 						editorMaximized={isEditorMaximized}
 						previewMaximized={isPreviewMaximized}
@@ -672,6 +701,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						isDragging={isDragging}
 						onPageInfoChange={handlePageInfoChange}
 						currentPageInfo={pageInfo}
+						onSelectionChange={handleSelectionChange}
 						// 最大化状態を明示的に渡す
 						editorMaximized={isEditorMaximized}
 						previewMaximized={isPreviewMaximized}

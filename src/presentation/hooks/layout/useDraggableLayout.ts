@@ -4,6 +4,7 @@ import { DISPLAY_MODE } from '@/domain'
 import { formatNumber, UI_CONSTANTS } from '@/utils'
 import { LayoutType } from '../../components/layout/LayoutRenderer'
 import { useViewportSize } from '../common'
+import { logger } from '@/utils/logger'
 
 export interface ContainerConfig {
 	title: string
@@ -37,6 +38,12 @@ interface UseDraggableLayoutOptions {
 	viewMode: DISPLAY_MODE
 	charCount: number
 	pageInfo?: { currentPage: number; totalPages: number }
+	selectionCharCount?: {
+		selectedText: string
+		characterCount: number
+		lineCount: number
+		pageCount: number
+	}
 }
 
 export const useDraggableLayout = (
@@ -50,7 +57,7 @@ export const useDraggableLayout = (
 		setPreviewPosition,
 		setPreviewSize,
 	}: DraggableLayoutConfig,
-	{ isDraggableMode, viewMode, pageInfo, charCount }: UseDraggableLayoutOptions
+	{ isDraggableMode, viewMode, pageInfo, charCount, selectionCharCount }: UseDraggableLayoutOptions
 ) => {
 	const { width: viewportWidth, height: viewportHeight } = useViewportSize()
 
@@ -97,8 +104,16 @@ export const useDraggableLayout = (
 			const isMaximizedMode = isMaximized || viewMode === DISPLAY_MODE.EDITOR
 			const sizes = isMaximizedMode ? commonSizes.maximized : commonSizes.standard
 			const baseTitle = isMaximizedMode ? 'エディター (最大化)' : 'エディター'
-			const titleWithCharCount =
-				charCount !== undefined ? `${baseTitle} - ${formatNumber(charCount)}文字` : baseTitle
+
+			// 選択範囲がある場合は選択範囲の文字数も表示
+			let titleWithCharCount = baseTitle
+			if (selectionCharCount && selectionCharCount.selectedText.length > 0) {
+				titleWithCharCount = `${baseTitle} - 選択: ${formatNumber(selectionCharCount.characterCount)}文字 / 全体: ${formatNumber(charCount)}文字`
+				logger.debug('useDraggableLayout', `Title with selection: ${titleWithCharCount}`)
+			} else if (charCount !== undefined) {
+				titleWithCharCount = `${baseTitle} - ${formatNumber(charCount)}文字`
+				logger.debug('useDraggableLayout', `Title without selection: ${titleWithCharCount}`)
+			}
 
 			// 現在のサイズが初期サイズと異なる場合は、現在のサイズを優先
 			const currentSize =
@@ -121,7 +136,16 @@ export const useDraggableLayout = (
 				onFocus,
 			}
 		},
-		[editorPosition, editorSize, setEditorPosition, setEditorSize, viewMode, commonSizes, charCount]
+		[
+			editorPosition,
+			editorSize,
+			setEditorPosition,
+			setEditorSize,
+			viewMode,
+			commonSizes,
+			charCount,
+			selectionCharCount,
+		]
 	)
 
 	// プレビューコンテナの設定を生成

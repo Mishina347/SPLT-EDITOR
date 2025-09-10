@@ -1,11 +1,35 @@
 import { useState } from 'react'
 import { FontFamily } from '@/domain'
-import { ExportTxtUseCase } from '@/application/preview/usePagination'
 import { TxtWriter } from '@/infra/plainText/TxtWriter'
 import { isAndroid, isIOS } from '@/utils'
+import {
+	validateFilename,
+	sanitizeFilename,
+	generateDefaultFilename,
+} from '@/utils/filenameValidation'
 import styles from './TxtExportButton.module.css'
 import { Selector } from '@/presentation/shared'
 import buttonStyles from '@/presentation/shared/Button/Button.module.css'
+
+// テキストからデフォルトファイル名を生成する関数（トップレベル）
+function generateDefaultFilenameFromText(text: string): string {
+	if (!text || text.trim() === '') {
+		return generateDefaultFilename()
+	}
+
+	// テキストの最初の行を取得（タイトルとして使用）
+	const firstLine = text.split('\n')[0].trim()
+	if (firstLine && firstLine.length > 0) {
+		// 最初の行をサニタイズしてファイル名として使用
+		const sanitizedTitle = sanitizeFilename(firstLine)
+		// 長すぎる場合は切り詰める
+		const truncatedTitle =
+			sanitizedTitle.length > 50 ? sanitizedTitle.substring(0, 50) : sanitizedTitle
+		return truncatedTitle + '.txt'
+	}
+
+	return generateDefaultFilename()
+}
 
 type Props = {
 	text: string
@@ -26,15 +50,38 @@ export function TxtExportButton({
 }: Props) {
 	const [showEncodingOptions, setShowEncodingOptions] = useState(false)
 	const [selectedEncoding, setSelectedEncoding] = useState<'utf8' | 'shift_jis'>('utf8')
+	const [filename, setFilename] = useState(() => generateDefaultFilenameFromText(text))
+	const [filenameError, setFilenameError] = useState<string | null>(null)
+
+	const handleFilenameChange = (newFilename: string) => {
+		setFilename(newFilename)
+
+		// リアルタイムバリデーション（エラー表示のみ、自動更新はしない）
+		const validation = validateFilename(newFilename)
+		if (!validation.isValid) {
+			setFilenameError(validation.error || '無効なファイル名です')
+		} else {
+			setFilenameError(null)
+		}
+	}
 
 	const handleExportWithEncoding = async () => {
+		// 最終バリデーション
+		const validation = validateFilename(filename)
+		if (!validation.isValid) {
+			setFilenameError(validation.error || '無効なファイル名です')
+			return
+		}
+
+		const finalFilename = validation.suggestedFilename || filename
+
 		const txtWriter = new TxtWriter()
 		// テキストをページ分割してから出力
 		// ここでは簡易的に1行ずつ処理
 		const lines = text.split('\n')
 		const pages = [lines] // 1ページとして扱う
 
-		await txtWriter.writeWithEncoding(pages, selectedEncoding)
+		await txtWriter.writeWithEncoding(pages, selectedEncoding, finalFilename)
 		onExport?.()
 	}
 
@@ -55,6 +102,24 @@ export function TxtExportButton({
 						{isAndroid() && '📱 Android端末:  UTF-8使用可能'}
 						{isIOS() && '🍎 iOS端末: UTF-8使用可能'}
 						{!isAndroid() && !isIOS() && '💻 デスクトップ:  UTF-8使用可能'}
+					</div>
+
+					{/* ファイル名入力フィールド */}
+					<div className={styles.filenameInput}>
+						<div className={styles.filenameHeader}>
+							<label htmlFor="txt-filename" className={styles.filenameLabel}>
+								ファイル名
+							</label>
+						</div>
+						<input
+							id="txt-filename"
+							type="text"
+							value={filename}
+							onChange={e => handleFilenameChange(e.target.value)}
+							placeholder="document.txt"
+							className={`${styles.filenameField} ${filenameError ? styles.filenameFieldError : ''}`}
+						/>
+						{filenameError && <div className={styles.filenameError}>{filenameError}</div>}
 					</div>
 
 					<div className={styles.encodingSelector}>
@@ -81,6 +146,7 @@ export function TxtExportButton({
 						<button
 							className={`${buttonStyles.button} ${buttonStyles.buttonPrimary}`}
 							onClick={handleExportWithEncoding}
+							disabled={!!filenameError}
 						>
 							選択したエンコーディングで出力
 						</button>

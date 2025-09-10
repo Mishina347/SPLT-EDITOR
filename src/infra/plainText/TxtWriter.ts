@@ -1,19 +1,18 @@
 import { isAndroid, isIOS } from '@/utils/deviceDetection'
 
 export class TxtWriter {
-	async write(pages: string[][]) {
+	async write(pages: string[][], filename?: string) {
 		let output = ''
 
 		pages.forEach((pageLines, pageIndex) => {
-			for (const line of pageLines) {
-				output += line
-			}
-			// ページ間の改行も削除
+			// 各行の間に改行を入れて結合
+			output += pageLines.join('\n')
+			// ページ間には余計な改行を入れない
 		})
 
 		// プラットフォーム別の最適化された文字化け対策
 		const platform = this.detectPlatform()
-		const optimizedContent = this.optimizeForPlatform(output, platform)
+		const optimizedContent = this.optimizeForPlatform(output, platform, filename)
 
 		// Blobを作成してダウンロード
 		const blob = new Blob([optimizedContent.data], {
@@ -34,22 +33,26 @@ export class TxtWriter {
 		return 'desktop'
 	}
 
-	private optimizeForPlatform(text: string, platform: 'android' | 'ios' | 'desktop') {
+	private optimizeForPlatform(
+		text: string,
+		platform: 'android' | 'ios' | 'desktop',
+		customFilename?: string
+	) {
 		switch (platform) {
 			case 'android':
 				// Android端末: 最も確実な文字化け対策
-				return this.optimizeForAndroid(text)
+				return this.optimizeForAndroid(text, customFilename)
 			case 'ios':
 				// iOS端末: 標準的なUTF-8出力
-				return this.optimizeForIOS(text)
+				return this.optimizeForIOS(text, customFilename)
 			case 'desktop':
 			default:
 				// デスクトップ: 標準的なUTF-8出力
-				return this.optimizeForDesktop(text)
+				return this.optimizeForDesktop(text, customFilename)
 		}
 	}
 
-	private optimizeForAndroid(text: string) {
+	private optimizeForAndroid(text: string, customFilename?: string) {
 		// Android端末での文字化けを防ぐための最強対策
 		// 1. BOM（Byte Order Mark）を追加
 		// 2. 改行コードをCRLFに統一
@@ -66,11 +69,11 @@ export class TxtWriter {
 		return {
 			data: finalContent,
 			charset: 'utf-8',
-			filename: 'document_android_utf8.txt',
+			filename: customFilename || 'document_android_utf8.txt',
 		}
 	}
 
-	private optimizeForIOS(text: string) {
+	private optimizeForIOS(text: string, customFilename?: string) {
 		// iOS端末: 標準的なUTF-8出力（BOMなし）
 		// iOSのテキストビューアーはUTF-8対応が良好
 
@@ -80,11 +83,11 @@ export class TxtWriter {
 		return {
 			data: encodedText,
 			charset: 'utf-8',
-			filename: 'document_ios_utf8.txt',
+			filename: customFilename || 'document_ios_utf8.txt',
 		}
 	}
 
-	private optimizeForDesktop(text: string) {
+	private optimizeForDesktop(text: string, customFilename?: string) {
 		// デスクトップ: 標準的なUTF-8出力
 		// モダンブラウザはUTF-8対応が良好
 
@@ -94,18 +97,21 @@ export class TxtWriter {
 		return {
 			data: encodedText,
 			charset: 'utf-8',
-			filename: 'document_desktop_utf8.txt',
+			filename: customFilename || 'document_desktop_utf8.txt',
 		}
 	}
 
 	// プラットフォーム別の最適化されたエンコーディング選択メソッド
-	async writeWithEncoding(pages: string[][], encoding: 'utf8' | 'shift_jis' = 'utf8') {
+	async writeWithEncoding(
+		pages: string[][],
+		encoding: 'utf8' | 'shift_jis' = 'utf8',
+		filename?: string
+	) {
 		let output = ''
 
 		pages.forEach((pageLines, pageIndex) => {
-			for (const line of pageLines) {
-				output += line
-			}
+			// 各行の間に改行を入れて結合
+			output += pageLines.join('\n')
 		})
 
 		const platform = this.detectPlatform()
@@ -113,13 +119,13 @@ export class TxtWriter {
 
 		if (encoding === 'utf8') {
 			// UTF-8: プラットフォーム別最適化
-			optimizedContent = this.optimizeForPlatform(output, platform)
+			optimizedContent = this.optimizeForPlatform(output, platform, filename)
 		} else if (encoding === 'shift_jis') {
 			// Shift_JIS: プラットフォーム別最適化 + エンコーディング指定
-			optimizedContent = this.optimizeForShiftJIS(output, platform)
+			optimizedContent = this.optimizeForShiftJIS(output, platform, filename)
 		} else {
 			// デフォルト: プラットフォーム別最適化
-			optimizedContent = this.optimizeForPlatform(output, platform)
+			optimizedContent = this.optimizeForPlatform(output, platform, filename)
 		}
 
 		// ファイルをダウンロード
@@ -131,7 +137,11 @@ export class TxtWriter {
 		)
 	}
 
-	private optimizeForShiftJIS(text: string, platform: 'android' | 'ios' | 'desktop') {
+	private optimizeForShiftJIS(
+		text: string,
+		platform: 'android' | 'ios' | 'desktop',
+		customFilename?: string
+	) {
 		// Shift_JISエンコーディングの最適化
 		// 注意: 実際のShift_JISエンコーディングには別途ライブラリが必要
 
@@ -141,7 +151,7 @@ export class TxtWriter {
 			const encodedText = new TextEncoder().encode(normalizedOutput)
 
 			// プラットフォーム別のファイル名
-			const filename = `document_${platform}_shiftjis_fallback.txt`
+			const filename = customFilename || `document_${platform}_shiftjis_fallback.txt`
 
 			return {
 				data: encodedText,
@@ -151,7 +161,7 @@ export class TxtWriter {
 		} catch (error) {
 			console.warn('Shift_JISエンコーディングに失敗、UTF-8でフォールバック:', error)
 			// フォールバック: プラットフォーム別最適化
-			return this.optimizeForPlatform(text, platform)
+			return this.optimizeForPlatform(text, platform, customFilename)
 		}
 	}
 

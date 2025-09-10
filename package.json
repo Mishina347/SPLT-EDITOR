@@ -36,6 +36,7 @@
 	"dependencies": {
 		"@monaco-editor/react": "^4.4.6",
 		"@tauri-apps/plugin-dialog": "^2.3.2",
+		"@types/qrcode": "^1.5.5",
 		"diff": "^8.0.2",
 		"diff-match-patch": "^1.0.5",
 		"diff2html": "^3.4.52",
@@ -44,6 +45,7 @@
 		"jspdf-font": "^1.0.7",
 		"monaco-editor": "^0.52.2",
 		"pdf-lib": "^1.17.1",
+		"qrcode": "^1.5.4",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"uuid": "^9.0.0"

@@ -1,3 +1,4 @@
 [capabilities.default]
 fs = { scope = ["**"] }
 dialog = { scope = ["**"] }
+window = { scope = ["**"] }

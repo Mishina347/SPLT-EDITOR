@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { QrCodeService, QrCodeOptions } from '@/infra/qrCode/QrCodeService'
 import styles from './QrCodeDisplay.module.css'
+import { wordCounter } from '@/utils'
 
 interface QrCodeDisplayProps {
 	text: string
@@ -23,7 +24,7 @@ export const QrCodeDisplay: React.FC<QrCodeDisplayProps> = ({
 
 	// 日本語テキストかどうかを判定
 	const isJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)
-	const textLength = text.length
+	const textLength = wordCounter(text).characterCount
 
 	// 日本語テキストに適した初期設定
 	const getInitialOptions = (): QrCodeOptions => {

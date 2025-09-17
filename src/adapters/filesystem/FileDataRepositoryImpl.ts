@@ -9,9 +9,10 @@ const SETTINGS_FILE = 'settings.json'
 export class FileDataRepositoryImpl implements FileDataRepository {
 	async load(): Promise<Settings | null> {
 		try {
-			logger.debug('FileDataRepositoryImpl', 'Loading settings')
+			const tauriEnv = isTauri()
+			logger.debug('FileDataRepositoryImpl', `Loading settings - isTauri: ${tauriEnv}`)
 
-			if (isTauri()) {
+			if (tauriEnv) {
 				// Tauri環境 → ファイルシステムから読み込み
 				try {
 					const content = await readTextFile(SETTINGS_FILE, {

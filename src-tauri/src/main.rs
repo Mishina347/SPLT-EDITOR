@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use tauri::AppHandle;
 use tauri::Manager;
+use tauri::Emitter;
 use tauri_plugin_dialog::{DialogExt,FilePath};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -48,7 +49,7 @@ impl Default for AutoSaveSettings {
 }
 
 #[tauri::command]
-fn save_settings(settings: EditorSettings, app: tauri::AppHandle) -> Result<(), String> {
+fn saveSettings(settings: EditorSettings, app: tauri::AppHandle) -> Result<(), String> {
     let dir = app
         .path()
         .app_data_dir()
@@ -62,7 +63,7 @@ fn save_settings(settings: EditorSettings, app: tauri::AppHandle) -> Result<(), 
 }
 
 #[tauri::command]
-fn load_settings(app: tauri::AppHandle) -> Result<EditorSettings, String> {
+fn loadSettings(app: tauri::AppHandle) -> Result<EditorSettings, String> {
     let dir = app
         .path()
         .app_data_dir()
@@ -73,7 +74,7 @@ fn load_settings(app: tauri::AppHandle) -> Result<EditorSettings, String> {
     if !path.exists() {
         println!("[Tauri] Settings file not found, creating default settings");
         let default_settings = EditorSettings::default();
-        save_settings(default_settings.clone(), app.clone())?;
+        saveSettings(default_settings.clone(), app.clone())?;
         return Ok(default_settings);
     }
 
@@ -84,7 +85,7 @@ fn load_settings(app: tauri::AppHandle) -> Result<EditorSettings, String> {
 
 
 #[tauri::command]
-fn open_text_file(app: AppHandle) -> Result<(String, String), String> {
+fn openTextFile(app: AppHandle) -> Result<(String, String), String> {
     // ファイル選択ダイアログ
     let file_path = app
         .dialog()
@@ -124,14 +125,22 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![save_settings, load_settings, open_text_file])
+        .invoke_handler(tauri::generate_handler![saveSettings, loadSettings, openTextFile])
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                println!("[Tauri] Close requested event received");
+                // フロントエンドにイベントを送信して未保存チェックを依頼
+                window.emit("close-requested", ()).unwrap();
+                // 常にデフォルトの動作を防ぐ（フロントエンドで判断）
+            }
+        })
         .setup(|app| {
             println!("[Tauri] App setup completed");
             println!("[Tauri] App info: {:?}", app.package_info());
             
             // アプリ起動時に設定ファイルの初期化を確認
             let app_handle = app.handle();
-            match load_settings(app_handle.clone()) {
+            match loadSettings(app_handle.clone()) {
                 Ok(settings) => {
                     println!("[Tauri] Settings loaded successfully: {:?}", settings);
                 }

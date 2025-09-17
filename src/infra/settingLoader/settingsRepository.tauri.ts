@@ -5,7 +5,7 @@ import { FONT_FAMILIES } from '../../domain/editor/EditorSetting'
 export class TauriSettingsRepository implements SettingsRepository {
 	async loadSettings(): Promise<Settings> {
 		try {
-			return await invoke<Settings>('load_settings')
+			return await invoke<Settings>('loadSettings')
 		} catch (error) {
 			console.warn('settings.json がないため生成します')
 			const defaultSettings: Settings = {
@@ -35,6 +35,6 @@ export class TauriSettingsRepository implements SettingsRepository {
 	}
 
 	async saveSettings(settings: Settings): Promise<void> {
-		await invoke('save_settings', { settings })
+		await invoke('saveSettings', { settings })
 	}
 }

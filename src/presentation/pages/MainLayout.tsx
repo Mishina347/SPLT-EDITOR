@@ -9,6 +9,7 @@ import {
 	LayoutRenderer,
 	ExportDialog,
 	LayerIcon,
+	Dialog,
 } from '../components'
 import {
 	useCharCount,
@@ -25,7 +26,7 @@ import { editorService } from '../../application'
 import { eventBus, EVENTS } from '../../application/observers/EventBus'
 import { saveEditorSettings } from '../../usecases/editor/SaveEditorSettings'
 import { serviceFactory } from '@/infra'
-import { hexToRgba, isMobile, isMobileSize } from '@/utils'
+import { hexToRgba, isMobile, isMobileSize, isTauri } from '@/utils'
 import styles from './MainLayout.module.css'
 import { SwipeDirection } from '../hooks/common/useSwipeGesture'
 
@@ -91,6 +92,12 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 
 	// 初期化状態の管理
 	const [isInitialized, setIsInitialized] = useState(false)
+	// 保存確認モーダル用の状態
+	const [showSaveConfirm, setShowSaveConfirm] = useState(false)
+	const pendingActionRef = React.useRef<null | (() => void)>(null)
+
+	const { currentNotSavedText, charCount, updateText } = useCharCount()
+	const { history, saveSnapshot, getLatestSnapshot, getPreviousSnapshot } = useTextHistory(20)
 
 	// 選択範囲の文字数情報
 	const [selectionCharCount, setSelectionCharCount] = useState<
@@ -101,7 +108,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 				pageCount: number
 		  }
 		| undefined
-	>(undefined)
+	>()
 
 	// 選択範囲の変更ハンドラー
 	const handleSelectionChange = useCallback(
@@ -119,6 +126,51 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		},
 		[]
 	)
+
+	// ブラウザのページ離脱前の保存確認（beforeunload）
+	useEffect(() => {
+		if (isTauri()) return // Tauri環境では不要
+		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+			// currentNotSavedText: 現在編集中のテキスト（未保存）
+			// lastSavedText: 最後に保存したテキスト
+			const hasUnsavedChanges = currentNotSavedText !== lastSavedText
+			if (hasUnsavedChanges) {
+				e.preventDefault()
+				// Chrome等では returnValue に空文字以外でもよいが、仕様上空文字を設定
+				e.returnValue = ''
+				return ''
+			}
+		}
+
+		window.addEventListener('beforeunload', handleBeforeUnload)
+		return () => {
+			window.removeEventListener('beforeunload', handleBeforeUnload)
+		}
+	}, [currentNotSavedText, lastSavedText])
+
+	// ブラウザ環境でのページ更新/タブ閉じる前のカスタム保存確認
+	useEffect(() => {
+		if (isTauri()) return // Tauri環境では不要
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// F5キーまたはCtrl+R/Cmd+Rでページ更新
+			if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
+				const hasUnsavedChanges = currentNotSavedText !== lastSavedText
+				if (hasUnsavedChanges) {
+					e.preventDefault()
+					pendingActionRef.current = () => {
+						window.location.reload()
+					}
+					setShowSaveConfirm(true)
+				}
+			}
+		}
+
+		window.addEventListener('keydown', handleKeyDown)
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown)
+		}
+	}, [currentNotSavedText, lastSavedText])
 
 	// スマホサイズの場合はドラッグ可能モードを無効化
 	useEffect(() => {
@@ -193,9 +245,6 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		},
 		[focusedPane]
 	)
-
-	const { currentNotSavedText, charCount, updateText } = useCharCount()
-	const { history, saveSnapshot, getLatestSnapshot, getPreviousSnapshot } = useTextHistory(20)
 
 	// Auto save機能
 	const handleAutoSave = useCallback(
@@ -510,6 +559,13 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 
 	// 書き出しダイアログのハンドラー
 	const handleOpenExportDialog = useCallback(() => {
+		// 未保存なら保存確認モーダルを表示し、OKなら実行
+		const hasUnsaved = currentNotSavedText !== lastSavedText
+		if (hasUnsaved) {
+			pendingActionRef.current = () => setShowExportDialog(true)
+			setShowSaveConfirm(true)
+			return
+		}
 		setShowExportDialog(true)
 	}, [])
 
@@ -517,19 +573,96 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		setShowExportDialog(false)
 	}, [])
 
+	// 保存確認モーダルのボタン動作
+	const handleConfirmSaveAndContinue = useCallback(async () => {
+		try {
+			await forceSave()
+			setLastSavedText(currentNotSavedText)
+			setCurrentSavedText(currentNotSavedText)
+		} finally {
+			setShowSaveConfirm(false)
+			// 保留中アクションを実行
+			pendingActionRef.current?.()
+			pendingActionRef.current = null
+		}
+	}, [currentNotSavedText, forceSave])
+
+	const handleDiscardAndContinue = useCallback(() => {
+		setShowSaveConfirm(false)
+		pendingActionRef.current?.()
+		pendingActionRef.current = null
+	}, [])
+
+	const handleCancelContinue = useCallback(() => {
+		setShowSaveConfirm(false)
+		pendingActionRef.current = null
+	}, [])
+
+	// ブラウザ/PWA: ウィンドウ終了前の保存確認（beforeunload）
+	useEffect(() => {
+		if (isTauri()) {
+			return // Tauri環境では不要
+		}
+		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+			const hasUnsaved = currentNotSavedText !== lastSavedText
+
+			if (hasUnsaved) {
+				event.preventDefault()
+				event.returnValue = ''
+				return ''
+			}
+		}
+
+		window.addEventListener('beforeunload', handleBeforeUnload)
+
+		return () => {
+			window.removeEventListener('beforeunload', handleBeforeUnload)
+		}
+	}, [currentNotSavedText, lastSavedText])
+
+	// Tauri: ウィンドウ終了前の保存確認（close-requested）
+	useEffect(() => {
+		if (!isTauri()) {
+			return
+		}
+
+		let unlisten: (() => void) | null = null
+
+		;(async () => {
+			try {
+				const { getCurrentWindow } = await import('@tauri-apps/api/window')
+				const appWindow = getCurrentWindow()
+				unlisten = await appWindow.listen('close-requested', async event => {
+					console.log('MainLayout: Tauri close-requested event triggered')
+
+					// 最新の値を取得するために、現在のstateを直接参照
+					const currentText = currentNotSavedText
+					const lastText = lastSavedText
+					const hasUnsaved = currentText !== lastText
+					if (hasUnsaved) {
+						logger.debug('MainLayout', 'Has unsaved changes, showing save confirmation')
+						pendingActionRef.current = async () => {
+							try {
+								logger.debug('MainLayout', 'INTO')
+								setShowSaveConfirm(true)
+							} catch (error) {
+								console.error('MainLayout: Failed to invoke allowClose:', error)
+							}
+						}
+					}
+				})
+			} catch (err) {}
+		})()
+
+		return () => {
+			if (unlisten) {
+				unlisten()
+			}
+		}
+	}, [])
+
 	return (
-		<div
-			style={{
-				position: 'fixed',
-				top: 0,
-				left: 0,
-				right: 0,
-				bottom: 0,
-				width: '100vw',
-				height: '100vh',
-				overflow: 'hidden',
-			}}
-		>
+		<div className={styles.mainLayout}>
 			<main className={styles.animatedContainer}>
 				{/* ツールバー */}
 				<section
@@ -741,6 +874,34 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 					textColor: editorSettings.textColor,
 				}}
 			/>
+
+			{/* 保存確認モーダル */}
+			<Dialog
+				isOpen={showSaveConfirm}
+				onClose={handleCancelContinue}
+				title="未保存の変更があります"
+				constrainToContainer={true}
+				maxWidth="520px"
+			>
+				<div style={{ padding: '8px 4px 0 4px' }}>
+					<p style={{ marginBottom: 12 }}>
+						現在の編集内容を保存しますか？
+						<br />
+						保存しない場合、直近の変更は失われます。
+					</p>
+					<div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+						<button className={styles.buttonSecondary} onClick={handleCancelContinue}>
+							キャンセル
+						</button>
+						<button className={styles.buttonDanger} onClick={handleDiscardAndContinue}>
+							保存しない
+						</button>
+						<button className={styles.buttonPrimary} onClick={handleConfirmSaveAndContinue}>
+							保存して続行
+						</button>
+					</div>
+				</div>
+			</Dialog>
 
 			{/* 書き出しダイアログ */}
 			<ExportDialog

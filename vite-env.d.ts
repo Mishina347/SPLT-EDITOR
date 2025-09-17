@@ -2,9 +2,7 @@
 
 interface ImportMetaEnv {
 	readonly VITE_TAURI_PLATFORM?: string
-	readonly MODE: string
-	readonly DEV: boolean
-	readonly PROD: boolean
+	readonly TAURI_ENV_DEBUG: boolean
 }
 
 interface ImportMeta {

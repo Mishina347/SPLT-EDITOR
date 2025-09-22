@@ -21,14 +21,15 @@ import {
 } from '../hooks'
 import { DISPLAY_MODE, Settings, TextSnapshot } from '@/domain'
 
-import { loadText } from '../../usecases'
+import { loadText, saveText } from '../../usecases'
 import { editorService } from '../../application'
 import { eventBus, EVENTS } from '../../application/observers/EventBus'
 import { saveEditorSettings } from '../../usecases/editor/SaveEditorSettings'
 import { serviceFactory } from '@/infra'
+import { SwipeDirection } from '../hooks/common/useSwipeGesture'
+import { usePWA } from '../hooks/pwa/usePWA'
 import { hexToRgba, isMobile, isMobileSize, isTauri } from '@/utils'
 import styles from './MainLayout.module.css'
-import { SwipeDirection } from '../hooks/common/useSwipeGesture'
 
 interface EditorPageProps {
 	initSettings: Settings
@@ -97,7 +98,8 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	const pendingActionRef = React.useRef<null | (() => void)>(null)
 
 	const { currentNotSavedText, charCount, updateText } = useCharCount()
-	const { history, saveSnapshot, getLatestSnapshot, getPreviousSnapshot } = useTextHistory(20)
+	const { history, saveSnapshot } = useTextHistory(20)
+	const { isInstalled: isPwaInstalled } = usePWA()
 
 	// 選択範囲の文字数情報
 	const [selectionCharCount, setSelectionCharCount] = useState<
@@ -258,7 +260,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	)
 
 	const { forceSave, isSaving } = useAutoSave(currentNotSavedText, {
-		enabled: editorSettings.autoSave.enabled,
+		enabled: editorSettings.autoSave.enabled && !isPwaInstalled,
 		delay: editorSettings.autoSave.delay,
 		fileName: 'document.json',
 		onSave: handleAutoSave,
@@ -426,8 +428,22 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	const onChangeText = useCallback(
 		(v: string) => {
 			updateText(v)
+			// PWA(standalone) 実行時は入力のたびに即時保存
+			if (isPwaInstalled) {
+				// 非同期で失敗してもUIをブロックしない
+				;(async () => {
+					try {
+						await saveText('document.json', v)
+						setLastSavedText(v)
+						setCurrentSavedText(v)
+					} catch (e) {
+						// 失敗時はログのみ（次回入力や起動時再保存に期待）
+						logger.error('MainLayout', 'Immediate save (PWA) failed', e)
+					}
+				})()
+			}
 		},
-		[updateText]
+		[updateText, isPwaInstalled]
 	)
 
 	// mobileでのみ最新の書き込みをcurrentSaveTextに常に保存

@@ -14,20 +14,22 @@ import {
 import {
 	useCharCount,
 	useTextHistory,
-	useAutoSave,
 	useSwipeGesture,
 	useResizable,
 	useDraggableLayout,
 } from '../hooks'
 import { DISPLAY_MODE, Settings, TextSnapshot } from '@/domain'
 
-import { loadText, saveText } from '../../usecases'
 import { editorService } from '../../application'
-import { eventBus, EVENTS } from '../../application/observers/EventBus'
-import { saveEditorSettings } from '../../usecases/editor/SaveEditorSettings'
-import { serviceFactory } from '@/infra'
 import { SwipeDirection } from '../hooks/common/useSwipeGesture'
 import { usePWA } from '../hooks/pwa/usePWA'
+import {
+	useFileOperations,
+	useDialogState,
+	useEventHandlers,
+	useAppInitialization,
+	useEditorInputSave,
+} from './hooks'
 import { hexToRgba, isMobile, isMobileSize, isTauri } from '@/utils'
 import styles from './MainLayout.module.css'
 
@@ -75,7 +77,6 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		setPreviewSize,
 		setShowThemeEditDialog,
 		setShowExportDialog,
-		setPageInfo,
 		setCurrentSavedText,
 		setInitialText,
 		setLastSavedText,
@@ -96,10 +97,12 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	// 保存確認モーダル用の状態
 	const [showSaveConfirm, setShowSaveConfirm] = useState(false)
 	const pendingActionRef = React.useRef<null | (() => void)>(null)
+	const setPendingAction = (action: (() => void) | null) => {
+		pendingActionRef.current = action
+	}
 
 	const { currentNotSavedText, charCount, updateText } = useCharCount()
 	const { history, saveSnapshot } = useTextHistory(20)
-	const { isInstalled: isPwaInstalled } = usePWA()
 
 	// 選択範囲の文字数情報
 	const [selectionCharCount, setSelectionCharCount] = useState<
@@ -248,22 +251,70 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		[focusedPane]
 	)
 
-	// Auto save機能
-	const handleAutoSave = useCallback(
-		(content: string) => {
-			setLastSavedText(content)
-			setCurrentSavedText(content)
-			// 自動保存時にスナップショットを追加
-			saveSnapshot(content, `自動保存 - ${new Date().toLocaleString('ja-JP')}`)
-		},
-		[saveSnapshot]
-	)
+	// 入力時保存ロジック（PWAでは即時、通常はauto save）
+	const { onChangeText, isSaving, forceSave } = useEditorInputSave({
+		editorSettings,
+		currentNotSavedText,
+		updateText,
+		setLastSavedText,
+		setCurrentSavedText,
+	})
 
-	const { forceSave, isSaving } = useAutoSave(currentNotSavedText, {
-		enabled: editorSettings.autoSave.enabled && !isPwaInstalled,
-		delay: editorSettings.autoSave.delay,
-		fileName: 'document.json',
-		onSave: handleAutoSave,
+	// ファイル操作ロジック
+	const { initializeApp, handleFileLoad, handleThemeUpdate, saveSettings, saveResizerRatio } =
+		useFileOperations({
+			editorSettings,
+			previewSettings,
+			isInitialized,
+			setInitialText,
+			setCurrentSavedText,
+			setLastSavedText,
+			updateText,
+			setIsInitialized,
+			saveSnapshot,
+		})
+
+	// ダイアログ状態管理
+	const {
+		handleCloseThemeEditDialog,
+		handleOpenExportDialog,
+		handleCloseExportDialog,
+		handleConfirmSaveAndContinue,
+		handleDiscardAndContinue,
+		handleCancelContinue,
+	} = useDialogState({
+		setShowThemeEditDialog,
+		setShowExportDialog,
+		setShowSaveConfirm,
+		setPendingAction,
+	})
+
+	// イベントハンドラ
+	useEventHandlers({
+		currentNotSavedText,
+		lastSavedText,
+		isSaving,
+		forceSave,
+		setCurrentSavedText,
+		setIsDraggableMode,
+		setPendingAction,
+		setShowSaveConfirm,
+		saveSnapshot,
+	})
+
+	// アプリ初期化
+	useAppInitialization({
+		editorSettings,
+		isDraggableMode,
+		lastDraggableEditorSize,
+		lastDraggablePreviewSize,
+		setEditorSize,
+		setPreviewSize,
+		editorSize,
+		previewSize,
+		setLastDraggableEditorSize,
+		setLastDraggablePreviewSize,
+		initializeApp,
 	})
 
 	// 履歴復元機能
@@ -286,72 +337,16 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		[setInitialText]
 	)
 
-	// ファイル読み込み機能
-	const handleFileLoad = useCallback(
-		(content: string, fileName: string) => {
-			// 読み込んだテキストを初期状態として保存
-			setCurrentSavedText(content)
-			setLastSavedText(content)
-			// エディタの内容も更新
-			updateText(content)
-			// 履歴にファイル読み込みを記録
-			saveSnapshot(content, `ファイル読み込み - ${fileName}`)
-		},
-		[saveSnapshot, updateText]
-	)
-
-	// テーマ編集ダイアログを閉じる
-	const handleCloseThemeEditDialog = useCallback(() => {
-		setShowThemeEditDialog(false)
-	}, [])
-
-	// テーマ設定を更新
-	const handleThemeUpdate = useCallback(
+	// テーマ設定を更新（フックから取得したハンドラーをラップ）
+	const handleThemeUpdateWrapper = useCallback(
 		(backgroundColor: string, textColor: string) => {
-			// CSS変数を更新
-			document.documentElement.style.setProperty('--app-bg-color', backgroundColor)
-			document.documentElement.style.setProperty('--app-text-color', textColor)
-			const bgColorAlpha = hexToRgba(backgroundColor, 0.15)
-			document.documentElement.style.setProperty('--app-bg-color-alpha', bgColorAlpha)
-
-			const updatedSettings = {
-				...editorSettings,
-				backgroundColor,
-				textColor,
-			}
-			setEditorSettings(updatedSettings)
+			handleThemeUpdate(backgroundColor, textColor, setEditorSettings)
 			setShowThemeEditDialog(false)
 		},
-		[editorSettings]
+		[handleThemeUpdate, setEditorSettings]
 	)
 
-	useEffect(() => {
-		;(async () => {
-			const initialText = await loadText('document.json')
-
-			// 初回起動時の状態設定
-			if (initialText) {
-				// ファイルが存在する場合
-				setInitialText(initialText)
-				setCurrentSavedText(initialText)
-				setLastSavedText(initialText)
-				// エディタの初期化完了を待ってからテキストを設定
-				setTimeout(() => {
-					updateText(initialText)
-					setIsInitialized(true)
-				}, 100)
-			} else {
-				// 初回起動時（ファイルが存在しない場合）
-				setCurrentSavedText('')
-				setLastSavedText('') // 明示的に空文字列を設定
-			}
-
-			// エディタの初期化完了を待ってからテキストを設定
-			setTimeout(() => {
-				updateText(initialText)
-			}, 100)
-		})()
-	}, [])
+	// 初期化ロジックは useAppInitialization フックで処理
 
 	useEffect(() => {
 		onChangeToolbarDisplayMode(focusedPane)
@@ -359,107 +354,13 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 
 	// 設定の自動保存
 	useEffect(() => {
-		const saveSettings = async () => {
-			try {
-				const fileDataRepository = serviceFactory.getFileDataRepository()
-				const fullSettings = {
-					editor: editorSettings,
-					preview: previewSettings,
-				}
-				await saveEditorSettings(fileDataRepository, fullSettings)
-				logger.debug('MainLayout', 'Settings auto-saved successfully')
-			} catch (error) {
-				logger.error('MainLayout', 'Failed to auto-save settings', error)
-			}
-		}
-
 		// 初期化完了後にのみ自動保存を有効化
 		if (isInitialized) {
 			saveSettings()
 		}
-	}, [editorSettings, previewSettings, isInitialized])
+	}, [editorSettings, previewSettings, isInitialized, saveSettings])
 
-	//手動保存機能（Cmd+S / Ctrl+S）
-	useEffect(() => {
-		const handleKeyDown = async (e: KeyboardEvent) => {
-			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
-				e.preventDefault()
-
-				// 既に保存処理中の場合は何もしない
-				if (isSaving) {
-					return
-				}
-
-				try {
-					logger.info('MainLayout', 'Manual save triggered with content', currentNotSavedText)
-
-					// forceSaveを使用してauto saveタイマーをリセット＆即座に保存
-					await forceSave()
-
-					// 手動保存成功時に状態を更新（空文字でも更新）
-					setLastSavedText(currentNotSavedText)
-					setCurrentSavedText(currentNotSavedText)
-
-					// イベントバスで保存完了を通知
-					eventBus.publish(EVENTS.TEXT_SAVED, {
-						timestamp: Date.now(),
-						contentLength: currentNotSavedText.length,
-					})
-
-					// 手動保存時のスナップショットを追加（空文字でも記録）
-					saveSnapshot(currentNotSavedText, `手動保存 - ${new Date().toLocaleString('ja-JP')}`)
-
-					logger.info('MainLayout', 'Manual save completed successfully')
-				} catch (error) {
-					logger.error('MainLayout', 'Manual save failed', error)
-					eventBus.publish(EVENTS.ERROR_OCCURRED, {
-						error: error instanceof Error ? error.message : String(error),
-						operation: 'manual_save',
-					})
-				}
-			}
-		}
-		window.addEventListener('keydown', handleKeyDown)
-
-		return () => window.removeEventListener('keydown', handleKeyDown)
-	}, [currentNotSavedText, saveSnapshot, forceSave, isSaving])
-
-	// テキスト変更時の処理
-	const onChangeText = useCallback(
-		(v: string) => {
-			updateText(v)
-			// PWA(standalone) 実行時は入力のたびに即時保存
-			if (isPwaInstalled) {
-				// 非同期で失敗してもUIをブロックしない
-				;(async () => {
-					try {
-						await saveText('document.json', v)
-						setLastSavedText(v)
-						setCurrentSavedText(v)
-					} catch (e) {
-						// 失敗時はログのみ（次回入力や起動時再保存に期待）
-						logger.error('MainLayout', 'Immediate save (PWA) failed', e)
-					}
-				})()
-			}
-		},
-		[updateText, isPwaInstalled]
-	)
-
-	// mobileでのみ最新の書き込みをcurrentSaveTextに常に保存
-	// PCでは通常の自動保存機能を使用し、mobileではリアルタイムでcurrentSaveTextを更新
-	useEffect(() => {
-		if (isMobile() && currentNotSavedText !== '') {
-			// mobileの場合、テキストが変更されるたびにcurrentSaveTextを更新
-			// デバウンス処理でパフォーマンスを最適化
-			const timeoutId = setTimeout(() => {
-				logger.info('MainLayout', 'Mobile auto-save: updating currentSaveText')
-				setCurrentSavedText(currentNotSavedText)
-			}, 300) // 300msのデバウンス
-
-			return () => clearTimeout(timeoutId)
-		}
-	}, [currentNotSavedText])
+	// 手動保存、mobile保存、その他イベントハンドラーは useEventHandlers フックで処理
 
 	// スワイプジェスチャーでUI制御（モバイル端末のみ）
 	const handleSwipe = useCallback(
@@ -509,21 +410,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 			onResize: newSize => {
 				setCurrentEditorSize(newSize)
 			},
-			onSaveRatio: async (ratio: number) => {
-				// 比率を設定に保存
-				try {
-					const fileDataRepository = serviceFactory.getFileDataRepository()
-					const fullSettings = {
-						editor: editorSettings,
-						preview: previewSettings,
-						resizerRatio: ratio,
-					}
-					await saveEditorSettings(fileDataRepository, fullSettings)
-					logger.debug('MainLayout', `Resizer ratio saved: ${ratio}%`)
-				} catch (error) {
-					logger.error('MainLayout', 'Failed to save resizer ratio', error)
-				}
-			},
+			onSaveRatio: saveResizerRatio,
 		})
 
 	// ドラッグ可能レイアウトの設定
@@ -573,109 +460,29 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		handleMaximize(DISPLAY_MODE.PREVIEW)
 	}, [handleMaximize])
 
-	// 書き出しダイアログのハンドラー
-	const handleOpenExportDialog = useCallback(() => {
-		// 未保存なら保存確認モーダルを表示し、OKなら実行
+	// 書き出しダイアログのハンドラー（フックから取得したハンドラーをラップ）
+	const handleOpenExportDialogWrapper = useCallback(() => {
 		const hasUnsaved = currentNotSavedText !== lastSavedText
-		if (hasUnsaved) {
-			pendingActionRef.current = () => setShowExportDialog(true)
-			setShowSaveConfirm(true)
-			return
-		}
-		setShowExportDialog(true)
-	}, [])
+		handleOpenExportDialog(hasUnsaved)
+	}, [currentNotSavedText, lastSavedText, handleOpenExportDialog])
 
-	const handleCloseExportDialog = useCallback(() => {
-		setShowExportDialog(false)
-	}, [])
+	// 保存確認モーダルのボタン動作（フックから取得したハンドラーをラップ）
+	const handleConfirmSaveAndContinueWrapper = useCallback(async () => {
+		await handleConfirmSaveAndContinue(
+			forceSave,
+			currentNotSavedText,
+			setLastSavedText,
+			setCurrentSavedText
+		)
+	}, [
+		handleConfirmSaveAndContinue,
+		forceSave,
+		currentNotSavedText,
+		setLastSavedText,
+		setCurrentSavedText,
+	])
 
-	// 保存確認モーダルのボタン動作
-	const handleConfirmSaveAndContinue = useCallback(async () => {
-		try {
-			await forceSave()
-			setLastSavedText(currentNotSavedText)
-			setCurrentSavedText(currentNotSavedText)
-		} finally {
-			setShowSaveConfirm(false)
-			// 保留中アクションを実行
-			pendingActionRef.current?.()
-			pendingActionRef.current = null
-		}
-	}, [currentNotSavedText, forceSave])
-
-	const handleDiscardAndContinue = useCallback(() => {
-		setShowSaveConfirm(false)
-		pendingActionRef.current?.()
-		pendingActionRef.current = null
-	}, [])
-
-	const handleCancelContinue = useCallback(() => {
-		setShowSaveConfirm(false)
-		pendingActionRef.current = null
-	}, [])
-
-	// ブラウザ/PWA: ウィンドウ終了前の保存確認（beforeunload）
-	useEffect(() => {
-		if (isTauri()) {
-			return // Tauri環境では不要
-		}
-		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-			const hasUnsaved = currentNotSavedText !== lastSavedText
-
-			if (hasUnsaved) {
-				event.preventDefault()
-				event.returnValue = ''
-				return ''
-			}
-		}
-
-		window.addEventListener('beforeunload', handleBeforeUnload)
-
-		return () => {
-			window.removeEventListener('beforeunload', handleBeforeUnload)
-		}
-	}, [currentNotSavedText, lastSavedText])
-
-	// Tauri: ウィンドウ終了前の保存確認（close-requested）
-	useEffect(() => {
-		if (!isTauri()) {
-			return
-		}
-
-		let unlisten: (() => void) | null = null
-
-		;(async () => {
-			try {
-				const { getCurrentWindow } = await import('@tauri-apps/api/window')
-				const appWindow = getCurrentWindow()
-				unlisten = await appWindow.listen('close-requested', async event => {
-					console.log('MainLayout: Tauri close-requested event triggered')
-
-					// 最新の値を取得するために、現在のstateを直接参照
-					const currentText = currentNotSavedText
-					const lastText = lastSavedText
-					const hasUnsaved = currentText !== lastText
-					if (hasUnsaved) {
-						logger.debug('MainLayout', 'Has unsaved changes, showing save confirmation')
-						pendingActionRef.current = async () => {
-							try {
-								logger.debug('MainLayout', 'INTO')
-								setShowSaveConfirm(true)
-							} catch (error) {
-								console.error('MainLayout: Failed to invoke allowClose:', error)
-							}
-						}
-					}
-				})
-			} catch (err) {}
-		})()
-
-		return () => {
-			if (unlisten) {
-				unlisten()
-			}
-		}
-	}, [])
+	// beforeunload、close-requested イベントハンドラーは useEventHandlers フックで処理
 
 	return (
 		<div className={styles.mainLayout}>
@@ -697,7 +504,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						onToolbarFocusChange={onChangeToolbarDisplayMode}
 						onFileLoad={handleFileLoad}
 						onThemeEdit={() => setShowThemeEditDialog(true)}
-						onExportOpen={handleOpenExportDialog}
+						onExportOpen={handleOpenExportDialogWrapper}
 						themeColors={{
 							backgroundColor: editorSettings.backgroundColor,
 							textColor: editorSettings.textColor,
@@ -884,7 +691,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 			<ThemeEditDialog
 				isOpen={showThemeEditDialog}
 				onClose={handleCloseThemeEditDialog}
-				onThemeUpdate={handleThemeUpdate}
+				onThemeUpdate={handleThemeUpdateWrapper}
 				themeColors={{
 					backgroundColor: editorSettings.backgroundColor,
 					textColor: editorSettings.textColor,
@@ -912,7 +719,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						<button className={styles.buttonDanger} onClick={handleDiscardAndContinue}>
 							保存しない
 						</button>
-						<button className={styles.buttonPrimary} onClick={handleConfirmSaveAndContinue}>
+						<button className={styles.buttonPrimary} onClick={handleConfirmSaveAndContinueWrapper}>
 							保存して続行
 						</button>
 					</div>

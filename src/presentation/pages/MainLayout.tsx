@@ -22,7 +22,6 @@ import { DISPLAY_MODE, Settings, TextSnapshot } from '@/domain'
 
 import { editorService } from '../../application'
 import { SwipeDirection } from '../hooks/common/useSwipeGesture'
-import { usePWA } from '../hooks/pwa/usePWA'
 import {
 	useFileOperations,
 	useDialogState,

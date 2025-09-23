@@ -19,8 +19,8 @@ export enum DISPLAY_MODE {
 export const DEFAULT_THEME: EditorTheme = {
 	background: '#ffffff',
 	foreground: '#000000',
-	keyword: '#0000ff',
-	string: '#008000',
+	keyword: '#A0A0FF97',
+	string: '#E0FFE0AC',
 	comment: '#808080',
 }
 
@@ -36,7 +36,7 @@ export const DESKTOP_SETTING: Settings = {
 		theme: DEFAULT_THEME,
 		autoSave: {
 			enabled: true,
-			delay: 10, // 10分後に自動保存
+			delay: 5, // 10分後に自動保存
 		},
 	},
 	preview: {
@@ -60,7 +60,7 @@ export const MOBILE_SETTING: Settings = {
 		theme: DEFAULT_THEME,
 		autoSave: {
 			enabled: true,
-			delay: 1, // 1分後に自動保存
+			delay: 0.5, // 1分後に自動保存
 		},
 	},
 	preview: {

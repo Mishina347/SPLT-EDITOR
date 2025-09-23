@@ -1,6 +1,5 @@
 import { useCallback } from 'react'
 import { usePWA } from '../../hooks/pwa/usePWA'
-import { saveText } from '@/usecases'
 import { useAutoSave } from '../../hooks/editor/useAutoSave'
 import { logger } from '@/utils/logger'
 
@@ -37,7 +36,7 @@ export const useEditorInputSave = ({
 	)
 
 	const { forceSave, isSaving } = useAutoSave(currentNotSavedText, {
-		enabled: editorSettings.autoSave.enabled && !isPwaInstalled,
+		enabled: editorSettings.autoSave.enabled,
 		delay: editorSettings.autoSave.delay,
 		fileName: 'document.json',
 		onSave: handleAutoSave,
@@ -49,7 +48,6 @@ export const useEditorInputSave = ({
 			if (isPwaInstalled) {
 				;(async () => {
 					try {
-						setLastSavedText(v)
 						setCurrentSavedText(v)
 					} catch (e) {
 						logger.error('useEditorInputSave', 'Immediate save (PWA) failed', e)

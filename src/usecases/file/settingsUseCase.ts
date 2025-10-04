@@ -34,6 +34,7 @@ export async function loadSettings() {
 				return DEFAULT_SETTING
 			}
 		} catch (error) {
+			console.error('Failed to load settings from localStorage:', error)
 			return DEFAULT_SETTING
 		}
 	}
@@ -53,6 +54,7 @@ export async function saveSettings(settings: unknown) {
 		try {
 			localStorage.setItem(SETTINGS_FILE, JSON.stringify(settings, null, 2))
 		} catch (error) {
+			console.error('Failed to save settings to localStorage:', error)
 			throw error
 		}
 	}

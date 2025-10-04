@@ -111,7 +111,6 @@ function Root() {
 						setSettings(adjustedSettings)
 					} else if (isPWA()) {
 						// PWA環境では専用のストレージサービスを使用
-						logger.info('App', 'PWA environment detected, using PWA storage')
 						const settingsStorageService = storageServiceFactory.createSettingsStorageService()
 						const loadedSettings = await settingsStorageService.loadSettings()
 

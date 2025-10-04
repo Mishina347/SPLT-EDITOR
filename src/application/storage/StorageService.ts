@@ -1,3 +1,4 @@
+import { isPWA } from '@/utils'
 import {
 	StorageRepository,
 	SettingsStorageRepository,
@@ -113,10 +114,17 @@ export class StorageServiceFactory {
 			const repo = new TauriStorageRepository()
 			return new SettingsStorageService(repo)
 		} else {
-			// PWA環境ではPWAStorageRepositoryを使用
-			const { PWAStorageRepository } = require('../../infra/storage/PWAStorageRepository')
-			const repo = new PWAStorageRepository()
-			return new SettingsStorageService(repo)
+			if (isPWA()) {
+				// PWA環境ではPWAStorageRepositoryを使用
+				const { PWAStorageRepository } = require('../../infra/storage/PWAStorageRepository')
+				const repo = new PWAStorageRepository()
+				return new SettingsStorageService(repo)
+			} else {
+				// ブラウザ環境ではBrowserStorageRepositoryを使用
+				const { BrowserStorageRepository } = require('../../infra/storage/BrowserStorageRepository')
+				const repo = new BrowserStorageRepository()
+				return new SettingsStorageService(repo)
+			}
 		}
 	}
 

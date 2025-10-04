@@ -14,25 +14,15 @@ export function isPWA(): boolean {
 	// 4. PWAインストール済みかチェック
 	const isInstalled = isStandalone || isIOSStandalone
 
-	// 5. windowがwindow.openerを持たない場合（PWAとして起動）
-	const isWindowOpener = window.opener === null
-
-	// 6. referrerが空の場合（直接起動）
-	const isDirectLaunch = !document.referrer
-
 	console.log('[PWA Detection]', {
 		isStandalone,
 		isIOSStandalone,
 		hasServiceWorker,
 		isInstalled,
-		isWindowOpener,
-		isDirectLaunch,
-		userAgent: navigator.userAgent,
-		referrer: document.referrer,
 	})
 
 	// PWAとして起動している条件
-	return isInstalled && hasServiceWorker && isWindowOpener && isDirectLaunch
+	return isInstalled && hasServiceWorker
 }
 
 /**

@@ -5,8 +5,6 @@ import {
 	ThemeStorageRepository,
 } from '../../domain/storage/StorageRepository'
 import { isTauri } from '../../utils/isTauri'
-import { logger } from '../../utils/logger'
-
 /**
  * ストレージサービスの抽象クラス
  * 環境に応じて適切なストレージリポジトリを選択
@@ -135,10 +133,17 @@ export class StorageServiceFactory {
 			const repo = new TauriStorageRepository()
 			return new ThemeStorageService(repo)
 		} else {
-			// PWA環境ではPWAStorageRepositoryを使用
-			const { PWAStorageRepository } = require('../../infra/storage/PWAStorageRepository')
-			const repo = new PWAStorageRepository()
-			return new ThemeStorageService(repo)
+			if (isPWA()) {
+				// PWA環境ではPWAStorageRepositoryを使用
+				const { PWAStorageRepository } = require('../../infra/storage/PWAStorageRepository')
+				const repo = new PWAStorageRepository()
+				return new ThemeStorageService(repo)
+			} else {
+				// ブラウザ環境ではBrowserStorageRepositoryを使用
+				const { BrowserStorageRepository } = require('../../infra/storage/BrowserStorageRepository')
+				const repo = new BrowserStorageRepository()
+				return new ThemeStorageService(repo)
+			}
 		}
 	}
 }

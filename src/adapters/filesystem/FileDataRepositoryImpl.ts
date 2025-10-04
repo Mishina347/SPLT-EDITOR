@@ -1,8 +1,9 @@
 import { Settings } from '../../domain'
 import { FileDataRepository } from './FileDataRepository'
 import { logger } from '../../utils/logger'
-import { isTauri } from '../../utils'
+import { isPWA, isTauri } from '../../utils'
 import { readTextFile, writeFile, BaseDirectory } from '@tauri-apps/plugin-fs'
+import { storageServiceFactory } from '@/application/storage/StorageService'
 
 const SETTINGS_FILE = 'settings.json'
 
@@ -70,13 +71,18 @@ export class FileDataRepositoryImpl implements FileDataRepository {
 					throw error
 				}
 			} else {
-				// ブラウザ環境 → localStorage に保存
-				try {
-					localStorage.setItem(SETTINGS_FILE, JSON.stringify(settings, null, 2))
-					logger.debug('FileDataRepositoryImpl', 'Settings saved to localStorage')
-				} catch (error) {
-					logger.error('FileDataRepositoryImpl', 'Failed to save settings to localStorage', error)
-					throw error
+				if (isPWA()) {
+					const settingsStorageService = storageServiceFactory.createSettingsStorageService()
+					await settingsStorageService.saveSettings(settings)
+				} else {
+					// ブラウザ環境 → localStorage に保存
+					try {
+						localStorage.setItem(SETTINGS_FILE, JSON.stringify(settings, null, 2))
+						logger.debug('FileDataRepositoryImpl', 'Settings saved to localStorage')
+					} catch (error) {
+						logger.error('FileDataRepositoryImpl', 'Failed to save settings to localStorage', error)
+						throw error
+					}
 				}
 			}
 		} catch (error) {

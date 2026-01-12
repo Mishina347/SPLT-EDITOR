@@ -64,20 +64,14 @@ export class JapaneseDictionaryService {
 			{ url: 'https://api.allorigins.win/raw?url=', format: 'query' },
 		]
 
-		// 直接アクセスを試みる（一部のサイトはCORSを許可している場合がある）
-		// ただし、ヘッダーを最小限にしてpreflightを避ける
-		try {
-			const directResponse = await fetch(url, {
-				mode: 'cors',
-				// ヘッダーを最小限にしてpreflightリクエストを避ける
-			})
-
-			if (directResponse.ok) {
-				console.log('JapaneseDictionaryService: Direct fetch succeeded')
-				return directResponse
-			}
-		} catch (error) {
-			console.log('JapaneseDictionaryService: Direct fetch failed (CORS), trying proxy', error)
+		// 本番環境（ブラウザ環境）では直接アクセスを試みない（CORSエラーを避ける）
+		// 開発環境でのみ直接アクセスを試みる（Viteプロキシ経由の場合）
+		if (import.meta.env.DEV && url.startsWith('/api/weblio')) {
+			// 開発環境でViteプロキシ経由の場合は既に上で処理済み
+			// ここには到達しないはずだが、念のため
+		} else {
+			// 本番環境では直接アクセスを試みない（CORSエラーを避ける）
+			console.log('JapaneseDictionaryService: Skipping direct fetch in production, using proxy')
 		}
 
 		// CORSプロキシを使用

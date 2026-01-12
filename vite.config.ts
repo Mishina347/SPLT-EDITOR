@@ -141,23 +141,6 @@ export default defineConfig(({ command, mode }) => {
     server: { 
       port: 3000,
       base: isTauriBuildResult ? '/' : '/SPLT-EDITOR/',
-      proxy: {
-        '/api/jisho': {
-          target: 'https://jisho.org',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/jisho/, ''),
-          secure: true,
-        },
-        '/api/weblio': {
-          target: 'https://www.weblio.jp',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/weblio/, ''),
-          secure: true,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          },
-        },
-      },
     },
     build: {
       outDir: 'dist',

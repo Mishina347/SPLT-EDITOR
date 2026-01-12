@@ -5,6 +5,21 @@
 	overflow: hidden;
 }
 
+.iframeContainer {
+	flex: 1;
+	overflow: hidden;
+	position: relative;
+	width: 100%;
+	height: 100%;
+}
+
+.weblioIframe {
+	width: 100%;
+	height: 100%;
+	border: none;
+	display: block;
+}
+
 .header {
 	padding: 1rem;
 	background: var(--app-bg-color, #f8f9fa);

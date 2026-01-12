@@ -5,7 +5,6 @@ import { useDiffCalculation } from './useDiffCalculation'
 import { usePreviewMode } from './usePreviewMode'
 import { usePreviewScale } from './usePreviewScale'
 import { usePreviewHistory } from './usePreviewHistory'
-import { useDictionary } from './useDictionary'
 import { useFocusTrap } from '../common'
 
 interface UseRightPaneProps {
@@ -74,15 +73,6 @@ export const useRightPane = ({
 		onRestoreHistory,
 	})
 
-	// 辞書検索管理
-	const {
-		searchResult: dictionaryResult,
-		isLoading: isDictionaryLoading,
-		error: dictionaryError,
-	} = useDictionary({
-		selectedText,
-	})
-
 	// ページネーション管理（Preview.tsxから渡された情報を使用）
 	const currentPageInfo = { currentPage: 1, totalPages: 1 } // デフォルト値
 	const handleInternalPageInfoChange = useCallback(
@@ -121,9 +111,6 @@ export const useRightPane = ({
 		currentPageInfo,
 		selectedSnapshotId,
 		showHistoryDetailDialog,
-		dictionaryResult,
-		isDictionaryLoading,
-		dictionaryError,
 
 		// config
 		tabs,

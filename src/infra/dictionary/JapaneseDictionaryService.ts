@@ -56,13 +56,8 @@ export class JapaneseDictionaryService {
 		}
 
 		// ブラウザ環境（本番）ではCORSプロキシを使用
-		// より信頼性の高いプロキシを最初に試す
-		// allorigins.winは/get?url=形式を使用（/raw?url=はpreflightで失敗する可能性がある）
-		const CORS_PROXIES: Array<{ url: string; format: 'query' | 'get' }> = [
-			{ url: 'https://corsproxy.io/', format: 'query' },
-			{ url: 'https://api.allorigins.win/get?url=', format: 'get' },
-			{ url: 'https://api.allorigins.win/raw?url=', format: 'query' },
-		]
+		// allorigins.winの/raw?url=形式を使用
+		const CORS_PROXY_URL = 'https://api.allorigins.win/raw?url='
 
 		// 本番環境（ブラウザ環境）では直接アクセスを試みない（CORSエラーを避ける）
 		// 開発環境でのみ直接アクセスを試みる（Viteプロキシ経由の場合）
@@ -71,54 +66,59 @@ export class JapaneseDictionaryService {
 			// ここには到達しないはずだが、念のため
 		} else {
 			// 本番環境では直接アクセスを試みない（CORSエラーを避ける）
-			console.log('JapaneseDictionaryService: Skipping direct fetch in production, using proxy')
+			console.log('JapaneseDictionaryService: Using CORS proxy:', CORS_PROXY_URL)
 		}
 
 		// CORSプロキシを使用
-		for (const proxy of CORS_PROXIES) {
-			try {
-				let proxyUrl: string
-				if (proxy.format === 'get') {
-					// /get?url=形式の場合、レスポンスはJSON形式で返される
-					proxyUrl = `${proxy.url}${encodeURIComponent(url)}`
-				} else {
-					// /raw?url=またはquery形式の場合
-					proxyUrl = `${proxy.url}${encodeURIComponent(url)}`
-				}
+		try {
+			const proxyUrl = `${CORS_PROXY_URL}${encodeURIComponent(url)}`
+			console.log('JapaneseDictionaryService: Fetching via proxy')
 
-				console.log('JapaneseDictionaryService: Trying proxy:', proxy.url)
+			// ヘッダーを最小限にしてpreflightリクエストを避ける
+			// QUICプロトコルエラーを避けるため、keepaliveを無効化
+			const response = await fetch(proxyUrl, {
+				mode: 'cors',
+				keepalive: false,
+				// カスタムヘッダーを削除してpreflightを避ける
+			})
 
-				// ヘッダーを最小限にしてpreflightリクエストを避ける
-				const response = await fetch(proxyUrl, {
-					mode: 'cors',
-					// カスタムヘッダーを削除してpreflightを避ける
-				})
-
-				if (response.ok) {
-					// /get?url=形式の場合はJSONからcontentsを取得
-					if (proxy.format === 'get') {
-						const json = await response.json()
-						if (json.contents) {
-							// JSONレスポンスからcontentsを取得して、新しいResponseオブジェクトを作成
-							return new Response(json.contents, {
-								status: 200,
-								statusText: 'OK',
-								headers: {
-									'Content-Type': 'text/html; charset=utf-8',
-								},
-							})
-						}
+			// QUICエラーが発生する可能性があるため、レスポンスの読み取りも試行
+			if (response.ok) {
+				try {
+					// レスポンスのテキストを読み取って、QUICエラーが発生していないか確認
+					const text = await response.text()
+					if (text && text.length > 0) {
+						console.log('JapaneseDictionaryService: Proxy succeeded')
+						return new Response(text, {
+							status: 200,
+							statusText: 'OK',
+							headers: {
+								'Content-Type': 'text/html; charset=utf-8',
+							},
+						})
 					} else {
-						console.log('JapaneseDictionaryService: Proxy succeeded:', proxy.url)
-						return response
+						console.warn('JapaneseDictionaryService: Proxy returned empty response')
+						throw new Error('Empty response from proxy')
 					}
-				} else {
-					console.warn(`JapaneseDictionaryService: Proxy ${proxy.url} returned status:`, response.status)
+				} catch (readError) {
+					// QUICエラーやその他の読み取りエラーが発生した場合
+					console.error('JapaneseDictionaryService: Failed to read response from proxy:', readError)
+					throw readError
 				}
-			} catch (error) {
-				console.warn(`JapaneseDictionaryService: Proxy ${proxy.url} failed`, error)
-				continue
+			} else {
+				console.warn('JapaneseDictionaryService: Proxy returned status:', response.status)
+				throw new Error(`Proxy returned status: ${response.status}`)
 			}
+		} catch (error) {
+			// QUICエラーやネットワークエラーが発生した場合
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			console.error('JapaneseDictionaryService: Proxy failed:', errorMessage)
+
+			// QUICエラーの場合は特にログを出力
+			if (errorMessage.includes('QUIC') || errorMessage.includes('quic')) {
+				console.error('JapaneseDictionaryService: QUIC protocol error detected')
+			}
+			throw error
 		}
 
 		throw new Error('All fetch methods failed. Please check the console for details.')

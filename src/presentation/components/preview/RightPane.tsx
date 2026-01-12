@@ -54,6 +54,9 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		diffHtml,
 		selectedSnapshotId,
 		showHistoryDetailDialog,
+		dictionaryResult,
+		isDictionaryLoading,
+		dictionaryError,
 
 		// config
 		tabs,
@@ -127,6 +130,9 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		} else if (mode === PreviewMode.DICTIONARY) {
 			return (
 				<DictionaryViewer
+					searchResult={dictionaryResult}
+					isLoading={isDictionaryLoading}
+					error={dictionaryError}
 					selectedText={selectedText}
 				/>
 			)
@@ -156,6 +162,9 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		setInitialText,
 		handleSnapshotSelect,
 		selectedText,
+		dictionaryResult,
+		isDictionaryLoading,
+		dictionaryError,
 	])
 
 	return (

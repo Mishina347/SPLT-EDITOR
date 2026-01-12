@@ -44,7 +44,7 @@ export class JapaneseDictionaryService {
 						'Content-Type': 'text/html; charset=utf-8',
 					},
 				})
-				
+
 				if (response.ok) {
 					console.log('JapaneseDictionaryService: Vite proxy succeeded')
 					return response
@@ -56,21 +56,22 @@ export class JapaneseDictionaryService {
 		}
 
 		// ブラウザ環境（本番）ではCORSプロキシを使用
-		const CORS_PROXIES = [
-			'https://api.allorigins.win/raw?url=',
-			'https://corsproxy.io/?',
+		// より信頼性の高いプロキシを最初に試す
+		// allorigins.winは/get?url=形式を使用（/raw?url=はpreflightで失敗する可能性がある）
+		const CORS_PROXIES: Array<{ url: string; format: 'query' | 'get' }> = [
+			{ url: 'https://corsproxy.io/', format: 'query' },
+			{ url: 'https://api.allorigins.win/get?url=', format: 'get' },
+			{ url: 'https://api.allorigins.win/raw?url=', format: 'query' },
 		]
 
 		// 直接アクセスを試みる（一部のサイトはCORSを許可している場合がある）
+		// ただし、ヘッダーを最小限にしてpreflightを避ける
 		try {
 			const directResponse = await fetch(url, {
 				mode: 'cors',
-				headers: {
-					'Content-Type': 'text/html; charset=utf-8',
-					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-				},
+				// ヘッダーを最小限にしてpreflightリクエストを避ける
 			})
-			
+
 			if (directResponse.ok) {
 				console.log('JapaneseDictionaryService: Direct fetch succeeded')
 				return directResponse
@@ -82,23 +83,46 @@ export class JapaneseDictionaryService {
 		// CORSプロキシを使用
 		for (const proxy of CORS_PROXIES) {
 			try {
-				const proxyUrl = `${proxy}${encodeURIComponent(url)}`
-				console.log('JapaneseDictionaryService: Trying proxy:', proxy)
+				let proxyUrl: string
+				if (proxy.format === 'get') {
+					// /get?url=形式の場合、レスポンスはJSON形式で返される
+					proxyUrl = `${proxy.url}${encodeURIComponent(url)}`
+				} else {
+					// /raw?url=またはquery形式の場合
+					proxyUrl = `${proxy.url}${encodeURIComponent(url)}`
+				}
+
+				console.log('JapaneseDictionaryService: Trying proxy:', proxy.url)
+
+				// ヘッダーを最小限にしてpreflightリクエストを避ける
 				const response = await fetch(proxyUrl, {
 					mode: 'cors',
-					headers: {
-						'Content-Type': 'text/html; charset=utf-8',
-					},
+					// カスタムヘッダーを削除してpreflightを避ける
 				})
 
 				if (response.ok) {
-					console.log('JapaneseDictionaryService: Proxy succeeded:', proxy)
-					return response
+					// /get?url=形式の場合はJSONからcontentsを取得
+					if (proxy.format === 'get') {
+						const json = await response.json()
+						if (json.contents) {
+							// JSONレスポンスからcontentsを取得して、新しいResponseオブジェクトを作成
+							return new Response(json.contents, {
+								status: 200,
+								statusText: 'OK',
+								headers: {
+									'Content-Type': 'text/html; charset=utf-8',
+								},
+							})
+						}
+					} else {
+						console.log('JapaneseDictionaryService: Proxy succeeded:', proxy.url)
+						return response
+					}
 				} else {
-					console.warn(`JapaneseDictionaryService: Proxy ${proxy} returned status:`, response.status)
+					console.warn(`JapaneseDictionaryService: Proxy ${proxy.url} returned status:`, response.status)
 				}
 			} catch (error) {
-				console.warn(`JapaneseDictionaryService: Proxy ${proxy} failed`, error)
+				console.warn(`JapaneseDictionaryService: Proxy ${proxy.url} failed`, error)
 				continue
 			}
 		}
@@ -120,7 +144,8 @@ export class JapaneseDictionaryService {
 		}
 
 		// 1. content-explanation クラスから意味を抽出
-		const contentExplanationPattern = /<div[^>]*class="[^"]*content-explanation[^"]*"[^>]*>([\s\S]*?)<\/div>/gi
+		const contentExplanationPattern =
+			/<div[^>]*class="[^"]*content-explanation[^"]*"[^>]*>([\s\S]*?)<\/div>/gi
 		let match
 		while ((match = contentExplanationPattern.exec(html)) !== null) {
 			const content = this.cleanHTML(match[1])
@@ -224,7 +249,7 @@ export class JapaneseDictionaryService {
 			}
 
 			const html = await response.text()
-			
+
 			// HTMLが空またはエラーページの場合は空の結果を返す
 			if (!html || html.length < 100) {
 				console.log('JapaneseDictionaryService: Empty or invalid HTML response')

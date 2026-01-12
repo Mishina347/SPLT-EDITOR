@@ -24,6 +24,11 @@ export const usePreviewMode = () => {
 				label: '履歴',
 				ariaLabel: 'テキストの編集履歴',
 			},
+			{
+				id: PreviewMode.DICTIONARY,
+				label: '辞書',
+				ariaLabel: '選択したテキストの辞書検索結果',
+			},
 		],
 		[]
 	)

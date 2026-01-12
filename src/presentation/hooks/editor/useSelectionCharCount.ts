@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import * as monaco from 'monaco-editor'
 import { wordCounter } from '@/utils/wordCounter'
 import { logger } from '@/utils/logger'
@@ -14,7 +14,12 @@ export const useSelectionCharCount = (
 	editorRef: React.MutableRefObject<monaco.editor.IStandaloneCodeEditor | null>
 ) => {
 	const [selectedText, setSelectedText] = useState<string>('')
-	const [isEditorReady, setIsEditorReady] = useState(false)
+	// エディタインスタンスの変更を検知するための状態
+	const [editorInstance, setEditorInstance] = useState<monaco.editor.IStandaloneCodeEditor | null>(
+		null
+	)
+	// 前のエディタインスタンスを追跡するためのref（無限ループを防ぐ）
+	const prevEditorInstanceRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
 
 	const computeSelectedText = useCallback(() => {
 		const editor = editorRef.current
@@ -36,45 +41,35 @@ export const useSelectionCharCount = (
 		return selectedText
 	}, [editorRef])
 
-	// エディタの準備状態を監視
+	// エディタインスタンスの変更を定期的にチェック（再作成を検知）
 	useEffect(() => {
-		const checkEditorReady = () => {
-			if (editorRef.current) {
-				logger.debug('useSelectionCharCount', 'Editor is ready')
-				setIsEditorReady(true)
-				return true
-			} else {
-				logger.debug('useSelectionCharCount', 'Editor not ready yet')
-				setIsEditorReady(false)
-				return false
+		const checkEditorChange = () => {
+			const currentEditor = editorRef.current
+
+			// エディタインスタンスが変更された場合、状態を更新してuseEffectをトリガー
+			if (currentEditor !== prevEditorInstanceRef.current) {
+				logger.debug('useSelectionCharCount', 'Editor instance changed, updating state')
+				prevEditorInstanceRef.current = currentEditor
+				setEditorInstance(currentEditor)
 			}
 		}
 
 		// 初回チェック
-		if (checkEditorReady()) {
-			return // エディタが既に準備完了している場合
-		}
+		checkEditorChange()
 
-		// 定期的にチェック（エディタの初期化を待つ）
-		const interval = setInterval(() => {
-			if (checkEditorReady()) {
-				clearInterval(interval)
-			}
-		}, 50) // より頻繁にチェック
+		// 定期的にチェック（エディタの再作成を検知）
+		const interval = setInterval(checkEditorChange, 50)
 
 		return () => clearInterval(interval)
 	}, [editorRef])
 
-	// Subscribe to selection/content changes
+	// エディタインスタンスの変更を監視してイベントリスナーを再設定
 	useEffect(() => {
-		if (!isEditorReady) {
-			logger.debug('useSelectionCharCount', 'Editor not ready, skipping event listener setup')
-			return
-		}
+		const currentEditor = editorInstance
 
-		const editor = editorRef.current
-		if (!editor) {
-			logger.debug('useSelectionCharCount', 'Editor not available in useEffect')
+		// エディタが存在しない場合
+		if (!currentEditor) {
+			setSelectedText('')
 			return
 		}
 
@@ -84,19 +79,22 @@ export const useSelectionCharCount = (
 			setSelectedText(newSelectedText)
 		}
 
-		logger.debug('useSelectionCharCount', 'Setting up event listeners')
-		const d1 = editor.onDidChangeCursorSelection(update)
-		const d2 = editor.onDidChangeModelContent(update)
+		logger.debug('useSelectionCharCount', 'Setting up event listeners for editor instance')
+		const d1 = currentEditor.onDidChangeCursorSelection(update)
+		const d2 = currentEditor.onDidChangeModelContent(update)
 
-		// 初期化
-		update()
+		// 初期化（少し遅延させてエディタの準備を待つ）
+		const initTimeout = setTimeout(() => {
+			update()
+		}, 100)
 
 		return () => {
+			clearTimeout(initTimeout)
 			logger.debug('useSelectionCharCount', 'Cleaning up event listeners')
 			d1.dispose()
 			d2.dispose()
 		}
-	}, [editorRef, computeSelectedText, isEditorReady])
+	}, [editorInstance, computeSelectedText])
 
 	const counts: SelectionCharCount = useMemo(() => {
 		const { characterCount, lineCount, pageCount } = wordCounter(selectedText)

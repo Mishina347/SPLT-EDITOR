@@ -78,7 +78,11 @@ export const useFileOperations = ({
 
 	// テーマ設定を更新
 	const handleThemeUpdate = useCallback(
-		(backgroundColor: string, textColor: string, setEditorSettings: (settings: any) => void) => {
+		async (
+			backgroundColor: string,
+			textColor: string,
+			setEditorSettings: (settings: any) => void
+		) => {
 			// CSS変数を更新
 			document.documentElement.style.setProperty('--app-bg-color', backgroundColor)
 			document.documentElement.style.setProperty('--app-text-color', textColor)
@@ -91,8 +95,24 @@ export const useFileOperations = ({
 				textColor,
 			}
 			setEditorSettings(updatedSettings)
+
+			// 更新された設定を即座に保存
+			try {
+				const fileDataRepository = serviceFactory.getFileDataRepository()
+				const fullSettings = {
+					editor: updatedSettings,
+					preview: previewSettings,
+				}
+				await saveEditorSettings(fileDataRepository, fullSettings)
+				logger.info('useFileOperations', 'Theme settings saved successfully', {
+					backgroundColor,
+					textColor,
+				})
+			} catch (error) {
+				logger.error('useFileOperations', 'Failed to save theme settings', error)
+			}
 		},
-		[editorSettings]
+		[editorSettings, previewSettings]
 	)
 
 	// 設定の自動保存

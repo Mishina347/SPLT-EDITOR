@@ -108,6 +108,21 @@ function Root() {
 						// 読み込んだ設定を現在のデバイスサイズに合わせて部分的に調整
 						const adjustedSettings = updateSettingsForDevice(loadedSettings)
 						logger.info('App', 'Settings adjusted for current device', adjustedSettings)
+						
+						// CSS変数を設定（テーマ設定を適用）
+						if (adjustedSettings.editor?.backgroundColor && adjustedSettings.editor?.textColor) {
+							document.documentElement.style.setProperty('--app-bg-color', adjustedSettings.editor.backgroundColor)
+							document.documentElement.style.setProperty('--app-text-color', adjustedSettings.editor.textColor)
+							// hexToRgbaをインポートして使用
+							const { hexToRgba } = await import('@/utils')
+							const bgColorAlpha = hexToRgba(adjustedSettings.editor.backgroundColor, 0.15)
+							document.documentElement.style.setProperty('--app-bg-color-alpha', bgColorAlpha)
+							logger.info('App', 'CSS variables set from loaded settings', {
+								backgroundColor: adjustedSettings.editor.backgroundColor,
+								textColor: adjustedSettings.editor.textColor,
+							})
+						}
+						
 						setSettings(adjustedSettings)
 					} else if (isPWA()) {
 						// PWA環境では専用のストレージサービスを使用
@@ -118,6 +133,20 @@ function Root() {
 							logger.info('App', 'Settings loaded successfully from PWA storage', loadedSettings)
 							const adjustedSettings = updateSettingsForDevice(loadedSettings)
 							logger.info('App', 'Settings adjusted for current device', adjustedSettings)
+							
+							// CSS変数を設定（テーマ設定を適用）
+							if (adjustedSettings.editor?.backgroundColor && adjustedSettings.editor?.textColor) {
+								document.documentElement.style.setProperty('--app-bg-color', adjustedSettings.editor.backgroundColor)
+								document.documentElement.style.setProperty('--app-text-color', adjustedSettings.editor.textColor)
+								const { hexToRgba } = await import('@/utils')
+								const bgColorAlpha = hexToRgba(adjustedSettings.editor.backgroundColor, 0.15)
+								document.documentElement.style.setProperty('--app-bg-color-alpha', bgColorAlpha)
+								logger.info('App', 'CSS variables set from loaded settings', {
+									backgroundColor: adjustedSettings.editor.backgroundColor,
+									textColor: adjustedSettings.editor.textColor,
+								})
+							}
+							
 							setSettings(adjustedSettings)
 						} else {
 							logger.info('App', 'No settings found in PWA storage, using initial settings')
@@ -133,6 +162,21 @@ function Root() {
 						// 読み込んだ設定を現在のデバイスサイズに合わせて部分的に調整
 						const adjustedSettings = updateSettingsForDevice(loadedSettings)
 						logger.info('App', 'Settings adjusted for current device', adjustedSettings)
+						
+						// CSS変数を設定（テーマ設定を適用）
+						if (adjustedSettings.editor?.backgroundColor && adjustedSettings.editor?.textColor) {
+							document.documentElement.style.setProperty('--app-bg-color', adjustedSettings.editor.backgroundColor)
+							document.documentElement.style.setProperty('--app-text-color', adjustedSettings.editor.textColor)
+							// hexToRgbaをインポートして使用
+							const { hexToRgba } = await import('@/utils')
+							const bgColorAlpha = hexToRgba(adjustedSettings.editor.backgroundColor, 0.15)
+							document.documentElement.style.setProperty('--app-bg-color-alpha', bgColorAlpha)
+							logger.info('App', 'CSS variables set from loaded settings', {
+								backgroundColor: adjustedSettings.editor.backgroundColor,
+								textColor: adjustedSettings.editor.textColor,
+							})
+						}
+						
 						setSettings(adjustedSettings)
 					}
 				} catch (error) {

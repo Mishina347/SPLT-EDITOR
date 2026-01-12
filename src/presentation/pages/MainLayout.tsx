@@ -338,8 +338,8 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 
 	// テーマ設定を更新（フックから取得したハンドラーをラップ）
 	const handleThemeUpdateWrapper = useCallback(
-		(backgroundColor: string, textColor: string) => {
-			handleThemeUpdate(backgroundColor, textColor, setEditorSettings)
+		async (backgroundColor: string, textColor: string) => {
+			await handleThemeUpdate(backgroundColor, textColor, setEditorSettings)
 			setShowThemeEditDialog(false)
 		},
 		[handleThemeUpdate, setEditorSettings]
@@ -557,6 +557,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						onPageInfoChange={handlePageInfoChange}
 						currentPageInfo={pageInfo}
 						onSelectionChange={handleSelectionChange}
+						selectedText={selectionCharCount?.selectedText}
 						// 最大化状態を明示的に渡す
 						editorMaximized={isEditorMaximized}
 						previewMaximized={isPreviewMaximized}
@@ -614,6 +615,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						onPageInfoChange={handlePageInfoChange}
 						currentPageInfo={pageInfo}
 						onSelectionChange={handleSelectionChange}
+						selectedText={selectionCharCount?.selectedText}
 						// 最大化状態を明示的に渡す
 						editorMaximized={isEditorMaximized}
 						previewMaximized={isPreviewMaximized}
@@ -657,6 +659,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 						onPageInfoChange={handlePageInfoChange}
 						currentPageInfo={pageInfo}
 						onSelectionChange={handleSelectionChange}
+						selectedText={selectionCharCount?.selectedText}
 						// 最大化状態を明示的に渡す
 						editorMaximized={isEditorMaximized}
 						previewMaximized={isPreviewMaximized}

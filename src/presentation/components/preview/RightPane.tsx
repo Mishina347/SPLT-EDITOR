@@ -3,7 +3,7 @@ import { PreviewMode, LayoutConfig, TextSnapshot } from '@/domain'
 import { Preview } from './preview/Preview'
 import { useRightPane } from '../../hooks'
 import { TabPanel } from '../'
-import { TextHistoryTimeline, HistoryDetailDialog } from './'
+import { TextHistoryTimeline, HistoryDetailDialog, DictionaryViewer } from './'
 import styles from './RightPane.module.css'
 import buttonStyles from '../../shared/Button/Button.module.css'
 
@@ -23,6 +23,8 @@ interface PreviewPaneProps {
 	onPageInfoChange?: (currentPage: number, totalPages: number) => void
 	// ページ情報を直接受け取る
 	currentPageInfo?: { currentPage: number; totalPages: number }
+	// 選択されたテキスト
+	selectedText?: string
 }
 
 export const RightPane: React.FC<PreviewPaneProps> = ({
@@ -38,6 +40,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 	onRestoreHistory,
 	onPageInfoChange,
 	currentPageInfo: externalPageInfo,
+	selectedText,
 }) => {
 	// すべてのロジックを統合したhook
 	const {
@@ -51,6 +54,9 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		diffHtml,
 		selectedSnapshotId,
 		showHistoryDetailDialog,
+		dictionaryResult,
+		isDictionaryLoading,
+		dictionaryError,
 
 		// config
 		tabs,
@@ -73,6 +79,7 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		isMaximized,
 		onRestoreHistory,
 		onPageInfoChange,
+		selectedText,
 	})
 
 	// ページ情報を外部から渡されたものと内部のものを組み合わせ
@@ -120,6 +127,15 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 					/>
 				</div>
 			)
+		} else if (mode === PreviewMode.DICTIONARY) {
+			return (
+				<DictionaryViewer
+					searchResult={dictionaryResult}
+					isLoading={isDictionaryLoading}
+					error={dictionaryError}
+					selectedText={selectedText}
+				/>
+			)
 		} else {
 			return (
 				<Preview
@@ -145,6 +161,10 @@ export const RightPane: React.FC<PreviewPaneProps> = ({
 		currentNotSavedText,
 		setInitialText,
 		handleSnapshotSelect,
+		dictionaryResult,
+		isDictionaryLoading,
+		dictionaryError,
+		selectedText,
 	])
 
 	return (

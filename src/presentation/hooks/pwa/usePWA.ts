@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { isPWAInstalled, isPWAInstallable } from '../../../utils/pwaDetection'
 
 interface PWAInstallPromptEvent extends Event {
 	readonly platforms: string[]
@@ -37,13 +38,9 @@ export const usePWA = () => {
 	// PWAのインストール可能性をチェック
 	useEffect(() => {
 		const checkInstallability = () => {
-			// インストール済みかチェック
-			const isInstalled =
-				window.matchMedia('(display-mode: standalone)').matches ||
-				(window.navigator as any).standalone === true
-
-			// インストール可能かチェック
-			const isInstallable = !isInstalled && 'serviceWorker' in navigator
+			// 新しいPWA検知ユーティリティを使用
+			const isInstalled = isPWAInstalled()
+			const isInstallable = isPWAInstallable()
 
 			console.log('[PWA] Installability check:', {
 				isInstalled,

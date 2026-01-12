@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useEffect } from 'react'
 import { logger } from '@/utils/logger'
 import { eventBus, EVENTS } from '@/application/observers/EventBus'
 import { isMobile, isMobileSize, isTauri } from '@/utils'
@@ -129,7 +129,7 @@ export const useEventHandlers = ({
 		window.addEventListener('keydown', handleKeyDown)
 
 		return () => window.removeEventListener('keydown', handleKeyDown)
-	}, [currentNotSavedText, saveSnapshot, forceSave, isSaving, setCurrentSavedText])
+	}, [])
 
 	// Tauri: ウィンドウ終了前の保存確認（close-requested）
 	useEffect(() => {

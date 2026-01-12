@@ -45,6 +45,9 @@ interface CommonProps {
 		lineCount: number
 		pageCount: number
 	}) => void
+
+	// 選択されたテキスト
+	selectedText?: string
 }
 
 interface FixedLayoutProps extends CommonProps {
@@ -88,6 +91,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 		editorMaximized = false,
 		previewMaximized = false,
 		onSelectionChange,
+		selectedText,
 	} = props
 
 	// エディターコンポーネントの共通props
@@ -118,6 +122,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = props => {
 		onRestoreHistory,
 		onPageInfoChange,
 		currentPageInfo,
+		selectedText,
 	}
 
 	// 固定レイアウトの場合

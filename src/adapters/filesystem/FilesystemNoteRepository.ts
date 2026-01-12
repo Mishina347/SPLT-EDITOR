@@ -9,7 +9,7 @@ export class FilesystemNoteRepository implements NoteRepository {
 		const content = JSON.stringify(note)
 
 		if (isTauri()) {
-			await invoke('save_note', { filename, content })
+			await invoke('saveNote', { filename, content })
 		} else {
 			// ブラウザ環境 → localStorage に保存
 			localStorage.setItem(filename, content)
@@ -21,7 +21,7 @@ export class FilesystemNoteRepository implements NoteRepository {
 
 		if (isTauri()) {
 			try {
-				const content = await invoke<string>('load_note', { filename })
+				const content = await invoke<string>('loadNote', { filename })
 				return JSON.parse(content) as Note
 			} catch (e) {
 				// ファイルがなければnullを返す

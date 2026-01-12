@@ -13,7 +13,7 @@ export interface LoadedFile {
 export const loadTextFile = async (): Promise<LoadedFile> => {
 	if (isTauri()) {
 		try {
-			const result = await invoke<[string, string]>('open_text_file')
+			const result = await invoke<[string, string]>('openTextFile')
 			return {
 				content: result[0],
 				fileName: result[1],

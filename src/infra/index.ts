@@ -19,3 +19,9 @@ export { commandManager } from '../application/commands/CommandManager'
 
 // オブザーバーパターン
 export { EventBus, eventBus, EVENTS } from '../application/observers/EventBus'
+
+// Storage
+export { IndexedDBStorageRepository } from './storage/IndexedDBStorageRepository'
+export { LocalStorageRepository } from './storage/LocalStorageRepository'
+export { PWAStorageRepository } from './storage/PWAStorageRepository'
+export { TauriStorageRepository } from './storage/TauriStorageRepository'

@@ -1,6 +1,7 @@
 import { readTextFile, writeFile, BaseDirectory } from '@tauri-apps/plugin-fs'
 import { DEFAULT_SETTING } from '../../domain'
-import { isTauri } from '../../utils'
+import { isPWA, isTauri } from '../../utils'
+import { storageServiceFactory } from '@/application/storage/StorageService'
 
 const SETTINGS_FILE = 'settings.json'
 
@@ -24,17 +25,23 @@ export async function loadSettings() {
 			return DEFAULT_SETTING
 		}
 	} else {
-		// ブラウザ環境 → localStorage から読み込み
-		try {
-			const content = localStorage.getItem(SETTINGS_FILE)
-			if (content) {
-				const parsed = JSON.parse(content)
-				return parsed
-			} else {
+		if (isPWA()) {
+			const settingsStorageService = storageServiceFactory.createSettingsStorageService()
+			return await settingsStorageService.loadSettings()
+		} else {
+			// ブラウザ環境 → localStorage から読み込み
+			try {
+				const content = localStorage.getItem(SETTINGS_FILE)
+				if (content) {
+					const parsed = JSON.parse(content)
+					return parsed
+				} else {
+					return DEFAULT_SETTING
+				}
+			} catch (error) {
+				console.error('Failed to load settings from localStorage:', error)
 				return DEFAULT_SETTING
 			}
-		} catch (error) {
-			return DEFAULT_SETTING
 		}
 	}
 }
@@ -49,11 +56,17 @@ export async function saveSettings(settings: unknown) {
 			throw error
 		}
 	} else {
-		// ブラウザ環境 → localStorage に保存
-		try {
-			localStorage.setItem(SETTINGS_FILE, JSON.stringify(settings, null, 2))
-		} catch (error) {
-			throw error
+		if (isPWA()) {
+			const settingsStorageService = storageServiceFactory.createSettingsStorageService()
+			await settingsStorageService.saveSettings(settings)
+		} else {
+			// ブラウザ環境 → localStorage に保存
+			try {
+				localStorage.setItem(SETTINGS_FILE, JSON.stringify(settings, null, 2))
+			} catch (error) {
+				console.error('Failed to save settings to localStorage:', error)
+				throw error
+			}
 		}
 	}
 }

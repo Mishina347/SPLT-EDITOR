@@ -36,11 +36,10 @@ export function useAutoSave(content: string, options: UseAutoSaveOptions) {
 				await saveText(fileName, textContent)
 				lastSavedContentRef.current = textContent
 
-				// 手動保存の場合はonSaveコールバックを呼び出さない
-				// （呼び出し元で個別にスナップショットを作成するため）
-				if (!isManualSave) {
-					onSave?.(textContent)
-				}
+				// 保存完了時にonSaveコールバックを呼び出す
+				// （currentSavedTextを更新してプレビューを更新するため）
+				// スナップショット作成は呼び出し元で個別に行う
+				onSave?.(textContent)
 			} catch (error) {
 				logger.error(isManualSave ? 'Manual save failed:' : 'Auto save failed:', error as any)
 			} finally {

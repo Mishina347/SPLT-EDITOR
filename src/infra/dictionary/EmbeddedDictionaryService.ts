@@ -55,42 +55,44 @@ export class EmbeddedDictionaryService {
 	 */
 	private async _loadDictionaryData(): Promise<void> {
 		try {
+			// baseパスを取得（GitHub Pagesでは /SPLT-EDITOR/ がbaseパス）
+			// ViteのBASE_URLを使用（型定義がない場合はanyで回避）
+			const basePath = (import.meta.env as any).BASE_URL || '/'
+
 			// 方法1: public/jpn_wn_lmf_glosses_json.txt から読み込む（日本語WordNetデータ）
 			try {
-				const response = await fetch('/jpn_wn_lmf_glosses_json.txt')
+				const url = `${basePath}jpn_wn_lmf_glosses_json.txt`.replace(/\/+/g, '/') // 連続するスラッシュを1つに
+				const response = await fetch(url)
 				if (response.ok) {
 					const text = await response.text()
 					this._parseWordNetData(text)
 					this.isLoaded = true
-					console.log(
-						'EmbeddedDictionaryService: Japanese WordNet loaded from /jpn_wn_lmf_glosses_json.txt',
-						{
-							wordCount: this.dictionaryData.size,
-						}
-					)
-					return
-				}
-			} catch (error) {
-				console.warn(
-					'EmbeddedDictionaryService: Failed to load Japanese WordNet from /jpn_wn_lmf_glosses_json.txt',
-					error
-				)
-			}
-
-			// 方法2: public/data/dictionary.json から読み込む（フォールバック）
-			try {
-				const response = await fetch('/data/dictionary.json')
-				if (response.ok) {
-					const data = await response.json()
-					this._parseDictionaryData(data)
-					this.isLoaded = true
-					console.log('EmbeddedDictionaryService: Dictionary loaded from /data/dictionary.json', {
+					console.log('EmbeddedDictionaryService: Japanese WordNet loaded', {
+						url,
 						wordCount: this.dictionaryData.size,
 					})
 					return
 				}
 			} catch (error) {
-				console.warn('EmbeddedDictionaryService: Failed to load from /data/dictionary.json', error)
+				console.warn('EmbeddedDictionaryService: Failed to load Japanese WordNet', error)
+			}
+
+			// 方法2: public/data/dictionary.json から読み込む（フォールバック）
+			try {
+				const url = `${basePath}data/dictionary.json`.replace(/\/+/g, '/') // 連続するスラッシュを1つに
+				const response = await fetch(url)
+				if (response.ok) {
+					const data = await response.json()
+					this._parseDictionaryData(data)
+					this.isLoaded = true
+					console.log('EmbeddedDictionaryService: Dictionary loaded from data/dictionary.json', {
+						url,
+						wordCount: this.dictionaryData.size,
+					})
+					return
+				}
+			} catch (error) {
+				console.warn('EmbeddedDictionaryService: Failed to load from data/dictionary.json', error)
 			}
 
 			// 方法2: npmパッケージから読み込む（オプション）

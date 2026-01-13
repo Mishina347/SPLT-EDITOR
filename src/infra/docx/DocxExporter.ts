@@ -9,8 +9,8 @@ import {
 	TextDirection,
 	Header,
 	Footer,
+	PageNumberElement,
 	PageNumber,
-	NumberFormat,
 } from 'docx'
 import { saveAs } from 'file-saver'
 import {
@@ -39,6 +39,15 @@ export class DocxExporter implements DocxExporterRepository {
 			},
 			// 縦書き用のページ設定を直接指定
 			...this.getVerticalWritingPageProperties(),
+			// 横書きの場合は明示的に縦向きを設定
+			...(this.settings.verticalWriting
+				? {}
+				: {
+						pageOrientation:
+							this.settings.orientation === 'landscape'
+								? PageOrientation.LANDSCAPE
+								: PageOrientation.PORTRAIT,
+					}),
 		}
 
 		console.log('[DEBUG] Page properties:', pageProperties)
@@ -96,86 +105,152 @@ export class DocxExporter implements DocxExporterRepository {
 		return paragraphs
 	}
 
-	private createHorizontalWritingContent(manuscript: Manuscript) {
-		// 横書き用のコンテンツ生成（従来の実装）
-		return manuscript.pages.map(
-			pageLines =>
-				new Paragraph({
-					children: pageLines.map(line => {
-						if (line.ruby) {
-							return new TextRun({
-								text: `${line.text}(${line.ruby})`,
-								font: this.settings.font.family,
-								size: this.settings.font.size * 2,
-							})
-						}
-						return new TextRun({
-							text: line.text,
+	private createHorizontalWritingContent(manuscript: Manuscript): Paragraph[] {
+		// 横書き用のコンテンツ生成
+		// 各行を別々のParagraphにして改行を反映
+		const paragraphs: Paragraph[] = []
+
+		manuscript.pages.forEach(pageLines => {
+			pageLines.forEach(line => {
+				const children: TextRun[] = []
+
+				if (line.ruby) {
+					children.push(
+						new TextRun({
+							text: `${line.text}(${line.ruby})`,
 							font: this.settings.font.family,
 							size: this.settings.font.size * 2,
 						})
-					}),
+					)
+				} else {
+					children.push(
+						new TextRun({
+							text: line.text || ' ', // 空行の場合はスペース
+							font: this.settings.font.family,
+							size: this.settings.font.size * 2,
+						})
+					)
+				}
+
+				const paragraph = new Paragraph({
+					children,
 					spacing: {
 						line: this.settings.lineSpacing * 240,
 					},
 					alignment: AlignmentType.LEFT,
 				})
-		)
+
+				paragraphs.push(paragraph)
+			})
+		})
+
+		return paragraphs
 	}
 
 	private createHeaders() {
 		const pageLayout = this.settings.pageLayout || {}
-		if (!pageLayout.showHeader) {
+		const showHeader = pageLayout.showHeader === true
+		const pageNumberPosition = pageLayout.pageNumberPosition || 'bottom'
+
+		if (!showHeader && pageNumberPosition !== 'top') {
 			return {}
 		}
 
-		// Pages対応のヘッダー設定
+		const headerChildren: Paragraph[] = []
+
+		// ページ番号を追加
+		if (pageNumberPosition === 'top') {
+			headerChildren.push(
+				new Paragraph({
+					children: [
+						new TextRun({
+							children: [new PageNumberElement()],
+						}),
+					],
+					alignment: AlignmentType.CENTER,
+				})
+			)
+		} else if (showHeader) {
+			// ヘッダー表示だがページ番号なしの場合
+			headerChildren.push(
+				new Paragraph({
+					children: [
+						new TextRun({
+							text: this.settings.verticalWriting ? '　' : ' ',
+							font: this.settings.font.family,
+							size: this.settings.font.size * 2,
+						}),
+					],
+					alignment: this.settings.verticalWriting ? AlignmentType.RIGHT : AlignmentType.LEFT,
+				})
+			)
+		}
+
+		if (headerChildren.length === 0) {
+			return {}
+		}
+
 		return {
 			default: new Header({
-				children: [
-					new Paragraph({
-						children: [
-							new TextRun({
-								text: this.settings.verticalWriting ? '　' : ' ', // 縦書き用の空白文字
-								font: this.settings.font.family,
-								size: this.settings.font.size * 2,
-							}),
-						],
-						alignment: this.settings.verticalWriting ? AlignmentType.RIGHT : AlignmentType.LEFT,
-					}),
-				],
+				children: headerChildren,
 			}),
 		}
 	}
 
 	private createFooters() {
 		const pageLayout = this.settings.pageLayout || {}
-		if (!pageLayout.showFooter) {
+		const showFooter = pageLayout.showFooter !== false // デフォルトで表示
+		const pageNumberPosition = pageLayout.pageNumberPosition || 'bottom'
+
+		// ページ番号がnoneでない場合は、フッターを表示
+		if (pageNumberPosition === 'none' && !showFooter) {
 			return {}
 		}
 
-		// Pages対応のフッター設定
+		const footerChildren: Paragraph[] = []
+
+		// ページ番号を追加
+		if (pageNumberPosition === 'bottom') {
+			footerChildren.push(
+				new Paragraph({
+					children: [
+						new TextRun({
+							children: [new PageNumberElement()],
+						}),
+					],
+					alignment: AlignmentType.CENTER,
+				})
+			)
+		} else if (showFooter) {
+			// フッター表示だがページ番号なしの場合
+			footerChildren.push(
+				new Paragraph({
+					children: [
+						new TextRun({
+							text: this.settings.verticalWriting ? '　' : ' ',
+							font: this.settings.font.family,
+							size: this.settings.font.size * 2,
+						}),
+					],
+					alignment: this.settings.verticalWriting ? AlignmentType.RIGHT : AlignmentType.LEFT,
+				})
+			)
+		}
+
+		if (footerChildren.length === 0) {
+			return {}
+		}
+
 		return {
 			default: new Footer({
-				children: [
-					new Paragraph({
-						children: [
-							new TextRun({
-								text: this.settings.verticalWriting ? '　' : ' ', // 縦書き用の空白文字
-								font: this.settings.font.family,
-								size: this.settings.font.size * 2,
-							}),
-						],
-						alignment: this.settings.verticalWriting ? AlignmentType.RIGHT : AlignmentType.LEFT,
-					}),
-				],
+				children: footerChildren,
 			}),
 		}
 	}
 
 	private getPageSize() {
 		const sizes: Record<string, { width: number; height: number }> = {
-			A4: { width: 11906, height: 16838 }, // A4サイズ（縦書き用の横向き）
+			A4: { width: 11906, height: 16838 }, // A4サイズ（縦向き: 210mm x 297mm）
 			A5: { width: 8391, height: 11906 },
 			B5: { width: 10006, height: 14173 },
 			B6: { width: 7087, height: 10006 },
@@ -195,21 +270,26 @@ export class DocxExporter implements DocxExporterRepository {
 	}
 
 	private getMargins() {
-		// ミリメートルをEMU（English Metric Units）に変換
-		// 1mm = 36000 EMU
-
-		// 縦書き用の余白調整
+		// docxライブラリはUniversalMeasure型を受け取るため、文字列形式（"30mm"）で指定
+		// これにより、ライブラリが自動的に適切な単位に変換する
 		const margins = this.settings.margins
-		const result = {
-			top: margins.top,
-			right: margins.right,
-			bottom: margins.bottom,
-			left: margins.left,
-			// ヘッダー・フッター余白
-			...(margins.header && { header: margins.header }),
-			...(margins.footer && { footer: margins.footer }),
-			// 装丁余白
-			...(margins.gutter && { gutter: margins.gutter }),
+		const result: any = {
+			top: `${margins.top}mm`,
+			right: `${margins.right}mm`,
+			bottom: `${margins.bottom}mm`,
+			left: `${margins.left}mm`,
+		}
+
+		// ヘッダー・フッター余白
+		if (margins.header) {
+			result.header = `${margins.header}mm`
+		}
+		if (margins.footer) {
+			result.footer = `${margins.footer}mm`
+		}
+		// 装丁余白
+		if (margins.gutter) {
+			result.gutter = `${margins.gutter}mm`
 		}
 
 		console.log('[DEBUG] Margins calculation:', margins, '->', result)

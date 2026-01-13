@@ -2,7 +2,9 @@ import React from 'react'
 import { Dialog } from '../../../shared'
 import { TxtExportButton } from './TxtExportButton'
 import { QrCodeExportButton } from './QrCodeExportButton'
+import { DocxExportButton } from './DocxExportButton'
 import { LayoutConfig } from '../../../../domain/preview/pdf/TextContent'
+import { convertTextToManuscript } from '../../../../domain/text/convertTextToManuscript'
 import styles from './ExportDialog.module.css'
 
 interface ExportDialogProps {
@@ -19,7 +21,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 	previewSettings,
 }) => {
 	// currentSavedTextをManuscript形式に変換
-	//const manuscript = convertTextToManuscript(currentSavedText)
+	const manuscript = convertTextToManuscript(currentSavedText, '原稿')
 
 	return (
 		<Dialog
@@ -55,14 +57,15 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 							</div>
 							<QrCodeExportButton text={currentSavedText} onExport={onClose} />
 						</div>
+
+						<div className={styles.exportOption}>
+							<div>
+								<h4 className={styles.exportTitle}>Word形式 (.docx)</h4>
+								<p className={styles.exportDescription}>A4縦向き、横書きで出力します</p>
+							</div>
+							<DocxExportButton manuscript={manuscript} onExport={onClose} />
+						</div>
 						{/* 
-							<div className={styles.exportOption}>
-								<div>
-									<h4 className={styles.exportTitle}>Word形式 (.docx)</h4>
-									<p className={styles.exportDescription}>Word形式で出力します</p>
-								</div>
-								<DocxExportButton manuscript={manuscript} />
-							</div> 
 							<div className={styles.exportOption}>
 								<div>
 									<h4 className={styles.exportTitle}>PDF形式 (.pdf)</h4>

@@ -56,28 +56,23 @@ export interface DocxExportSettings {
 
 export const DEFAULT_DOCX_SETTINGS: DocxExportSettings = {
 	pageSize: 'A4',
-	orientation: 'landscape', // A4横向き
+	orientation: 'portrait', // A4縦向き
 	margins: {
-		top: 50, // 上余白を50mmに増加（Pages対応）
-		right: 30, // 右余白30mm（Pages対応）
-		bottom: 50, // 下余白を50mmに増加（Pages対応）
-		left: 30, // 左余白30mm（Pages対応）
-		header: 20, // ヘッダー余白20mm（Pages対応）
-		footer: 20, // フッター余白20mm（Pages対応）
+		top: 30, // 上余白30mm
+		right: 25, // 右余白25mm
+		bottom: 30, // 下余白30mm
+		left: 25, // 左余白25mm
+		header: 10, // ヘッダー余白10mm
+		footer: 10, // フッター余白10mm
 		gutter: 0, // 装丁余白0mm
 		mirror: false, // 対向ページ余白なし
 	},
-	verticalWriting: true, // 縦書き有効
+	verticalWriting: false, // 横書き
 	font: {
-		family: 'Yu Mincho', // Pages対応の明朝体
-		size: 16,
+		family: 'Yu Mincho', // 明朝体
+		size: 12, // 12pt
 	},
-	lineSpacing: 1.8, // 縦書き用に行間を調整
-	verticalWritingOptions: {
-		textRotation: 90, // 文字を90度回転（縦書き用）
-		textDirection: 'vertical', // 縦方向のテキスト
-		pageOrientation: 'landscape', // 縦書き用の横向きページ
-	},
+	lineSpacing: 1.5, // 行間1.5倍
 	pageLayout: {
 		columns: 1, // 1段組み
 		columnGap: 10, // 段間隔10mm

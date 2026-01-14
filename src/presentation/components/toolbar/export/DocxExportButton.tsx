@@ -8,9 +8,10 @@ import { Dialog } from '../..'
 
 interface DocxExportButtonProps {
 	manuscript: Manuscript
+	onExport?: () => void
 }
 
-export const DocxExportButton: React.FC<DocxExportButtonProps> = ({ manuscript }) => {
+export const DocxExportButton: React.FC<DocxExportButtonProps> = ({ manuscript, onExport }) => {
 	const [showSettings, setShowSettings] = useState(false)
 	const [exportSettings, setExportSettings] = useState<DocxExportSettings>(DEFAULT_DOCX_SETTINGS)
 	const [fileType, setFileType] = useState<'docx' | 'dotx'>('docx')
@@ -31,11 +32,15 @@ export const DocxExportButton: React.FC<DocxExportButtonProps> = ({ manuscript }
 
 			const exporter = new DocxExporter(exportSettings)
 			await exporter.export(manuscript, fileType)
+			
+			// エクスポート成功時に設定ダイアログを閉じ、親のダイアログも閉じる
+			setShowSettings(false)
+			onExport?.()
 		} catch (error) {
 			console.error('Word export failed:', error)
 			alert('Word出力に失敗しました。')
 		}
-	}, [exportSettings, manuscript, fileType])
+	}, [exportSettings, manuscript, fileType, onExport])
 
 	const handleSettingChange = (key: keyof DocxExportSettings, value: any) => {
 		const newSettings = {

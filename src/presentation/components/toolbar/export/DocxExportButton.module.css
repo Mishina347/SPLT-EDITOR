@@ -16,8 +16,8 @@
 }
 
 .settingsPanel {
-	background: var(--app-bg-color, #ffffff);
-	border: 1px solid var(--app-border-color, #ddd);
+	background: #ffffff; /* エディタのテーマを反映しない */
+	border: 1px solid #ddd; /* エディタのテーマを反映しない */
 	border-radius: 8px;
 	padding: 1.5rem;
 	max-width: 500px;
@@ -29,7 +29,7 @@
 
 .settingsPanel h3 {
 	margin: 0 0 1rem 0;
-	color: var(--app-text-color, #333);
+	color: #333; /* エディタのテーマを反映しない */
 	font-size: 1.2rem;
 	font-weight: 600;
 }
@@ -37,15 +37,15 @@
 .debugInfo {
 	margin-top: 1rem;
 	padding: 1rem;
-	background: var(--app-background-secondary-color, #f5f5f5);
+	background: #f5f5f5; /* エディタのテーマを反映しない */
 	border-radius: 4px;
-	border: 1px solid var(--app-border-color, #e0e0e0);
+	border: 1px solid #e0e0e0; /* エディタのテーマを反映しない */
 }
 
 .debugInfo h4 {
 	margin: 0 0 0.5rem 0;
 	font-size: 0.9rem;
-	color: var(--app-text-color, #333333);
+	color: #333333; /* エディタのテーマを反映しない */
 }
 
 .debugSection {
@@ -55,14 +55,14 @@
 .debugSection h5 {
 	margin: 0 0 0.25rem 0;
 	font-size: 0.8rem;
-	color: var(--app-text-color, #333333);
+	color: #333333; /* エディタのテーマを反映しない */
 	font-weight: 600;
 }
 
 .debugSection p {
 	margin: 0.1rem 0;
 	font-size: 0.8rem;
-	color: var(--app-text-secondary-color, #666666);
+	color: #666666; /* エディタのテーマを反映しない */
 }
 
 .debugInfo pre {
@@ -73,7 +73,7 @@
 	background: white;
 	padding: 0.5rem;
 	border-radius: 4px;
-	border: 1px solid var(--app-border-color, #e0e0e0);
+	border: 1px solid #e0e0e0; /* エディタのテーマを反映しない */
 }
 
 /* 設定パネルのヘッダーとフッター */
@@ -81,14 +81,14 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	border-bottom: 1px solid var(--app-border-color, #e0e0e0);
+	border-bottom: 1px solid #e0e0e0; /* エディタのテーマを反映しない */
 	padding-bottom: 1rem;
 	margin-bottom: 1rem;
 }
 
 .settingsHeader h3 {
 	margin: 0;
-	color: var(--app-text-color, #333333);
+	color: #333333; /* エディタのテーマを反映しない */
 	font-size: 1.2rem;
 	font-weight: 600;
 }
@@ -98,7 +98,7 @@
 	border: none;
 	font-size: 1.5rem;
 	cursor: pointer;
-	color: var(--app-text-secondary-color, #666666);
+	color: #666666; /* エディタのテーマを反映しない */
 	padding: 0;
 	width: 2rem;
 	height: 2rem;
@@ -109,8 +109,8 @@
 }
 
 .closeButton:hover {
-	background: var(--app-background-secondary-color, #f5f5f5);
-	color: var(--app-text-color, #333333);
+	background: #f5f5f5; /* エディタのテーマを反映しない */
+	color: #333333; /* エディタのテーマを反映しない */
 }
 
 .settingsContent {
@@ -124,13 +124,13 @@
 	justify-content: flex-end;
 	align-items: center;
 	gap: 1rem;
-	border-top: 1px solid var(--app-border-color, #e0e0e0);
+	border-top: 1px solid #e0e0e0; /* エディタのテーマを反映しない */
 	padding-top: 1rem;
 	margin-top: 1rem;
 }
 
 .exportButton {
-	background: var(--app-accent-color, #007acc);
+	background: #007acc; /* エディタのテーマを反映しない */
 	color: white;
 	border: none;
 	border-radius: 4px;
@@ -141,15 +141,15 @@
 }
 
 .exportButton:hover {
-	background: var(--app-accent-hover-color, #005a9e);
+	background: #005a9e; /* エディタのテーマを反映しない */
 }
 
 .settingGroup {
 	margin-bottom: 1.5rem;
 	padding: 1rem;
-	background: var(--app-background-secondary-color, #f8f9fa);
+	background: #f8f9fa; /* エディタのテーマを反映しない */
 	border-radius: 8px;
-	border: 1px solid var(--app-border-color, #e0e0e0);
+	border: 1px solid #e0e0e0; /* エディタのテーマを反映しない */
 }
 
 .settingGroup:last-child {
@@ -160,12 +160,12 @@
 	display: block;
 	margin-bottom: 0.5rem;
 	font-weight: 500;
-	color: var(--app-text-color, #555);
+	color: #555; /* エディタのテーマを反映しない */
 }
 
 .sectionLabel {
 	font-weight: 600;
-	color: var(--app-text-color, #333333);
+	color: #333333; /* エディタのテーマを反映しない */
 	margin-bottom: 0.5rem;
 	font-size: 1rem;
 }
@@ -184,7 +184,7 @@
 
 .unit {
 	font-size: 0.8rem;
-	color: var(--app-text-secondary-color, #666666);
+	color: #666666; /* エディタのテーマを反映しない */
 	margin-left: 0.25rem;
 }
 
@@ -195,7 +195,7 @@
 .verticalWritingInfo {
 	margin-top: 0.5rem;
 	padding: 0.5rem;
-	background: var(--app-accent-color, #007acc);
+	background: #007acc; /* エディタのテーマを反映しない */
 	color: white;
 	border-radius: 4px;
 }
@@ -221,17 +221,17 @@
 .settingGroup input[type='number'] {
 	width: 100%;
 	padding: 0.5rem;
-	border: 1px solid var(--app-border-color, #ddd);
+	border: 1px solid #ddd; /* エディタのテーマを反映しない */
 	border-radius: 4px;
-	background: var(--app-bg-color, #ffffff);
-	color: var(--app-text-color, #333);
+	background: #ffffff; /* エディタのテーマを反映しない */
+	color: #333; /* エディタのテーマを反映しない */
 	font-size: 0.9rem;
 }
 
 .settingGroup select:focus,
 .settingGroup input[type='number']:focus {
 	outline: none;
-	border-color: var(--app-accent-color, #007acc);
+	border-color: #007acc; /* エディタのテーマを反映しない */
 	box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
 }
 
@@ -338,7 +338,7 @@
 	gap: 1rem;
 	margin-top: 1.5rem;
 	padding-top: 1rem;
-	border-top: 1px solid var(--app-border-color, #eee);
+	border-top: 1px solid #eee; /* エディタのテーマを反映しない */
 }
 
 .buttonGroup button {
@@ -375,7 +375,7 @@
 	gap: 0.5rem;
 	cursor: pointer;
 	font-size: 0.9rem;
-	color: var(--app-text-color, #333333);
+	color: #333333; /* エディタのテーマを反映しない */
 }
 
 .radioLabel input[type='radio'] {
@@ -386,14 +386,14 @@
 .templateInfo {
 	margin-top: 0.5rem;
 	padding: 0.5rem;
-	background: var(--app-background-secondary-color, #f0f8ff);
+	background: #f0f8ff; /* エディタのテーマを反映しない */
 	border-radius: 4px;
-	border-left: 3px solid var(--app-primary-color, #007acc);
+	border-left: 3px solid #007acc; /* エディタのテーマを反映しない */
 }
 
 .templateInfo .infoText {
 	font-size: 0.8rem;
-	color: var(--app-text-secondary-color, #666666);
+	color: #666666; /* エディタのテーマを反映しない */
 	line-height: 1.4;
 }
 
@@ -408,7 +408,7 @@
 	align-items: center;
 	justify-content: center;
 	padding: 0.25rem 0.5rem;
-	background: var(--app-primary-color, #007acc);
+	background: #007acc; /* エディタのテーマを反映しない */
 	color: white;
 	border: none;
 	border-radius: 4px;
@@ -418,25 +418,25 @@
 }
 
 .templateButton:hover {
-	background: var(--app-primary-hover-color, #005a9e);
+	background: #005a9e; /* エディタのテーマを反映しない */
 }
 
 .templateButton:active {
-	background: var(--app-primary-active-color, #004080);
+	background: #004080; /* エディタのテーマを反映しない */
 }
 
 .debugInfo {
 	margin-top: 1rem;
 	padding: 1rem;
-	background: var(--app-background-secondary-color, #f5f5f5);
+	background: #f5f5f5; /* エディタのテーマを反映しない */
 	border-radius: 4px;
-	border: 1px solid var(--app-border-color, #e0e0e0);
+	border: 1px solid #e0e0e0; /* エディタのテーマを反映しない */
 }
 
 .debugInfo h4 {
 	margin: 0 0 0.5rem 0;
 	font-size: 0.9rem;
-	color: var(--app-text-color, #333333);
+	color: #333333; /* エディタのテーマを反映しない */
 }
 
 .debugSection {
@@ -446,14 +446,14 @@
 .debugSection h5 {
 	margin: 0 0 0.25rem 0;
 	font-size: 0.8rem;
-	color: var(--app-text-color, #333333);
+	color: #333333; /* エディタのテーマを反映しない */
 	font-weight: 600;
 }
 
 .debugSection p {
 	margin: 0.1rem 0;
 	font-size: 0.8rem;
-	color: var(--app-text-secondary-color, #666666);
+	color: #666666; /* エディタのテーマを反映しない */
 }
 
 .debugInfo pre {
@@ -464,5 +464,5 @@
 	background: white;
 	padding: 0.5rem;
 	border-radius: 4px;
-	border: 1px solid var(--app-border-color, #e0e0e0);
+	border: 1px solid #e0e0e0; /* エディタのテーマを反映しない */
 }

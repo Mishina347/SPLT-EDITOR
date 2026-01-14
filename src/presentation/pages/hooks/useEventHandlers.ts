@@ -129,7 +129,7 @@ export const useEventHandlers = ({
 		window.addEventListener('keydown', handleKeyDown)
 
 		return () => window.removeEventListener('keydown', handleKeyDown)
-	}, [])
+	}, [currentNotSavedText, isSaving, forceSave, setCurrentSavedText, saveSnapshot])
 
 	// Tauri: ウィンドウ終了前の保存確認（close-requested）
 	useEffect(() => {

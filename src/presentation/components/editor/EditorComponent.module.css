@@ -19,7 +19,30 @@
 	-webkit-overflow-scrolling: touch;
 }
 
-/* Monaco Editor内では確実にテキスト選択と入力を有効にする */
+/* CodeMirror 6エディタ内では確実にテキスト選択と入力を有効にする */
+.editorBody .codemirror-editor-container,
+.editorBody .codemirror-editor-container .cm-editor,
+.editorBody .codemirror-editor-container .cm-content,
+.editorBody .codemirror-editor-container .cm-scroller,
+.editorBody .codemirror-editor-container .cm-line,
+.editorBody .codemirror-editor-container .cm-editor textarea {
+	user-select: text !important;
+	-webkit-user-select: text !important;
+	-moz-user-select: text !important;
+	-ms-user-select: text !important;
+	/* 長押し選択を確実に有効化 */
+	-webkit-touch-callout: default !important;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
+	touch-action: manipulation !important; /* ピンチズームを有効化 */
+	pointer-events: auto !important;
+	/* IME入力最適化 */
+	-webkit-composition-fill-color: transparent;
+	-webkit-composition-frame-color: transparent;
+	ime-mode: active;
+	will-change: auto; /* GPU加速を避けてIME入力を安定化 */
+}
+
+/* Monaco Editor内では確実にテキスト選択と入力を有効にする（後方互換性のため残す） */
 .editorBody .monaco-editor-container,
 .editorBody .monaco-editor,
 .editorBody .monaco-editor .view-line,
@@ -42,6 +65,15 @@
 }
 
 /* IME入力候補ウィンドウの位置調整 */
+.editorBody .codemirror-editor-container .cm-editor textarea {
+	/* IME入力時のフォントレンダリング最適化 */
+	text-rendering: optimizeSpeed;
+	font-kerning: none;
+	/* レイアウトシフトを防ぐ */
+	contain: layout style;
+}
+
+/* IME入力候補ウィンドウの位置調整（Monaco Editor用、後方互換性のため残す） */
 .editorBody .monaco-editor textarea {
 	/* IME入力時のフォントレンダリング最適化 */
 	text-rendering: optimizeSpeed;
@@ -50,7 +82,19 @@
 	contain: layout style;
 }
 
-/* 長押し選択を確実に有効化 */
+/* 長押し選択を確実に有効化（CodeMirror 6用） */
+.editorBody .codemirror-editor-container .cm-line {
+	/* 長押し選択を有効化 */
+	-webkit-touch-callout: default !important;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
+	/* テキスト選択を確実に有効化 */
+	user-select: text !important;
+	-webkit-user-select: text !important;
+	-moz-user-select: text !important;
+	-ms-user-select: text !important;
+}
+
+/* 長押し選択を確実に有効化（Monaco Editor用、後方互換性のため残す） */
 .editorBody .monaco-editor .view-line {
 	/* 長押し選択を有効化 */
 	-webkit-touch-callout: default !important;
@@ -62,7 +106,15 @@
 	-ms-user-select: text !important;
 }
 
-/* 選択範囲のスタイルを最適化 */
+/* 選択範囲のスタイルを最適化（CodeMirror 6用） */
+.editorBody .codemirror-editor-container .cm-line::selection,
+.editorBody .codemirror-editor-container .cm-line *::selection,
+.editorBody .codemirror-editor-container .cm-content::selection {
+	background-color: rgba(0, 95, 204, 0.3) !important;
+	color: inherit !important;
+}
+
+/* 選択範囲のスタイルを最適化（Monaco Editor用、後方互換性のため残す） */
 .editorBody .monaco-editor .view-line::selection,
 .editorBody .monaco-editor .view-line *::selection {
 	background-color: rgba(0, 95, 204, 0.3) !important;
@@ -162,20 +214,52 @@
 		-webkit-overflow-scrolling: touch;
 	}
 
-	/* Monaco Editorのモバイル最適化 */
+	/* CodeMirror 6エディタのモバイル最適化 */
+	.editorBody .codemirror-editor-container .cm-editor {
+		touch-action: manipulation;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	/* CodeMirror 6のスクロール可能な要素のモバイル最適化 */
+	.editorBody .codemirror-editor-container .cm-scroller {
+		touch-action: manipulation;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	/* Monaco Editorのモバイル最適化（後方互換性のため残す） */
 	.editorBody .monaco-editor {
 		touch-action: manipulation;
 		-webkit-overflow-scrolling: touch;
 	}
 
-	/* スクロール可能な要素のモバイル最適化 */
+	/* スクロール可能な要素のモバイル最適化（Monaco Editor用、後方互換性のため残す） */
 	.editorBody .monaco-editor .monaco-scrollable-element {
 		touch-action: manipulation;
 		-webkit-overflow-scrolling: touch;
 	}
 }
 
-/* タイピング中の再描画抑制最適化 */
+/* タイピング中の再描画抑制最適化（CodeMirror 6用） */
+.editorBody .codemirror-editor-container .cm-content {
+	/* レイヤー合成を最適化 */
+	transform: translateZ(0);
+	/* 描画範囲の最適化 */
+	contain: layout style paint;
+	/* アニメーション無効化 */
+	animation: none !important;
+	transition: none !important;
+}
+
+/* テキスト表示領域の最大幅を制限（wordWrapColumnに合わせる、CodeMirror 6用） */
+.editorBody .codemirror-editor-container .cm-line {
+	/* max-widthはwordWrapColumnの計算値に基づいて動的に設定される */
+	/* ここでは基本的な制限のみ設定 */
+	max-width: 100%;
+	overflow-wrap: break-word;
+	word-wrap: break-word;
+}
+
+/* タイピング中の再描画抑制最適化（Monaco Editor用、後方互換性のため残す） */
 .editorBody .monaco-editor .view-lines {
 	/* レイヤー合成を最適化 */
 	transform: translateZ(0);
@@ -184,6 +268,15 @@
 	/* アニメーション無効化 */
 	animation: none !important;
 	transition: none !important;
+}
+
+/* テキスト表示領域の最大幅を制限（wordWrapColumnに合わせる、Monaco Editor用、後方互換性のため残す） */
+.editorBody .monaco-editor .view-lines .view-line {
+	/* max-widthはwordWrapColumnの計算値に基づいて動的に設定される */
+	/* ここでは基本的な制限のみ設定 */
+	max-width: 100%;
+	overflow-wrap: break-word;
+	word-wrap: break-word;
 }
 
 /* スクリーンリーダー専用テキスト */
@@ -199,7 +292,18 @@
 	border: 0;
 }
 
-/* スクロール時の描画最適化 */
+/* スクロール時の描画最適化（CodeMirror 6用） */
+.editorBody .codemirror-editor-container .cm-scroller {
+	/* スクロール中の再描画を最小化 */
+	contain: layout;
+	/* GPU合成の最適化 */
+	will-change: scroll-position;
+	/* モバイルでのピンチズームを有効化 */
+	touch-action: manipulation;
+	-webkit-overflow-scrolling: touch;
+}
+
+/* スクロール時の描画最適化（Monaco Editor用、後方互換性のため残す） */
 .editorBody .monaco-editor .monaco-scrollable-element {
 	/* スクロール中の再描画を最小化 */
 	contain: layout;

@@ -88,8 +88,9 @@ export function getOptimizedEditorOptions(baseOptions: any) {
 		disableLayerHinting: true, // レイヤーヒンティングを無効化（IME入力での安定性向上）
 		renderValidationDecorations: 'off' as const, // 検証デコレーションを無効化
 		showUnused: false, // 未使用コード表示を無効化
-		wordWrapBreakAfterCharacters: ' \t})]?|&,;', // 改行位置の最適化
-		wordWrapBreakBeforeCharacters: '{([+', // 改行前の文字指定
+		// 禁則処理の設定はbaseOptionsから継承（上書きしない）
+		// wordWrapBreakAfterCharacters: baseOptions.wordWrapBreakAfterCharacters,
+		// wordWrapBreakBeforeCharacters: baseOptions.wordWrapBreakBeforeCharacters,
 		// 検索最適化
 		find: {
 			addExtraSpaceOnTop: false,

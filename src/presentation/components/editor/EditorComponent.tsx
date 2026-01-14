@@ -1,5 +1,5 @@
-import * as monaco from 'monaco-editor'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { EditorView } from '@codemirror/view'
 
 import {
 	useResizeObserver,
@@ -7,10 +7,8 @@ import {
 	usePerformanceMonitor,
 	useViewportSize,
 	useOptimizedLayout,
-	useSelectionCharCount,
 } from '../../hooks'
 import { DEFAULT_SETTING, EditorSettings } from '@/domain'
-import { getOptimizedEditorOptions } from '@/utils/editorOptimization'
 import { calculateScaleWithViewport } from '@/utils/scaleCalculator'
 import { logger } from '@/utils/logger'
 import { ScaleInfo } from '@/types/common'
@@ -18,9 +16,11 @@ import { ScaleInfo } from '@/types/common'
 import styles from './EditorComponent.module.css'
 import buttonStyles from '../../shared/Button/Button.module.css'
 
-import { useCaretAnimation, useIMEFloat, useLineDecorations } from './components'
 import { Counter } from './components/Counter/Counter'
 import { isMobileSize, isPortrait } from '@/utils/deviceDetection'
+import { CodeMirrorEditor } from './CodeMirrorEditor'
+import { triggerCaretAnimation } from './codemirror-extensions/caretAnimationExtension'
+import { useIMEFloatCodeMirror } from './components/IMEFloat.codemirror'
 
 type Props = {
 	textData: string
@@ -54,16 +54,12 @@ export const EditorComponent = ({
 	const performanceMonitor = usePerformanceMonitor('EditorComponent')
 
 	const containerRef = useRef<HTMLDivElement>(null)
-	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
+	const editorRef = useRef<EditorView | null>(null)
 	const wrapperRef = useRef<HTMLDivElement>(null) // エディタ全体のWrapper
 	const isInnerFocusRef = useRef(false) // エディタ内部フォーカス状態
 	const imeCompositionRef = useRef(false) // IME入力中フラグ
 	// IME入力中の未確定文字を保持するref
 	const imeCompositionTextRef = useRef<string>('')
-	// IME開始時のエディタ状態を保存するref
-	const imeStartValueRef = useRef<string>('')
-	const imeStartPositionRef = useRef<monaco.IPosition | null>(null)
-	const imeStartSelectionRef = useRef<monaco.ISelection | null>(null)
 
 	// 倍率計算の状態
 	const [scaleInfo, setScaleInfo] = useState<ScaleInfo>({
@@ -93,25 +89,42 @@ export const EditorComponent = ({
 
 	const cellSize = useMemo(() => fontSize * 1.6, [fontSize])
 
-	// 選択範囲の文字数取得
-	const selectionCounts = useSelectionCharCount(editorRef)
+	// 日本語の禁則文字定義（editorOptionsより前に定義）
+	const kinsokuCharacters = useMemo(() => {
+		// 行頭禁則（行頭に来てはいけない文字）
+		// 句読点、閉じ括弧、長音記号、小文字など
+		const lineHeadProhibited =
+			'。、，．：；！？）］｝」』〉》〕〗〙〛ゝゞヽヾーァィゥェォッャュョヮヵヶぁぃぅぇぉっゃゅょゎゕゖ'
 
-	// 選択範囲の変更を親に通知
-	useEffect(() => {
-		if (onSelectionChange) {
-			logger.debug('EditorComponent', `Selection changed: ${selectionCounts.characterCount} chars`)
-			onSelectionChange(selectionCounts)
+		// 行末禁則（行末に来てはいけない文字）
+		// 開き括弧など
+		const lineEndProhibited = '（［｛「『〈《〔〖〘〙'
+
+		// wordWrapBreakAfterCharacters: これらの文字の後に改行を許可
+		// Monaco Editorの自動折り返し（wordWrapColumn）で使用される
+		// 行頭禁則文字を含めないことで、これらの文字が行頭に来ないようにする
+		// 通常の文字（空白、タブ、英数字、ひらがな、カタカナ、漢字など）の後に改行を許可
+		// ただし、行頭禁則文字の前では改行しない
+		const breakAfter =
+			' \t})]?|&,;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン'
+
+		// wordWrapBreakBeforeCharacters: これらの文字の前に改行を許可
+		// Monaco Editorの自動折り返し（wordWrapColumn）で使用される
+		// 行末禁則文字を含めないことで、これらの文字が行末に来ないようにする
+		// 通常の文字（開き括弧、英数字、ひらがな、カタカナ、漢字など）の前に改行を許可
+		// ただし、行末禁則文字の前では改行しない
+		const breakBefore =
+			'{([+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン'
+
+		return {
+			breakAfter,
+			breakBefore,
+			lineHeadProhibited,
+			lineEndProhibited,
 		}
-	}, [selectionCounts, onSelectionChange])
+	}, [])
 
-	// 分離されたコンポーネントを使用
-	const { triggerCaretAnimation, addCaretAnimationStyles, createRippleEffect } = useCaretAnimation({
-		editorRef,
-		containerRef,
-		fontSize,
-		textColor,
-		enabled: true,
-	})
+	// カーソルアニメーションはCodeMirrorEditorの拡張機能で実装済み
 
 	// 画面の向きとデバイスサイズを検出してIMEフロートの有効/無効を決定
 	const viewportSize = useViewportSize()
@@ -123,7 +136,8 @@ export const EditorComponent = ({
 		return enabled
 	}, [isMobileDevice, isPortraitMode, viewportSize])
 
-	const { createIMEFloat, updateIMEFloatContent, removeIMEFloat } = useIMEFloat({
+	// IMEフロート機能（CodeMirror 6用）
+	const { createIMEFloat, updateIMEFloatContent, removeIMEFloat } = useIMEFloatCodeMirror({
 		containerRef,
 		editorRef,
 		fontSize,
@@ -131,12 +145,6 @@ export const EditorComponent = ({
 		backgroundColor,
 		textColor,
 		enabled: shouldUseIMEFloat,
-	})
-
-	const { addLineDecorations } = useLineDecorations({
-		editorRef,
-		textColor,
-		enabled: true,
 	})
 
 	// 最適化されたレイアウト更新フック
@@ -199,6 +207,22 @@ export const EditorComponent = ({
 		}
 	}, [])
 
+	// CodeMirrorEditorのviewRefを取得するためのコールバック
+	const handleEditorRef = useCallback((view: EditorView | null) => {
+		editorRef.current = view
+		if (view) {
+			// エディタが初期化されたらフォーカスイベントを設定
+			const dom = view.dom
+			const handleFocus = () => {
+				isInnerFocusRef.current = true
+				if (wrapperRef.current) {
+					wrapperRef.current.setAttribute('data-inner-focus', 'true')
+				}
+			}
+			dom.addEventListener('focus', handleFocus, true)
+		}
+	}, [])
+
 	// エディタ外部にフォーカスを戻す関数
 	const focusOutOfEditor = useCallback(() => {
 		if (wrapperRef.current) {
@@ -241,71 +265,42 @@ export const EditorComponent = ({
 		}
 	}, [])
 
-	// Monaco Editorの自動折り返し設定を更新する関数
-	const updateWordWrapColumn = useCallback(() => {
-		if (!editorRef.current) return
-
-		const editor = editorRef.current
-		const currentWordWrapColumn = wordWrapColumn || DEFAULT_SETTING.editor.wordWrapColumn
-
-		if (imeCompositionRef.current) {
-			// IME入力中：wordWrapを無効にして要素の呼び出しを許可
-		} else {
-			// 通常時：ソフトラップ有効 + 日本語禁則処理適用
-			editor.updateOptions({
-				wordWrap: 'wordWrapColumn' as const,
-				wordWrapColumn: currentWordWrapColumn,
-				// 日本語禁則処理：空文字列でデフォルト動作を使用
-				wordWrapBreakAfterCharacters: '',
-				wordWrapBreakBeforeCharacters: '',
-			})
+	// IME入力ハンドラー
+	const handleIMEStart = useCallback(() => {
+		imeCompositionRef.current = true
+		imeCompositionTextRef.current = ''
+		if (shouldUseIMEFloat) {
+			createIMEFloat()
 		}
-	}, [wordWrapColumn])
+	}, [shouldUseIMEFloat, createIMEFloat])
 
-	// エディタの設定オブジェクトをメモ化（最適化版）
-	const editorOptions = useMemo(() => {
-		const baseOptions = {
-			language: 'plaintext' as const,
-			fontSize,
-			wordWrapColumn,
-			fontFamily,
-			wordWrap: 'wordWrapColumn' as const, // 指定文字数で自動折り返し（ソフトラップ）
-			// 日本語文字での厳密な折り返しのため、区切り文字を制限
-			wordWrapBreakAfterCharacters: '',
-			wordWrapBreakBeforeCharacters: '',
-			wordWrapBreakObtrusiveCharacters: '',
-			// IME入力制御
-			accessibilitySupport: 'off' as const, // IME入力の自動制御を無効化
-			renderFinalNewline: 'off' as const,
-			minimap: { enabled: false },
-			tabFocusMode: false, // 外部でフォーカス制御するため無効化
-			tabSize: 1,
-			scrollbar: {
-				vertical: 'hidden' as const,
-				horizontal: 'visible' as const,
-				verticalScrollbarSize: 2,
-				horizontalScrollbarSize: 0,
-			},
-			// 視認性向上の設定
-			lineHeight: fontSize * 1.5, // 行間を広げて読みやすく
-			letterSpacing: 0.5, // 文字間隔を調整
-			cursorWidth: 2, // カーソルを太くして見やすく
-			cursorBlinking: 'smooth' as const, // カーソルの点滅をスムーズに
-			renderWhitespace: 'boundary' as const, // 空白文字を境界のみ表示
-			renderLineHighlight: 'all' as const, // 現在行のハイライトを全体に
-			lineNumbers: 'on' as const, // 行番号を表示
-			lineNumbersMinChars: 3, // 行番号の最小桁数
-			glyphMargin: false, // グリフマージンを無効（シンプルに）
-			folding: false, // 折りたたみ機能を無効（プレーンテキスト用）
-			links: false, // リンク検出を無効
-			colorDecorators: false, // カラーデコレータを無効
-			hideCursorInOverviewRuler: false, // オーバービューでカーソル表示
-			overviewRulerBorder: false, // オーバービューの境界線を無効
-			renderControlCharacters: false, // 制御文字を非表
+	const handleIMEUpdate = useCallback(
+		(text: string) => {
+			imeCompositionTextRef.current = text
+			if (shouldUseIMEFloat) {
+				updateIMEFloatContent(text)
+			}
+		},
+		[shouldUseIMEFloat, updateIMEFloatContent]
+	)
+
+	const handleIMEEnd = useCallback(
+		(text: string) => {
+			imeCompositionRef.current = false
+			imeCompositionTextRef.current = ''
+			if (shouldUseIMEFloat) {
+				removeIMEFloat()
+			}
+		},
+		[shouldUseIMEFloat, removeIMEFloat]
+	)
+
+	// カーソルアニメーションのハンドラー
+	const handleCaretAnimation = useCallback((type: 'pulse' | 'blink', withRipple: boolean) => {
+		if (editorRef.current) {
+			triggerCaretAnimation(editorRef.current, type, withRipple)
 		}
-
-		return getOptimizedEditorOptions(baseOptions)
-	}, [fontSize, wordWrapColumn, fontFamily])
+	}, [])
 
 	// コンテナのスタイルをメモ化
 	const containerStyle = useMemo(
@@ -326,687 +321,48 @@ export const EditorComponent = ({
 
 	// コールバック関数をメモ化（パフォーマンス最適化版）
 	const handleMaximize = useCallback(() => {
-		// 最大化処理を最適化
 		onMaximize()
-
-		// 最適化されたレイアウト更新を使用
-		updateLayout(editorRef.current)
-	}, [onMaximize, updateLayout])
+	}, [onMaximize])
 
 	const handleFocusPane = useCallback(() => {
 		onFocusPane()
+	}, [onFocusPane])
 
-		// 最適化されたレイアウト更新を使用
-		updateLayout(editorRef.current)
-	}, [onFocusPane, updateLayout])
-
-	// 禁則処理用の文字判定関数
-	const applyKinsokuToEditor = useCallback(() => {
-		if (!editorRef.current) return
-
-		const editor = editorRef.current
-
-		// 禁則処理のテスト：まずは空文字列で試す
-		const kinsokuOptions = {
-			// 空文字列でMonaco Editorのデフォルト動作を確認
-			wordWrapBreakAfterCharacters: '',
-			wordWrapBreakBeforeCharacters: '',
-		}
-
-		// エディタの設定を更新
-		editor.updateOptions(kinsokuOptions)
-	}, [])
-
-	// エディタの初期化（設定変更時のみ再作成）
+	// CodeMirrorEditorのフォーカスイベント監視
 	useEffect(() => {
 		if (!containerRef.current) return
 
-		// 既存のエディタがあれば破棄
-		if (editorRef.current) {
-			editorRef.current.dispose()
-			editorRef.current = null
-		}
-
-		// レイアウト更新のクリーンアップ
-		cleanupLayout()
-
-		// カスタムテーマを定義（視認性向上）
-		monaco.editor.defineTheme('custom-theme', {
-			base: 'vs',
-			inherit: true,
-			rules: [],
-			colors: {
-				'editor.background': backgroundColor,
-				'editor.foreground': textColor,
-				// 現在行のハイライト（背景色より少し明るく/暗く）
-				'editor.lineHighlightBackground':
-					backgroundColor === '#ffffff'
-						? '#f8f8f8' // 白背景の場合は薄いグレー
-						: backgroundColor === '#000000'
-							? '#1a1a1a' // 黒背景の場合は薄い黒
-							: `${backgroundColor}20`, // その他の場合は透明度付き
-				// 行番号の色（テキスト色より少し薄く）
-				'editorLineNumber.foreground': textColor + '80', // 50%透明度
-				'editorLineNumber.activeForeground': textColor, // アクティブ行番号は通常色
-				// カーソルの色（テキスト色と同じ）
-				'editorCursor.foreground': textColor,
-				// 選択範囲の背景色
-				'editor.selectionBackground': textColor + '30', // 19%透明度
-				'editor.selectionHighlightBackground': textColor + '20', // 12%透明度
-				// 単語選択時のハイライト
-				'editor.wordHighlightBackground': textColor + '15', // 8%透明度
-				'editor.wordHighlightStrongBackground': textColor + '25', // 15%透明度
-				// 検索時のハイライト
-				'editor.findMatchBackground': textColor + '40', // 25%透明度
-				'editor.findMatchHighlightBackground': textColor + '20', // 12%透明度
-				// インデントガイドの色
-				'editorIndentGuide.background': textColor + '20', // 12%透明度
-				'editorIndentGuide.activeBackground': textColor + '40', // 25%透明度
-				// ホワイトスペース文字の色
-				'editorWhitespace.foreground': textColor + '30', // 19%透明度
-				// IME入力時の未確定文字スタイル
-				'editorSuggestWidget.background': backgroundColor,
-				'editorSuggestWidget.border': textColor + '20',
-				'editorSuggestWidget.foreground': textColor,
-				// 未確定文字の下線色（IME入力時）
-				'editorBracketMatch.background': 'transparent',
-				'editorBracketMatch.border': 'transparent',
-			},
-		})
-
-		const editor = monaco.editor.create(containerRef.current, {
-			...editorOptions,
-			value: textData, // 初期値を設定
-			theme: 'custom-theme',
-			language: 'plaintext', // 言語を明示的に設定
-			// モバイル対応の設定
-			automaticLayout: true, // レイアウトの自動調整
-			quickSuggestions: false, // クイック提案を無効（モバイルで邪魔になる場合）
-			wordBasedSuggestions: 'off', // 正しい型を使用
-			parameterHints: { enabled: false },
-			codeLens: false,
-			contextmenu: false,
-			mouseWheelZoom: true, // マウスホイールズームを有効
-			// モバイルでのピンチズームを有効化
-			fastScrollSensitivity: 5, // 高速スクロール感度を調整
-			// タッチデバイスでの操作を最適化
-			multiCursorModifier: 'alt', // モバイルでのマルチカーソル操作をaltキーに変更
-		})
-		editorRef.current = editor
-
-		// エディタの準備完了を通知
-		logger.debug('EditorComponent', 'Monaco Editor initialized')
-
-		// Monaco Editor内でのTabキー処理を設定
-		editor.addCommand(monaco.KeyCode.Tab, () => {
-			if (isInnerFocusRef.current) {
-				// 内部フォーカス時はTab文字を挿入
-				editor.trigger('keyboard', 'type', { text: '\t' })
-				return true
-			} else {
-				// 外部フォーカス時はTab文字挿入を無効化
-				return false
-			}
-		})
-
-		// Shift+Tab でアウトデント（内部フォーカス時のみ）
-		editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.Tab, () => {
-			if (isInnerFocusRef.current) {
-				editor.trigger('keyboard', 'editor.action.outdentLines', {})
-				return true
-			} else {
-				return false
-			}
-		})
-
-		// フォントファミリーを初期設定で適用
-		setTimeout(() => {
-			const editorContainer = containerRef.current
-			if (editorContainer) {
-				// Monaco Editor全体にフォントファミリーを適用
-				const editorElement = editorContainer.querySelector('.monaco-editor') as HTMLElement
-				if (editorElement) {
-					editorElement.style.fontFamily = fontFamily
-				}
-
-				// テキストエリアにも直接適用
-				const textareas = editorContainer.querySelectorAll('textarea')
-				textareas.forEach(textarea => {
-					;(textarea as HTMLElement).style.fontFamily = fontFamily
-				})
-
-				// view-lineクラスの要素にも適用
-				const viewLines = editorContainer.querySelectorAll('.view-line')
-				viewLines.forEach(line => {
-					;(line as HTMLElement).style.fontFamily = fontFamily
-				})
-			}
-		}, 100) // Monaco Editorの初期化を待つ
-
-		// 現在行のワードラップ制御
-		let currentLineStyle: HTMLStyleElement | null = null
-
-		const updateCurrentLineWrap = () => {
-			const position = editor.getPosition()
-			if (!position) return
-
-			// 既存のスタイルを削除
-			if (currentLineStyle) {
-				currentLineStyle.remove()
-				currentLineStyle = null
-			}
-
-			// 現在行のスタイルを動的に追加
-			currentLineStyle = document.createElement('style')
-			currentLineStyle.textContent = `
-				.monaco-editor .view-line:nth-child(${position.lineNumber}) {
-					white-space: nowrap !important;
-					overflow-x: visible !important;
-				}
-				.monaco-editor .view-line:nth-child(${position.lineNumber}) > span {
-					white-space: nowrap !important;
-				}
-			`
-			document.head.appendChild(currentLineStyle)
-		}
-
-		// クリーンアップ関数
-		const cleanupCurrentLineStyle = () => {
-			if (currentLineStyle) {
-				currentLineStyle.remove()
-				currentLineStyle = null
-			}
-		}
-
-		// onChangeイベントを追加
-		const disposable = editor.onDidChangeModelContent(() => {
-			const currentValue = editor.getValue()
-
-			// IME入力中は状態更新を抑制
-			if (imeCompositionRef.current) {
-				return
-			}
-
-			// 初期値と異なる場合のみonChangeを呼び出し
-			if (currentValue !== textData) {
-				handleChange(currentValue)
-			}
-
-			// ソフトラップ設定を更新
-			updateWordWrapColumn()
-
-			// 行デコレーションを更新
-			setTimeout(() => {
-				addLineDecorations()
-			}, 100)
-		})
-
-		// カーソル位置変更時の制御
-		const cursorDisposable = editor.onDidChangeCursorPosition(() => {
-			// IME入力中はカーソル移動を元の位置に戻す
-			if (imeCompositionRef.current && imeStartPositionRef.current) {
-				const currentPosition = editor.getPosition()
-				const startPosition = imeStartPositionRef.current
-
-				// カーソルが元の位置と異なる場合、元の位置に戻す
-				if (
-					currentPosition &&
-					(currentPosition.lineNumber !== startPosition.lineNumber ||
-						currentPosition.column !== startPosition.column)
-				) {
-					editor.setPosition(startPosition)
-					return
-				}
-			}
-
-			// ソフトラップ設定を更新
-			updateWordWrapColumn()
-		})
-
-		// IMEイベントハンドラーを追加
-		const setupIMEHandlers = () => {
-			const textArea = containerRef.current?.querySelector('textarea')
-			if (textArea) {
-				// IME関連のイベントハンドラー
-				const handleBeforeInput = (e: Event) => {
-					// IME入力中はbeforeinputイベントを無効化
-					if (imeCompositionRef.current) {
-						e.preventDefault()
-						e.stopPropagation()
-						return false
-					}
-				}
-
-				const handleInput = (e: Event) => {
-					// IME入力中はinputイベントを無効化
-					if (imeCompositionRef.current) {
-						e.preventDefault()
-						e.stopPropagation()
-						return false
-					}
-				}
-				const handleCompositionStart = () => {
-					imeCompositionRef.current = true
-					imeCompositionTextRef.current = ''
-
-					if (editorRef.current) {
-						// IME開始時のエディタ状態を保存
-						imeStartValueRef.current = editorRef.current.getValue()
-						imeStartPositionRef.current = editorRef.current.getPosition()
-						imeStartSelectionRef.current = editorRef.current.getSelection()
-					}
-
-					// IME開始時にwordWrapを無効化
-					updateWordWrapColumn()
-
-					// IMEフロートが有効な場合のみ作成
-					if (shouldUseIMEFloat) {
-						createIMEFloat()
-					}
-				}
-
-				const handleCompositionUpdate = (e: CompositionEvent) => {
-					if (imeCompositionRef.current && editorRef.current) {
-						imeCompositionTextRef.current = e.data || ''
-
-						// エディタの内容を元の状態に強制復元（IME入力中は反映させない）
-						const currentValue = editorRef.current.getValue()
-						if (currentValue !== imeStartValueRef.current) {
-							editorRef.current.setValue(imeStartValueRef.current)
-						}
-
-						// カーソル位置を固定
-						if (imeStartPositionRef.current) {
-							editorRef.current.setPosition(imeStartPositionRef.current)
-						}
-
-						// IMEフロートが有効な場合のみ内容更新
-						if (shouldUseIMEFloat) {
-							updateIMEFloatContent(imeCompositionTextRef.current)
-						}
-					}
-				}
-
-				const handleCompositionEnd = (e: CompositionEvent) => {
-					const finalText = e.data || ''
-
-					// IMEフロートが有効な場合のみ削除
-					if (shouldUseIMEFloat) {
-						removeIMEFloat()
-					}
-
-					if (editorRef.current && imeStartPositionRef.current) {
-						// エディタを元の状態に戻す
-						editorRef.current.setValue(imeStartValueRef.current)
-						editorRef.current.setPosition(imeStartPositionRef.current)
-
-						// 確定文字を挿入
-						if (finalText) {
-							const position = imeStartPositionRef.current
-							const model = editorRef.current.getModel()
-
-							if (model) {
-								// 現在の行内容を取得
-								const lineContent = model.getLineContent(position.lineNumber)
-								const beforeCursor = lineContent.substring(0, position.column - 1)
-								const afterCursor = lineContent.substring(position.column - 1)
-
-								// 新しい行内容を作成（確定文字を挿入）
-								const newLineContent = beforeCursor + finalText + afterCursor
-
-								// 行全体を置換
-								const range = {
-									startLineNumber: position.lineNumber,
-									startColumn: 1,
-									endLineNumber: position.lineNumber,
-									endColumn: lineContent.length + 1,
-								}
-
-								editorRef.current.executeEdits('ime-insert', [
-									{
-										range: range,
-										text: newLineContent,
-									},
-								])
-
-								// キャレット位置を確定文字の後に設定
-								setTimeout(() => {
-									if (editorRef.current) {
-										const textLength = finalText.length
-										const newPosition = {
-											lineNumber: position.lineNumber,
-											column: position.column + textLength,
-										}
-
-										// 強制的にキャレット位置を設定
-										editorRef.current.setPosition(newPosition)
-										editorRef.current.revealPosition(newPosition)
-										editorRef.current.focus()
-
-										// キャレット移動アニメーションを実行（波紋なし）
-										setTimeout(() => {
-											triggerCaretAnimation('pulse', false)
-										}, 100)
-									}
-								}, 50)
-							}
-						}
-					}
-
-					// IME状態をリセット
-					imeCompositionRef.current = false
-					imeCompositionTextRef.current = ''
-					imeStartValueRef.current = ''
-					imeStartPositionRef.current = null
-					imeStartSelectionRef.current = null
-
-					// IME入力完了後の処理
-					setTimeout(() => {
-						if (editorRef.current) {
-							// IME終了時にwordWrapを再有効化
-							updateWordWrapColumn()
-							// 状態更新
-							const currentValue = editorRef.current.getValue()
-							if (currentValue !== textData) {
-								handleChange(currentValue)
-							}
-						}
-					}, 100)
-				}
-
-				textArea.addEventListener('beforeinput', handleBeforeInput, true) // キャプチャフェーズで実行
-				textArea.addEventListener('compositionstart', handleCompositionStart)
-				textArea.addEventListener('compositionupdate', handleCompositionUpdate)
-				textArea.addEventListener('compositionend', handleCompositionEnd)
-				textArea.addEventListener('input', handleInput, true) // キャプチャフェーズで実行
-
-				return () => {
-					textArea.removeEventListener('beforeinput', handleBeforeInput, true)
-					textArea.removeEventListener('compositionstart', handleCompositionStart)
-					textArea.removeEventListener('compositionupdate', handleCompositionUpdate)
-					textArea.removeEventListener('compositionend', handleCompositionEnd)
-					textArea.removeEventListener('input', handleInput, true)
-				}
-			}
-			return () => {}
-		}
-
-		// Monaco Editorのフォーカスイベント監視
-		const focusDisposable = editor.onDidFocusEditorText(() => {
+		const handleFocus = () => {
 			isInnerFocusRef.current = true
 			if (wrapperRef.current) {
 				wrapperRef.current.setAttribute('data-inner-focus', 'true')
 			}
-		})
+		}
 
-		const blurDisposable = editor.onDidBlurEditorText(() => {
-			// エディタからフォーカスが外れた時の処理
-			// Tabキーによる移動の場合は、外部フォーカスを維持せずに次の要素へ移動
+		const handleBlur = () => {
 			setTimeout(() => {
 				if (isInnerFocusRef.current && document.activeElement !== wrapperRef.current) {
-					// エディタ外の要素にフォーカスが移った場合は、内部フォーカス状態をリセット
 					isInnerFocusRef.current = false
 					if (wrapperRef.current) {
 						wrapperRef.current.setAttribute('data-inner-focus', 'false')
 					}
 				}
 			}, 0)
-		})
-
-		// IMEハンドラーをセットアップ（少し遅延してDOMの準備を待つ）
-		let imeCleanupFn: (() => void) | null = null
-		const imeTimer = setTimeout(() => {
-			imeCleanupFn = setupIMEHandlers()
-		}, 100)
-
-		// Ctrlキー押下時のキャレットアニメーション
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === 'Control' && !e.repeat) {
-				// キャレットにフォーカスがある場合のみアニメーションを実行
-				if (editorRef.current && document.activeElement?.closest('.monaco-editor')) {
-					triggerCaretAnimation('pulse', true) // 波紋効果も有効
-				}
-			}
 		}
 
-		// グローバルキーイベントリスナーを追加
-		document.addEventListener('keydown', handleKeyDown)
-
-		// エディタのレイアウトを強制的に計算
-		setTimeout(() => {
-			if (editorRef.current) {
-				editorRef.current.layout()
-				// 行デコレーションを追加
-				addLineDecorations()
-				// キャレットアニメーションスタイルを追加
-				addCaretAnimationStyles()
-			}
-		}, 0)
+		const editorElement = containerRef.current.querySelector('.cm-editor')
+		if (editorElement) {
+			editorElement.addEventListener('focus', handleFocus, true)
+			editorElement.addEventListener('blur', handleBlur, true)
+		}
 
 		return () => {
-			disposable.dispose()
-			cursorDisposable.dispose()
-			focusDisposable.dispose()
-			blurDisposable.dispose()
-			cleanupCurrentLineStyle()
-			clearTimeout(imeTimer)
-			if (imeCleanupFn) {
-				imeCleanupFn()
-			}
-
-			// キーイベントリスナーを削除
-			document.removeEventListener('keydown', handleKeyDown)
-
-			// IMEフロート要素をクリーンアップ
-			removeIMEFloat()
-
-			editor.dispose()
-			editorRef.current = null
-		}
-	}, [
-		editorOptions,
-		extended,
-		backgroundColor,
-		textColor,
-		fontFamily,
-		addLineDecorations,
-		addCaretAnimationStyles,
-		triggerCaretAnimation,
-		createRippleEffect,
-		removeIMEFloat,
-	]) // テーマ設定も依存関係に追加
-
-	// fontSize,fontFamily変化時にエディタ更新
-	useEffect(() => {
-		if (!editorRef.current) return
-
-		// IME入力中は更新を抑制
-		if (imeCompositionRef.current) {
-			return
-		}
-
-		// Monaco Editorのオプション更新
-		editorRef.current.updateOptions({
-			fontSize,
-			lineHeight: cellSize,
-		})
-
-		// フォントファミリーをCSSで直接適用
-		const editorContainer = containerRef.current
-		if (editorContainer) {
-			// Monaco Editor全体にフォントファミリーを適用
-			const editorElement = editorContainer.querySelector('.monaco-editor') as HTMLElement
 			if (editorElement) {
-				editorElement.style.fontFamily = fontFamily
-			}
-
-			// テキストエリアにも直接適用
-			const textareas = editorContainer.querySelectorAll('textarea')
-			textareas.forEach(textarea => {
-				;(textarea as HTMLElement).style.fontFamily = fontFamily
-			})
-
-			// view-lineクラスの要素にも適用
-			const viewLines = editorContainer.querySelectorAll('.view-line')
-			viewLines.forEach(line => {
-				;(line as HTMLElement).style.fontFamily = fontFamily
-			})
-		}
-	}, [fontSize, fontFamily, cellSize])
-
-	// wordWrapColumn変更時にエディタの折り返し設定を更新
-	useEffect(() => {
-		if (!editorRef.current) return
-
-		// IME入力中は設定変更を抑制（IME完了後に自動適用される）
-		if (imeCompositionRef.current) {
-			return
-		}
-
-		updateWordWrapColumn()
-	}, [wordWrapColumn, updateWordWrapColumn])
-
-	// ドラッグ状態の変更時にエディタのサイズを調整
-	useEffect(() => {
-		if (!editorRef.current) return
-
-		// IME入力中は更新を抑制
-		if (imeCompositionRef.current) {
-			return
-		}
-
-		// ドラッグ終了後にエディタのサイズを再計算
-		if (!isDragging) {
-			// 少し遅延させてレイアウトの安定化を待つ
-			setTimeout(() => {
-				if (editorRef.current) {
-					editorRef.current.layout()
-				}
-			}, 100)
-		}
-	}, [isDragging])
-
-	// ResizeObserverでコンテナサイズ変更を監視
-	useEffect(() => {
-		if (!containerRef.current) return
-
-		const resizeObserver = new ResizeObserver(entries => {
-			// IME入力中はレイアウト更新を抑制
-			if (imeCompositionRef.current) {
-				return
-			}
-
-			for (const entry of entries) {
-				const { width, height } = entry.contentRect
-
-				if (editorRef.current) {
-					// 明示的にサイズを指定してレイアウト再計算
-					editorRef.current.layout({
-						width: Math.floor(width),
-						height: Math.floor(height),
-					})
-				}
-			}
-		})
-
-		const currentContainer = containerRef.current
-		resizeObserver.observe(currentContainer)
-
-		return () => {
-			resizeObserver.disconnect()
-		}
-	}, [editorOptions, extended, backgroundColor, textColor, fontFamily]) // エディター再作成時に再設定
-
-	// ウィンドウリサイズイベントの監視（フォールバック）
-	useEffect(() => {
-		const handleResize = () => {
-			// IME入力中は更新を抑制
-			if (imeCompositionRef.current) {
-				return
-			}
-
-			if (editorRef.current) {
-				// 少し遅延してDOMの更新を待つ
-				setTimeout(() => {
-					if (editorRef.current) {
-						editorRef.current.layout()
-					}
-				}, 50)
+				editorElement.removeEventListener('focus', handleFocus, true)
+				editorElement.removeEventListener('blur', handleBlur, true)
 			}
 		}
-
-		window.addEventListener('resize', handleResize)
-		return () => window.removeEventListener('resize', handleResize)
-	}, [])
-
-	// value変化時にエディタの内容を更新（カーソル位置保持版）
-	useEffect(() => {
-		if (!editorRef.current) return
-		const currentValue = editorRef.current.getValue()
-
-		// IME入力中は外部更新を抑制
-		if (imeCompositionRef.current) {
-			return
-		}
-		// エディタの内容と異なる場合のみ更新（無限ループを防ぐ）
-		if (currentValue !== textData) {
-			const editor = editorRef.current
-			const model = editor.getModel()
-			if (model) {
-				// カーソル位置を保存
-				const position = editor.getPosition()
-				const selection = editor.getSelection()
-
-				// 少しの差分であれば編集操作を使用（カーソル位置が保持される）
-				const lengthDiff = Math.abs(currentValue.length - textData.length)
-				if (lengthDiff < 100 && position) {
-					// 編集操作でテキストを置換（カーソル位置が自動的に調整される）
-					const range = model.getFullModelRange()
-					editor.executeEdits('external-update', [
-						{
-							range: range,
-							text: textData,
-						},
-					])
-				} else {
-					// 大きな変更の場合は setValue を使用し、位置を復元
-					model.setValue(textData)
-
-					// カーソル位置を復元（位置が有効な範囲内の場合のみ）
-					if (position) {
-						// 次のフレームで実行してレンダリング完了を待つ
-						setTimeout(() => {
-							if (editorRef.current) {
-								const lineCount = model.getLineCount()
-								const maxLine = Math.min(position.lineNumber, lineCount)
-								const lineLength = model.getLineLength(maxLine)
-								const maxColumn = Math.min(position.column, lineLength + 1)
-
-								const newPosition = { lineNumber: maxLine, column: maxColumn }
-								editorRef.current.setPosition(newPosition)
-
-								// 選択範囲も復元（可能な場合）
-								if (selection) {
-									const startLine = Math.min(selection.startLineNumber, lineCount)
-									const endLine = Math.min(selection.endLineNumber, lineCount)
-									const startLineLength = model.getLineLength(startLine)
-									const endLineLength = model.getLineLength(endLine)
-
-									const newSelection = {
-										startLineNumber: startLine,
-										startColumn: Math.min(selection.startColumn, startLineLength + 1),
-										endLineNumber: endLine,
-										endColumn: Math.min(selection.endColumn, endLineLength + 1),
-									}
-									editorRef.current.setSelection(newSelection)
-								}
-							}
-						}, 0)
-					}
-				}
-			}
-		}
-	}, [textData])
+	}, [containerRef.current])
 
 	// エディタwrapperのキーボードハンドラー
 	const handleWrapperKeyDown = useCallback(
@@ -1079,20 +435,34 @@ export const EditorComponent = ({
 				>
 					<div
 						ref={containerRef}
-						className="monaco-editor-container"
+						className="codemirror-editor-container"
 						style={{
 							...containerStyle,
-							touchAction: 'auto', // Monaco Editorのタッチ操作を有効にする
-							userSelect: 'text', // Monaco Editor内でのテキスト選択を明示的に有効
-							WebkitUserSelect: 'text', // Webkit系ブラウザ対応
+							touchAction: 'auto',
+							userSelect: 'text',
+							WebkitUserSelect: 'text',
+							height: '100%',
 						}}
-					/>
+					>
+						<CodeMirrorEditor
+							containerRef={containerRef}
+							value={textData}
+							settings={settings}
+							onChange={handleChange}
+							onSelectionChange={onSelectionChange}
+							onIMEStart={handleIMEStart}
+							onIMEUpdate={handleIMEUpdate}
+							onIMEEnd={handleIMEEnd}
+							onCaretAnimation={handleCaretAnimation}
+							onEditorRef={handleEditorRef}
+						/>
+					</div>
 
 					<div id="editor-instructions" className={styles.instructions}>
 						<p>Enterキーで編集開始 • Escapeキーで編集終了 • Ctrl+Tabでフォーカス移動</p>
 					</div>
 					<div className={styles.counterInfoBar} role="status" aria-live="polite">
-						<Counter text={textData} editorRef={editorRef} />
+						<Counter text={textData} />
 					</div>
 				</div>
 			</main>

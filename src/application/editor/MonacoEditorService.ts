@@ -1,5 +1,5 @@
 import * as monaco from 'monaco-editor'
-import { FontFamily } from '../../domain'
+import { DEFAULT_SETTING, FontFamily } from '../../domain'
 
 export interface MonacoThemeConfig {
 	backgroundColor: string
@@ -41,19 +41,18 @@ export class MonacoEditorService {
 			fontSize,
 			fontFamily,
 			wordWrap: 'wordWrapColumn',
-			wordWrapColumn,
-			rulers: [wordWrapColumn],
+			rulers: [wordWrapColumn || DEFAULT_SETTING.editor.wordWrapColumn],
 			automaticLayout: true,
 			scrollBeyondLastLine: false,
 			minimap: { enabled: false },
 			lineNumbers: 'on',
 			lineNumbersMinChars: 3,
 			glyphMargin: false,
-			folding: false,
+			folding: true,
 			links: false,
 			colorDecorators: false,
 			hideCursorInOverviewRuler: false,
-			overviewRulerBorder: false,
+			overviewRulerBorder: true,
 			renderControlCharacters: false,
 			renderFinalNewline: 'on' as const,
 		}

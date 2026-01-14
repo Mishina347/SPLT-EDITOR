@@ -75,20 +75,35 @@ export class DocxExporter implements DocxExporterRepository {
 
 		manuscript.pages.forEach(pageLines => {
 			pageLines.forEach(line => {
-				const children: TextRun[] = [
-					new TextRun({
-						text: line.text,
-						font: this.getPagesCompatibleFont(this.settings.font.family),
-						size: this.settings.font.size * 2, // ポイントから半ポイントに変換
-					}),
-				]
+				const children: TextRun[] = []
 
 				if (line.ruby) {
+					// ルビが指定されている場合、メインテキストとルビを別々のTextRunとして追加
+					// メインテキスト
 					children.push(
 						new TextRun({
-							text: line.ruby,
+							text: line.text,
 							font: this.getPagesCompatibleFont(this.settings.font.family),
-							size: Math.max(8, this.settings.font.size * 1.2), // ルビサイズ
+							size: this.settings.font.size * 2, // ポイントから半ポイントに変換
+							color: '000000', // テキスト色を黒に設定（エディタのテーマを反映しない）
+						})
+					)
+					// ルビ（小さなフォントサイズで括弧付き）
+					children.push(
+						new TextRun({
+							text: `(${line.ruby})`,
+							font: this.getPagesCompatibleFont(this.settings.font.family),
+							size: Math.max(8, this.settings.font.size * 1.2) * 2, // ルビサイズ（半ポイント単位）
+							color: '000000', // テキスト色を黒に設定（エディタのテーマを反映しない）
+						})
+					)
+				} else {
+					children.push(
+						new TextRun({
+							text: line.text,
+							font: this.getPagesCompatibleFont(this.settings.font.family),
+							size: this.settings.font.size * 2, // ポイントから半ポイントに変換
+							color: '000000', // テキスト色を黒に設定（エディタのテーマを反映しない）
 						})
 					)
 				}
@@ -120,6 +135,7 @@ export class DocxExporter implements DocxExporterRepository {
 							text: `${line.text}(${line.ruby})`,
 							font: this.settings.font.family,
 							size: this.settings.font.size * 2,
+							color: '000000', // テキスト色を黒に設定（エディタのテーマを反映しない）
 						})
 					)
 				} else {
@@ -128,6 +144,7 @@ export class DocxExporter implements DocxExporterRepository {
 							text: line.text || ' ', // 空行の場合はスペース
 							font: this.settings.font.family,
 							size: this.settings.font.size * 2,
+							color: '000000', // テキスト色を黒に設定（エディタのテーマを反映しない）
 						})
 					)
 				}
@@ -165,6 +182,7 @@ export class DocxExporter implements DocxExporterRepository {
 					children: [
 						new TextRun({
 							children: [new PageNumberElement()],
+							color: '000000', // テキスト色を黒に設定（エディタのテーマを反映しない）
 						}),
 					],
 					alignment: AlignmentType.CENTER,
@@ -179,6 +197,7 @@ export class DocxExporter implements DocxExporterRepository {
 							text: this.settings.verticalWriting ? '　' : ' ',
 							font: this.settings.font.family,
 							size: this.settings.font.size * 2,
+							color: '000000', // テキスト色を黒に設定（エディタのテーマを反映しない）
 						}),
 					],
 					alignment: this.settings.verticalWriting ? AlignmentType.RIGHT : AlignmentType.LEFT,
@@ -216,6 +235,7 @@ export class DocxExporter implements DocxExporterRepository {
 					children: [
 						new TextRun({
 							children: [new PageNumberElement()],
+							color: '000000', // テキスト色を黒に設定（エディタのテーマを反映しない）
 						}),
 					],
 					alignment: AlignmentType.CENTER,
@@ -230,6 +250,7 @@ export class DocxExporter implements DocxExporterRepository {
 							text: this.settings.verticalWriting ? '　' : ' ',
 							font: this.settings.font.family,
 							size: this.settings.font.size * 2,
+							color: '000000', // テキスト色を黒に設定（エディタのテーマを反映しない）
 						}),
 					],
 					alignment: this.settings.verticalWriting ? AlignmentType.RIGHT : AlignmentType.LEFT,

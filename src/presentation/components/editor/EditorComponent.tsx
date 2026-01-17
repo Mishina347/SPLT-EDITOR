@@ -131,10 +131,9 @@ export const EditorComponent = ({
 	const isPortraitMode = useMemo(() => isPortrait(), [viewportSize])
 	const isMobileDevice = useMemo(() => isMobileSize(), [viewportSize])
 	const shouldUseIMEFloat = useMemo(() => {
-		// スマホで縦画面の場合はIMEフロートを無効化
-		const enabled = !(isMobileDevice && isPortraitMode)
-		return enabled
-	}, [isMobileDevice, isPortraitMode, viewportSize])
+		// IMEフロートを無効化
+		return false
+	}, [])
 
 	// IMEフロート機能（CodeMirror 6用）
 	const { createIMEFloat, updateIMEFloatContent, removeIMEFloat } = useIMEFloatCodeMirror({
@@ -277,11 +276,10 @@ export const EditorComponent = ({
 	const handleIMEUpdate = useCallback(
 		(text: string) => {
 			imeCompositionTextRef.current = text
-			if (shouldUseIMEFloat) {
-				updateIMEFloatContent(text)
-			}
+			// IMEFloatが存在する場合は常に更新
+			updateIMEFloatContent(text)
 		},
-		[shouldUseIMEFloat, updateIMEFloatContent]
+		[updateIMEFloatContent]
 	)
 
 	const handleIMEEnd = useCallback(

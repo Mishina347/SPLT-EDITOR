@@ -81,7 +81,7 @@ export const useIMEFloatCodeMirror = ({
 
 	const updateIMEFloatContent = useCallback(
 		(text: string) => {
-			if (!enabled || !imeFloatRef.current) return
+			if (!imeFloatRef.current) return
 
 			// フロートの位置は固定（IME入力開始時に設定した位置を維持）
 			// テキストのみを更新する

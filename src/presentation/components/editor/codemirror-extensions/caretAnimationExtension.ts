@@ -118,32 +118,41 @@ export function triggerCaretAnimation(
 
 	// 波紋効果の実行（withRippleフラグがtrueの場合のみ）
 	if (withRipple) {
-		const position = view.state.selection.main.head
-		const coords = view.coordsAtPos(position)
-		if (coords) {
-			// フォントサイズを取得（デフォルト16px）
-			const fontSize = 16
-			const ripple = document.createElement('div')
-			ripple.style.position = 'absolute'
-			ripple.style.margin = 'auto'
-			ripple.style.left = `${coords.left}px`
-			ripple.style.top = `${coords.top}px`
-			ripple.style.width = `${fontSize}px`
-			ripple.style.height = `${fontSize}px`
-			ripple.style.border = `0.5px solid currentColor`
-			ripple.style.borderRadius = '50%'
-			ripple.style.pointerEvents = 'none'
-			ripple.style.zIndex = '1001'
-			ripple.style.backgroundColor = 'transparent'
-			ripple.style.animation = 'rippleWave 0.8s ease-out forwards'
+		const cursorElement = view.dom.querySelector('.cm-cursor') as HTMLElement
+		if (cursorElement) {
+			const cursorRect = cursorElement.getBoundingClientRect()
+			const scrollerElement = view.dom.querySelector('.cm-scroller') as HTMLElement
+			if (scrollerElement) {
+				const scrollerRect = scrollerElement.getBoundingClientRect()
+				
+				// カーソル位置をscroller相対座標に変換
+				const cursorLeft = cursorRect.left - scrollerRect.left + cursorRect.width / 2
+				const cursorTop = cursorRect.top - scrollerRect.top + cursorRect.height / 2
+				
+				// フォントサイズを取得（デフォルト16px）
+				const fontSize = cursorRect.height || 16
+				const ripple = document.createElement('div')
+				ripple.style.position = 'absolute'
+				ripple.style.left = `${cursorLeft}px`
+				ripple.style.top = `${cursorTop}px`
+				ripple.style.width = `${fontSize}px`
+				ripple.style.height = `${fontSize}px`
+				ripple.style.border = `0.5px solid currentColor`
+				ripple.style.borderRadius = '50%'
+				ripple.style.pointerEvents = 'none'
+				ripple.style.zIndex = '1001'
+				ripple.style.backgroundColor = 'transparent'
+				ripple.style.animation = 'rippleWave 0.8s ease-out forwards'
+				ripple.style.transform = 'translate(-50%, -50%)'
 
-			view.dom.appendChild(ripple)
+				scrollerElement.appendChild(ripple)
 
-			setTimeout(() => {
-				if (ripple.parentNode) {
-					ripple.parentNode.removeChild(ripple)
-				}
-			}, 1200)
+				setTimeout(() => {
+					if (ripple.parentNode) {
+						ripple.parentNode.removeChild(ripple)
+					}
+				}, 1200)
+			}
 		}
 	}
 

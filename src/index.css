@@ -98,6 +98,79 @@ dialog:not(.-open) {
 	border: 0 !important;
 }
 
-:focus-visible {
+:focus-visible:not(.cm-editor):not(.cm-focused):not(.cm-gutter):not(.cm-gutters):not(.cm-scroller):not(.cm-content) {
 	outline: -webkit-focus-ring-color auto 2px;
+}
+
+/* CodeMirror 6のフォーカス時のアウトラインを完全に削除 */
+.cm-focused,
+.cm-focused:focus,
+.cm-focused:focus-visible,
+.cm-gutter,
+.cm-gutter:focus,
+.cm-gutter:focus-visible,
+.cm-gutters,
+.cm-gutters:focus,
+.cm-gutters:focus-visible,
+.cm-editor,
+.cm-editor.cm-focused,
+.cm-editor.cm-focused:focus,
+.cm-editor.cm-focused:focus-visible,
+.cm-editor:focus,
+.cm-editor:focus-visible,
+.cm-scroller,
+.cm-scroller:focus,
+.cm-scroller:focus-visible,
+.cm-scroller.cm-focused,
+.cm-content,
+.cm-content:focus,
+.cm-content:focus-visible,
+.cm-content.cm-focused {
+	outline: none !important;
+	outline-style: none !important;
+	outline-width: 0 !important;
+	outline-color: transparent !important;
+	outline-offset: 0 !important;
+	box-shadow: none !important;
+	border: none !important;
+}
+
+/* CodeMirror 6のすべての要素のアウトラインを削除 */
+.cm-editor *,
+.cm-editor *:focus,
+.cm-editor *:focus-visible {
+	outline: none !important;
+	outline-style: none !important;
+	outline-width: 0 !important;
+	outline-color: transparent !important;
+	outline-offset: 0 !important;
+	box-shadow: none !important;
+}
+
+/* CodeMirror 6のガッター要素のアウトラインを削除 */
+.cm-gutter *,
+.cm-gutter *:focus,
+.cm-gutter *:focus-visible,
+.cm-gutters *,
+.cm-gutters *:focus,
+.cm-gutters *:focus-visible {
+	outline: none !important;
+	outline-style: none !important;
+	outline-width: 0 !important;
+	outline-color: transparent !important;
+	outline-offset: 0 !important;
+	box-shadow: none !important;
+}
+
+/* CodeMirror 6のすべてのクラスにアウトライン削除を適用（より包括的） */
+[class*="cm-"]:focus,
+[class*="cm-"]:focus-visible,
+[class^="cm-"]:focus,
+[class^="cm-"]:focus-visible {
+	outline: none !important;
+	outline-style: none !important;
+	outline-width: 0 !important;
+	outline-color: transparent !important;
+	outline-offset: 0 !important;
+	box-shadow: none !important;
 }

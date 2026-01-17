@@ -42,6 +42,14 @@
 	will-change: auto; /* GPU加速を避けてIME入力を安定化 */
 }
 
+/* CodeMirror 6のフォーカス時のアウトラインを削除 */
+.editorBody .codemirror-editor-container .cm-focused,
+.editorBody .codemirror-editor-container .cm-gutter,
+.editorBody .codemirror-editor-container .cm-gutters {
+	outline: none !important;
+	box-shadow: none !important;
+}
+
 /* Monaco Editor内では確実にテキスト選択と入力を有効にする（後方互換性のため残す） */
 .editorBody .monaco-editor-container,
 .editorBody .monaco-editor,
@@ -139,15 +147,13 @@
 
 /* 外部フォーカス状態 */
 .editorWrapper[data-inner-focus='false']:focus {
-	outline: 1px solid var(--app-text-color, #005fcc);
-	outline-offset: 2px;
+	outline: none;
 	background: var(--app-bg-color, rgba(0, 95, 204, 0.05));
 }
 
 /* 内部フォーカス状態 */
 .editorWrapper[data-inner-focus='true'] {
-	outline: 1px solid var(--app-text-color, #007acc);
-	outline-offset: 1px;
+	outline: none;
 }
 
 /* 指示テキスト */

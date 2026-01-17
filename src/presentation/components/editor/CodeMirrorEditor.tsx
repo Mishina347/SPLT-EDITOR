@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import { EditorView } from '@codemirror/view'
 import { EditorState, Compartment } from '@codemirror/state'
 import { basicSetup } from 'codemirror'
@@ -56,6 +56,10 @@ export const CodeMirrorEditor = ({
 
 		const { fontSize, fontFamily, backgroundColor, textColor, wordWrapColumn } = settings
 
+		// wordWrapColumnの値を使って左右パディングを計算
+		const leftPadding = wordWrapColumn || 10
+		const rightPadding = wordWrapColumn || 20
+
 		// テーマ設定
 		const themeExtension = EditorView.theme({
 			'&': {
@@ -65,16 +69,16 @@ export const CodeMirrorEditor = ({
 				fontFamily,
 				height: '100%',
 			},
+			'&.cm-focused': {
+				outline: 'none',
+			},
 			'.cm-content': {
-				padding: '10px 20px 10px 10px', // 右側にマージンを追加
+				padding: `10px ${rightPadding}px 10px ${leftPadding}px`, // wordWrapColumnの値を使用
 				minHeight: '100%',
 				fontSize: `${fontSize}px`,
 				fontFamily,
 				lineHeight: `${fontSize * 1.5}px`,
 				letterSpacing: '0.5px',
-			},
-			'.cm-focused': {
-				outline: 'none',
 			},
 			'.cm-editor': {
 				height: '100%',
@@ -98,6 +102,12 @@ export const CodeMirrorEditor = ({
 			'.cm-gutters': {
 				backgroundColor: backgroundColor,
 				borderRight: 'none',
+				outline: 'none',
+				boxShadow: 'none',
+			},
+			'.cm-gutter': {
+				outline: 'none',
+				boxShadow: 'none',
 			},
 			'.cm-lineNumbers': {
 				minWidth: '3ch',
@@ -109,9 +119,8 @@ export const CodeMirrorEditor = ({
 				fontSize: `${fontSize}px`,
 				backgroundColor: backgroundColor,
 			},
-			'.cm-lineNumbers .cm-activeLineGutter': {
-				color: textColor,
-				backgroundColor: backgroundColor,
+			'.cm-activeLineGutter': {
+				backgroundColor: 'transparent',
 			},
 			'.cm-activeLine': {
 				backgroundColor:
@@ -144,6 +153,16 @@ export const CodeMirrorEditor = ({
 					onCompositionEnd: (text: string) => {
 						imeCompositionRef.current = false
 						onIMEEnd?.(text)
+						// IME確定後のテキスト変更を確実に反映
+						// requestAnimationFrameで次のフレームで実行し、view.dispatchの変更が反映された後にonChangeを呼ぶ
+						requestAnimationFrame(() => {
+							if (viewRef.current) {
+								const newValue = viewRef.current.state.doc.toString()
+								if (newValue !== value) {
+									onChange(newValue)
+								}
+							}
+						})
 					},
 				}),
 				// 行デコレーション
@@ -196,7 +215,11 @@ export const CodeMirrorEditor = ({
 	useEffect(() => {
 		if (!viewRef.current) return
 
-		const { fontSize, fontFamily, backgroundColor, textColor } = settings
+		const { fontSize, fontFamily, backgroundColor, textColor, wordWrapColumn } = settings
+
+		// wordWrapColumnの値を使って左右パディングを計算
+		const leftPadding = wordWrapColumn || 10
+		const rightPadding = wordWrapColumn || 20
 
 		// テーマを更新
 		const themeExtension = EditorView.theme({
@@ -207,8 +230,11 @@ export const CodeMirrorEditor = ({
 				fontFamily,
 				height: '100%',
 			},
+			'&.cm-focused': {
+				outline: 'none',
+			},
 			'.cm-content': {
-				padding: '10px 20px 10px 10px', // 右側にマージンを追加
+				padding: `10px ${rightPadding}px 10px ${leftPadding}px`, // wordWrapColumnの値を使用
 				minHeight: '100%',
 				fontSize: `${fontSize}px`,
 				fontFamily,
@@ -234,6 +260,12 @@ export const CodeMirrorEditor = ({
 			'.cm-gutters': {
 				backgroundColor: backgroundColor,
 				borderRight: 'none',
+				outline: 'none',
+				boxShadow: 'none',
+			},
+			'.cm-gutter': {
+				outline: 'none',
+				boxShadow: 'none',
 			},
 			'.cm-lineNumbers': {
 				minWidth: '3ch',
@@ -245,9 +277,8 @@ export const CodeMirrorEditor = ({
 				fontSize: `${fontSize}px`,
 				backgroundColor: backgroundColor,
 			},
-			'.cm-lineNumbers .cm-activeLineGutter': {
-				color: textColor,
-				backgroundColor: backgroundColor,
+			'.cm-activeLineGutter': {
+				backgroundColor: 'transparent',
 			},
 			'.cm-activeLine': {
 				backgroundColor:
@@ -262,7 +293,13 @@ export const CodeMirrorEditor = ({
 		viewRef.current.dispatch({
 			effects: themeCompartment.current.reconfigure(themeExtension),
 		})
-	}, [settings.backgroundColor, settings.textColor, settings.fontSize, settings.fontFamily])
+	}, [
+		settings.backgroundColor,
+		settings.textColor,
+		settings.fontSize,
+		settings.fontFamily,
+		settings.wordWrapColumn,
+	])
 
 	// 値の変更を反映
 	useEffect(() => {

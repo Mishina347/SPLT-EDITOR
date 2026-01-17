@@ -153,6 +153,16 @@ export const CodeMirrorEditor = ({
 					onCompositionEnd: (text: string) => {
 						imeCompositionRef.current = false
 						onIMEEnd?.(text)
+						// IME確定後のテキスト変更を確実に反映
+						// requestAnimationFrameで次のフレームで実行し、view.dispatchの変更が反映された後にonChangeを呼ぶ
+						requestAnimationFrame(() => {
+							if (viewRef.current) {
+								const newValue = viewRef.current.state.doc.toString()
+								if (newValue !== value) {
+									onChange(newValue)
+								}
+							}
+						})
 					},
 				}),
 				// 行デコレーション

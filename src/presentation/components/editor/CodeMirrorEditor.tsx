@@ -56,6 +56,10 @@ export const CodeMirrorEditor = ({
 
 		const { fontSize, fontFamily, backgroundColor, textColor, wordWrapColumn } = settings
 
+		// wordWrapColumnの値を使って左右パディングを計算
+		const leftPadding = wordWrapColumn || 10
+		const rightPadding = wordWrapColumn || 20
+
 		// テーマ設定
 		const themeExtension = EditorView.theme({
 			'&': {
@@ -66,7 +70,7 @@ export const CodeMirrorEditor = ({
 				height: '100%',
 			},
 			'.cm-content': {
-				padding: '10px 20px 10px 10px', // 右側にマージンを追加
+				padding: `10px ${rightPadding}px 10px ${leftPadding}px`, // wordWrapColumnの値を使用
 				minHeight: '100%',
 				fontSize: `${fontSize}px`,
 				fontFamily,
@@ -196,7 +200,11 @@ export const CodeMirrorEditor = ({
 	useEffect(() => {
 		if (!viewRef.current) return
 
-		const { fontSize, fontFamily, backgroundColor, textColor } = settings
+		const { fontSize, fontFamily, backgroundColor, textColor, wordWrapColumn } = settings
+
+		// wordWrapColumnの値を使って左右パディングを計算
+		const leftPadding = wordWrapColumn || 10
+		const rightPadding = wordWrapColumn || 20
 
 		// テーマを更新
 		const themeExtension = EditorView.theme({
@@ -208,7 +216,7 @@ export const CodeMirrorEditor = ({
 				height: '100%',
 			},
 			'.cm-content': {
-				padding: '10px 20px 10px 10px', // 右側にマージンを追加
+				padding: `10px ${rightPadding}px 10px ${leftPadding}px`, // wordWrapColumnの値を使用
 				minHeight: '100%',
 				fontSize: `${fontSize}px`,
 				fontFamily,
@@ -262,7 +270,13 @@ export const CodeMirrorEditor = ({
 		viewRef.current.dispatch({
 			effects: themeCompartment.current.reconfigure(themeExtension),
 		})
-	}, [settings.backgroundColor, settings.textColor, settings.fontSize, settings.fontFamily])
+	}, [
+		settings.backgroundColor,
+		settings.textColor,
+		settings.fontSize,
+		settings.fontFamily,
+		settings.wordWrapColumn,
+	])
 
 	// 値の変更を反映
 	useEffect(() => {

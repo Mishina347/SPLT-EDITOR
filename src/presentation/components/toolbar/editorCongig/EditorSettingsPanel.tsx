@@ -89,7 +89,7 @@ export const EditorSettingsPanel = React.memo<Props>(
 				/>
 
 				<NumberStepper
-					label="一行あたりの横幅"
+					label="一行あたりの幅"
 					value={settings.wordWrapColumn}
 					onChange={handleWordWrapChange}
 					onFocus={handleFocus}
@@ -97,8 +97,8 @@ export const EditorSettingsPanel = React.memo<Props>(
 					max={EDITOR_CONSTANTS.CHARS_PER_LINE.MAX}
 					step={EDITOR_CONSTANTS.CHARS_PER_LINE.STEP}
 					ariaDescribedBy="word-wrap-help"
-					decrementLabel="一行あたりの横幅を減らす"
-					incrementLabel="一行あたりの横幅を増やす"
+					decrementLabel="一行あたりの幅を減らす"
+					incrementLabel="一行あたりの幅を増やす"
 				/>
 
 				{/* Auto Save設定 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import { EditorView } from '@codemirror/view'
 import { EditorState, Compartment } from '@codemirror/state'
 import { basicSetup } from 'codemirror'
@@ -69,6 +69,9 @@ export const CodeMirrorEditor = ({
 				fontFamily,
 				height: '100%',
 			},
+			'&.cm-focused': {
+				outline: 'none',
+			},
 			'.cm-content': {
 				padding: `10px ${rightPadding}px 10px ${leftPadding}px`, // wordWrapColumnの値を使用
 				minHeight: '100%',
@@ -76,9 +79,6 @@ export const CodeMirrorEditor = ({
 				fontFamily,
 				lineHeight: `${fontSize * 1.5}px`,
 				letterSpacing: '0.5px',
-			},
-			'.cm-focused': {
-				outline: 'none',
 			},
 			'.cm-editor': {
 				height: '100%',
@@ -102,6 +102,12 @@ export const CodeMirrorEditor = ({
 			'.cm-gutters': {
 				backgroundColor: backgroundColor,
 				borderRight: 'none',
+				outline: 'none',
+				boxShadow: 'none',
+			},
+			'.cm-gutter': {
+				outline: 'none',
+				boxShadow: 'none',
 			},
 			'.cm-lineNumbers': {
 				minWidth: '3ch',
@@ -113,9 +119,8 @@ export const CodeMirrorEditor = ({
 				fontSize: `${fontSize}px`,
 				backgroundColor: backgroundColor,
 			},
-			'.cm-lineNumbers .cm-activeLineGutter': {
-				color: textColor,
-				backgroundColor: backgroundColor,
+			'.cm-activeLineGutter': {
+				backgroundColor: 'transparent',
 			},
 			'.cm-activeLine': {
 				backgroundColor:
@@ -215,6 +220,9 @@ export const CodeMirrorEditor = ({
 				fontFamily,
 				height: '100%',
 			},
+			'&.cm-focused': {
+				outline: 'none',
+			},
 			'.cm-content': {
 				padding: `10px ${rightPadding}px 10px ${leftPadding}px`, // wordWrapColumnの値を使用
 				minHeight: '100%',
@@ -242,6 +250,12 @@ export const CodeMirrorEditor = ({
 			'.cm-gutters': {
 				backgroundColor: backgroundColor,
 				borderRight: 'none',
+				outline: 'none',
+				boxShadow: 'none',
+			},
+			'.cm-gutter': {
+				outline: 'none',
+				boxShadow: 'none',
 			},
 			'.cm-lineNumbers': {
 				minWidth: '3ch',
@@ -253,9 +267,8 @@ export const CodeMirrorEditor = ({
 				fontSize: `${fontSize}px`,
 				backgroundColor: backgroundColor,
 			},
-			'.cm-lineNumbers .cm-activeLineGutter': {
-				color: textColor,
-				backgroundColor: backgroundColor,
+			'.cm-activeLineGutter': {
+				backgroundColor: 'transparent',
 			},
 			'.cm-activeLine': {
 				backgroundColor:

@@ -48,7 +48,6 @@ export const CodeMirrorEditor = ({
 	const themeCompartment = useRef(new Compartment())
 	const fontSizeCompartment = useRef(new Compartment())
 	const fontFamilyCompartment = useRef(new Compartment())
-	const imeCompositionRef = useRef(false)
 
 	// エディタの初期化
 	useEffect(() => {
@@ -144,25 +143,13 @@ export const CodeMirrorEditor = ({
 				// IME入力対応
 				imeExtension({
 					onCompositionStart: () => {
-						imeCompositionRef.current = true
 						onIMEStart?.()
 					},
 					onCompositionUpdate: (text: string) => {
 						onIMEUpdate?.(text)
 					},
 					onCompositionEnd: (text: string) => {
-						imeCompositionRef.current = false
 						onIMEEnd?.(text)
-						// IME確定後のテキスト変更を確実に反映
-						// requestAnimationFrameで次のフレームで実行し、view.dispatchの変更が反映された後にonChangeを呼ぶ
-						requestAnimationFrame(() => {
-							if (viewRef.current) {
-								const newValue = viewRef.current.state.doc.toString()
-								if (newValue !== value) {
-									onChange(newValue)
-								}
-							}
-						})
 					},
 				}),
 				// 行デコレーション
@@ -182,9 +169,11 @@ export const CodeMirrorEditor = ({
 				kinsokuExtension(),
 				// コンテンツ変更の監視
 				EditorView.updateListener.of(update => {
-					if (update.docChanged && !imeCompositionRef.current) {
+					if (update.docChanged) {
 						const newValue = update.state.doc.toString()
 						if (newValue !== value) {
+							// IME入力中でもドキュメント変更を反映
+							// IME確定後にも確実に更新されるように、条件を削除
 							onChange(newValue)
 						}
 					}

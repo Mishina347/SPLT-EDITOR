@@ -17,6 +17,7 @@ interface UseFileOperationsParams {
 	setIsInitialized: (initialized: boolean) => void
 	saveSnapshot: (content: string, description: string) => void
 	setCurrentFilePath: (path: string | null) => void
+	clearHistory: () => void
 }
 
 export const useFileOperations = ({
@@ -30,6 +31,7 @@ export const useFileOperations = ({
 	setIsInitialized,
 	saveSnapshot,
 	setCurrentFilePath,
+	clearHistory,
 }: UseFileOperationsParams) => {
 	// 初期ファイル読み込み
 	const initializeApp = useCallback(async () => {
@@ -56,30 +58,37 @@ export const useFileOperations = ({
 		setTimeout(() => {
 			updateText(initialText)
 		}, 100)
-	}, [
-		setInitialText,
-		setCurrentSavedText,
-		setLastSavedText,
-		updateText,
-		setIsInitialized,
-	])
+	}, [setInitialText, setCurrentSavedText, setLastSavedText, updateText, setIsInitialized])
 
 	// ファイル読み込み機能
 	const handleFileLoad = useCallback(
 		(content: string, fileName: string, filePath?: string) => {
+			// 保存履歴をリセット
+			clearHistory()
 			// 読み込んだテキストを初期状態として保存
+			setInitialText(content) // 差分表示の基準テキストを更新
 			setCurrentSavedText(content)
 			setLastSavedText(content)
-			// エディタの内容も更新
-			updateText(content)
+			// エディタの内容も更新（requestAnimationFrameで次のフレームで実行して、更新の競合を防ぐ）
+			requestAnimationFrame(() => {
+				updateText(content)
+			})
 			// ファイルパスを設定
 			// Tauri環境では完全なファイルパス、ブラウザ環境ではファイル名（ファイルハンドルが既に保存されている）
 			setCurrentFilePath(filePath || fileName)
 			console.log('handleFileLoad: File loaded', { fileName, filePath, contentLength: content.length })
-			// 履歴にファイル読み込みを記録
+			// 履歴にファイル読み込みを記録（リセット後の最初のスナップショット）
 			saveSnapshot(content, `ファイル読み込み - ${fileName}`)
 		},
-		[saveSnapshot, updateText, setCurrentSavedText, setLastSavedText, setCurrentFilePath]
+		[
+			saveSnapshot,
+			updateText,
+			setCurrentSavedText,
+			setLastSavedText,
+			setCurrentFilePath,
+			setInitialText,
+			clearHistory,
+		]
 	)
 
 	// テーマ設定を更新

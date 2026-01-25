@@ -1,0 +1,108 @@
+/* 保存ダイアログ用のスタイル */
+.saveDialogContainer {
+	width: 100%;
+	padding: 8px 4px 0 4px;
+}
+
+.saveDialogContent {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.label {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #333;
+	margin-bottom: 0.25rem;
+}
+
+.input {
+	width: 100%;
+	padding: 0.75rem;
+	border: 1px solid #d0d0d0;
+	border-radius: 4px;
+	font-size: 0.875rem;
+	font-family: inherit;
+	transition: border-color 0.2s ease;
+}
+
+.input:focus {
+	outline: none;
+	border-color: #005fcc;
+}
+
+.input:disabled {
+	background-color: #f5f5f5;
+	cursor: not-allowed;
+}
+
+.buttonGroup {
+	display: flex;
+	gap: 0.5rem;
+	justify-content: flex-end;
+	margin-top: 0.5rem;
+}
+
+.buttonPrimary {
+	padding: 0.5rem 1rem;
+	background-color: #005fcc;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	font-size: 0.875rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+}
+
+.buttonPrimary:hover:not(:disabled) {
+	background-color: #004ba3;
+}
+
+.buttonPrimary:disabled {
+	background-color: #ccc;
+	cursor: not-allowed;
+}
+
+.buttonSecondary {
+	padding: 0.5rem 1rem;
+	background-color: white;
+	color: #333;
+	border: 1px solid #d0d0d0;
+	border-radius: 4px;
+	font-size: 0.875rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+}
+
+.buttonSecondary:hover:not(:disabled) {
+	background-color: #f5f5f5;
+}
+
+.buttonSecondary:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+	.saveDialogContent {
+		gap: 0.75rem;
+	}
+
+	.input {
+		padding: 0.625rem;
+		font-size: 0.8rem;
+	}
+
+	.buttonGroup {
+		flex-direction: column;
+	}
+
+	.buttonPrimary,
+	.buttonSecondary {
+		width: 100%;
+	}
+}

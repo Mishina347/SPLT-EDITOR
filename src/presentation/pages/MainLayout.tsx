@@ -11,6 +11,7 @@ import {
 	LayerIcon,
 	Dialog,
 } from '../components'
+import { SaveDialog } from '../components/toolbar/save/SaveDialog'
 import {
 	useCharCount,
 	useTextHistory,
@@ -95,6 +96,10 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	const [isInitialized, setIsInitialized] = useState(false)
 	// 保存確認モーダル用の状態
 	const [showSaveConfirm, setShowSaveConfirm] = useState(false)
+	// ファイルパス管理（nullの場合は未保存）
+	const [currentFilePath, setCurrentFilePath] = useState<string | null>(null)
+	// 保存ダイアログの表示状態
+	const [showSaveDialog, setShowSaveDialog] = useState(false)
 	const pendingActionRef = React.useRef<null | (() => void)>(null)
 	const setPendingAction = (action: (() => void) | null) => {
 		pendingActionRef.current = action
@@ -271,6 +276,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 			updateText,
 			setIsInitialized,
 			saveSnapshot,
+			setCurrentFilePath,
 		})
 
 	// ダイアログ状態管理
@@ -295,10 +301,14 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 		isSaving,
 		forceSave,
 		setCurrentSavedText,
+		setLastSavedText,
 		setIsDraggableMode,
 		setPendingAction,
 		setShowSaveConfirm,
 		saveSnapshot,
+		currentFilePath,
+		setCurrentFilePath,
+		setShowSaveDialog,
 	})
 
 	// アプリ初期化
@@ -735,6 +745,40 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 				currentSavedText={currentSavedText}
 				previewSettings={previewSettings}
 			/>
+
+			{/* ファイル保存ダイアログ */}
+			{!isTauri() && (
+				<SaveDialog
+					isOpen={showSaveDialog}
+					onClose={() => setShowSaveDialog(false)}
+					onSave={async (fileName: string) => {
+						const { saveTextFile, saveToExistingFile } = await import('@/usecases/file/saveTextFile')
+						try {
+							if (currentFilePath) {
+								// 既存のファイルに保存
+								await saveToExistingFile(currentFilePath, currentNotSavedText)
+							} else {
+								// 新しいファイルとして保存（ブラウザ環境）
+								const savedFile = await saveTextFile(currentNotSavedText, fileName)
+								setCurrentFilePath(savedFile.filePath)
+							}
+							// 保存成功時に状態を更新
+							setCurrentSavedText(currentNotSavedText)
+							setLastSavedText(currentNotSavedText)
+							// 履歴に保存操作を記録
+							const displayFileName = currentFilePath
+								? currentFilePath.split(/[/\\]/).pop() || fileName
+								: fileName
+							saveSnapshot(currentNotSavedText, `ファイル保存 - ${displayFileName}`)
+						} catch (error) {
+							if (error instanceof Error && !error.message.includes('キャンセル')) {
+								throw error
+							}
+						}
+					}}
+					currentText={currentNotSavedText}
+				/>
+			)}
 		</div>
 	)
 }

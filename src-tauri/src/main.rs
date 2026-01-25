@@ -4,6 +4,7 @@ use tauri::AppHandle;
 use tauri::Manager;
 use tauri::Emitter;
 use tauri_plugin_dialog::{DialogExt,FilePath};
+use tokio::task;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct EditorSettings {
@@ -85,29 +86,39 @@ fn loadSettings(app: tauri::AppHandle) -> Result<EditorSettings, String> {
 
 
 #[tauri::command]
-fn openTextFile(app: AppHandle) -> Result<(String, String), String> {
-    // ファイル選択ダイアログ
-    let file_path = app
-        .dialog()
-        .file()
-        .add_filter("テキストファイル", &[
-            "txt", "md", "json", "js", "ts", "jsx", "tsx", "html", "css", "xml"
-        ])
-        .add_filter("すべてのファイル", &["*"])
-        .blocking_pick_file(); // 同期版
+async fn openTextFile(app: AppHandle) -> Result<(String, String), String> {
+    // ファイル選択ダイアログを別スレッドで実行してUIをブロックしないようにする
+    let app_clone = app.clone();
+    let file_path_result = task::spawn_blocking(move || {
+        app_clone
+            .dialog()
+            .file()
+            .add_filter("テキストファイル", &[
+                "txt", "md", "json", "js", "ts", "jsx", "tsx", "html", "css", "xml"
+            ])
+            .add_filter("すべてのファイル", &["*"])
+            .blocking_pick_file()
+    })
+    .await
+    .map_err(|e| format!("ファイル選択ダイアログの実行エラー: {}", e))?;
 
-    match file_path {
+    match file_path_result {
         Some(FilePath::Path(path_buf)) => {
-            // ファイル内容を読み込み
-            let contents = fs::read_to_string(&path_buf)
-                .map_err(|e| format!("ファイル読み込みエラー: {}", e))?;
-
-            // ファイル名だけ取り出す
+            // ファイル内容を読み込み（これも別スレッドで実行）
+            let path_clone = path_buf.clone();
             let file_name = path_buf
                 .file_name()
                 .and_then(|os_str| os_str.to_str())
                 .unwrap_or("不明なファイル")
                 .to_string();
+
+            let contents = task::spawn_blocking(move || {
+                fs::read_to_string(&path_clone)
+                    .map_err(|e| format!("ファイル読み込みエラー: {}", e))
+            })
+            .await
+            .map_err(|e| format!("ファイル読み込みの実行エラー: {}", e))?
+            .map_err(|e| e.to_string())?;
 
             Ok((contents, file_name))
         }
@@ -118,14 +129,79 @@ fn openTextFile(app: AppHandle) -> Result<(String, String), String> {
     }
 }
 
+#[tauri::command]
+async fn saveTextFile(app: AppHandle, content: String) -> Result<String, String> {
+    // ファイル保存ダイアログを別スレッドで実行してUIをブロックしないようにする
+    let app_clone = app.clone();
+    let file_path_result = task::spawn_blocking(move || {
+        app_clone
+            .dialog()
+            .file()
+            .set_file_name("untitled.txt")
+            .add_filter("テキストファイル", &[
+                "txt", "md", "json", "js", "ts", "jsx", "tsx", "html", "css", "xml"
+            ])
+            .add_filter("すべてのファイル", &["*"])
+            .blocking_save_file()
+    })
+    .await
+    .map_err(|e| format!("ファイル保存ダイアログの実行エラー: {}", e))?;
+
+    match file_path_result {
+        Some(FilePath::Path(path_buf)) => {
+            // ファイルに書き込み（これも別スレッドで実行）
+            let path_clone = path_buf.clone();
+            let content_clone = content.clone();
+            task::spawn_blocking(move || {
+                fs::write(&path_clone, content_clone)
+                    .map_err(|e| format!("ファイル保存エラー: {}", e))
+            })
+            .await
+            .map_err(|e| format!("ファイル書き込みの実行エラー: {}", e))?
+            .map_err(|e| e.to_string())?;
+
+            // ファイルパスを文字列として返す
+            Ok(path_buf.to_string_lossy().to_string())
+        }
+        Some(FilePath::Url(_url)) => {
+            Err("URL 経由のファイル保存は未対応です".to_string())
+        }
+        None => Err("ファイル保存がキャンセルされました".to_string()),
+    }
+}
+
+#[tauri::command]
+async fn saveToExistingFile(file_path: String, content: String) -> Result<(), String> {
+    // 既存のファイルパスに保存する
+    let path_buf = std::path::PathBuf::from(&file_path);
+    
+    task::spawn_blocking(move || {
+        fs::write(&path_buf, content)
+            .map_err(|e| format!("ファイル保存エラー: {}", e))
+    })
+    .await
+    .map_err(|e| format!("ファイル書き込みの実行エラー: {}", e))?
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 fn main() {
     println!("[Tauri] Starting application...");
     println!("[Tauri] Initializing plugins...");
     
+    // macOSのIMKエラーを抑制（警告レベルのエラーなので無視）
+    #[cfg(target_os = "macos")]
+    {
+        use std::env;
+        // IMK関連のエラーログを抑制
+        env::set_var("RUST_BACKTRACE", "0");
+    }
+    
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![saveSettings, loadSettings, openTextFile])
+        .invoke_handler(tauri::generate_handler![saveSettings, loadSettings, openTextFile, saveTextFile, saveToExistingFile])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 println!("[Tauri] Close requested event received");
@@ -139,13 +215,16 @@ fn main() {
             println!("[Tauri] App info: {:?}", app.package_info());
             
             // アプリ起動時に設定ファイルの初期化を確認
+            // 注意: フロントエンド側で設定を読み込むため、ここではエラーを無視
             let app_handle = app.handle();
             match loadSettings(app_handle.clone()) {
                 Ok(settings) => {
                     println!("[Tauri] Settings loaded successfully: {:?}", settings);
                 }
                 Err(e) => {
-                    println!("[Tauri] Failed to load settings: {}", e);
+                    // 設定ファイルの構造が新しい形式の場合、エラーを無視
+                    // フロントエンド側で正しく読み込まれる
+                    println!("[Tauri] Settings load failed (may be new format): {}", e);
                 }
             }
             

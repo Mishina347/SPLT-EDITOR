@@ -16,6 +16,7 @@ interface UseFileOperationsParams {
 	updateText: (text: string) => void
 	setIsInitialized: (initialized: boolean) => void
 	saveSnapshot: (content: string, description: string) => void
+	setCurrentFilePath: (path: string | null) => void
 }
 
 export const useFileOperations = ({
@@ -28,6 +29,7 @@ export const useFileOperations = ({
 	updateText,
 	setIsInitialized,
 	saveSnapshot,
+	setCurrentFilePath,
 }: UseFileOperationsParams) => {
 	// 初期ファイル読み込み
 	const initializeApp = useCallback(async () => {
@@ -70,10 +72,14 @@ export const useFileOperations = ({
 			setLastSavedText(content)
 			// エディタの内容も更新
 			updateText(content)
+			// ファイルパスを設定（ブラウザ環境ではファイル名をパスとして使用）
+			// 注意: ブラウザ環境では、loadTextFileでファイルハンドルが既に保存されている
+			setCurrentFilePath(fileName)
+			console.log('handleFileLoad: File loaded', { fileName, contentLength: content.length })
 			// 履歴にファイル読み込みを記録
 			saveSnapshot(content, `ファイル読み込み - ${fileName}`)
 		},
-		[saveSnapshot, updateText, setCurrentSavedText, setLastSavedText]
+		[saveSnapshot, updateText, setCurrentSavedText, setLastSavedText, setCurrentFilePath]
 	)
 
 	// テーマ設定を更新

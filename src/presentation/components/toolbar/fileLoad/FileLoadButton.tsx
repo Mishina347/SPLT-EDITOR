@@ -4,7 +4,7 @@ import buttonStyles from '../../../shared/Button/Button.module.css'
 import styles from './FileLoadButton.module.css'
 
 interface FileLoadButtonProps {
-	onFileLoad: (content: string, fileName: string) => void
+	onFileLoad: (content: string, fileName: string, filePath?: string) => void
 	disabled?: boolean
 }
 
@@ -12,7 +12,7 @@ export const FileLoadButton: React.FC<FileLoadButtonProps> = ({ onFileLoad, disa
 	const handleFileLoad = async () => {
 		try {
 			const loadedFile: LoadedFile = await loadTextFile()
-			onFileLoad(loadedFile.content, loadedFile.fileName)
+			onFileLoad(loadedFile.content, loadedFile.fileName, loadedFile.filePath)
 		} catch (error) {
 			console.error('ファイル読み込みエラー:', error)
 			alert(`ファイルの読み込みに失敗しました: ${error}`)

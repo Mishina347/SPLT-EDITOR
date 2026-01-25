@@ -17,7 +17,7 @@ interface ToolbarProps {
 	onEditorSettingChange: (settings: EditorSettings) => void
 	onPreviewSettingChange: (settings: LayoutConfig) => void
 	onToolbarFocusChange: (displayMode: DISPLAY_MODE) => void
-	onFileLoad?: (content: string, fileName: string) => void
+	onFileLoad?: (content: string, fileName: string, filePath?: string) => void
 	onThemeEdit?: () => void
 	onExportOpen?: () => void
 	themeColors?: {
@@ -129,7 +129,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 			// File System Access APIを使用してファイルを読み込む
 			const { loadTextFile } = await import('@/usecases/file/loadTextFile')
 			const loadedFile = await loadTextFile()
-			onFileLoad(loadedFile.content, loadedFile.fileName)
+			onFileLoad(loadedFile.content, loadedFile.fileName, loadedFile.filePath)
 		} catch (error) {
 			// File System Access APIが利用できない場合、またはエラーが発生した場合のフォールバック
 			if (error instanceof Error && error.message.includes('キャンセル')) {

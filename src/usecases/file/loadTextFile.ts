@@ -5,6 +5,7 @@ import { setBrowserFileHandle } from './saveTextFile'
 export interface LoadedFile {
 	content: string
 	fileName: string
+	filePath?: string // Tauri環境では完全なファイルパス、ブラウザ環境では未定義
 }
 
 /**
@@ -22,13 +23,14 @@ export const loadTextFile = async (): Promise<LoadedFile> => {
 			})
 
 			const result = await Promise.race([
-				invoke<[string, string]>('openTextFile'),
+				invoke<[string, string, string]>('openTextFile'),
 				timeoutPromise,
 			])
 
 			return {
 				content: result[0],
 				fileName: result[1],
+				filePath: result[2], // 完全なファイルパス
 			}
 		} catch (error: any) {
 			// キャンセルやタイムアウトのエラーを適切に処理

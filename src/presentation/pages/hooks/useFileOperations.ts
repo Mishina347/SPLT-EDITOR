@@ -66,16 +66,16 @@ export const useFileOperations = ({
 
 	// ファイル読み込み機能
 	const handleFileLoad = useCallback(
-		(content: string, fileName: string) => {
+		(content: string, fileName: string, filePath?: string) => {
 			// 読み込んだテキストを初期状態として保存
 			setCurrentSavedText(content)
 			setLastSavedText(content)
 			// エディタの内容も更新
 			updateText(content)
-			// ファイルパスを設定（ブラウザ環境ではファイル名をパスとして使用）
-			// 注意: ブラウザ環境では、loadTextFileでファイルハンドルが既に保存されている
-			setCurrentFilePath(fileName)
-			console.log('handleFileLoad: File loaded', { fileName, contentLength: content.length })
+			// ファイルパスを設定
+			// Tauri環境では完全なファイルパス、ブラウザ環境ではファイル名（ファイルハンドルが既に保存されている）
+			setCurrentFilePath(filePath || fileName)
+			console.log('handleFileLoad: File loaded', { fileName, filePath, contentLength: content.length })
 			// 履歴にファイル読み込みを記録
 			saveSnapshot(content, `ファイル読み込み - ${fileName}`)
 		},

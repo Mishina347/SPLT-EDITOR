@@ -86,7 +86,7 @@ fn loadSettings(app: tauri::AppHandle) -> Result<EditorSettings, String> {
 
 
 #[tauri::command]
-async fn openTextFile(app: AppHandle) -> Result<(String, String), String> {
+async fn openTextFile(app: AppHandle) -> Result<(String, String, String), String> {
     // ファイル選択ダイアログを別スレッドで実行してUIをブロックしないようにする
     let app_clone = app.clone();
     let file_path_result = task::spawn_blocking(move || {
@@ -111,6 +111,9 @@ async fn openTextFile(app: AppHandle) -> Result<(String, String), String> {
                 .and_then(|os_str| os_str.to_str())
                 .unwrap_or("不明なファイル")
                 .to_string();
+            
+            // ファイルパスを文字列として取得
+            let file_path = path_buf.to_string_lossy().to_string();
 
             let contents = task::spawn_blocking(move || {
                 fs::read_to_string(&path_clone)
@@ -120,7 +123,7 @@ async fn openTextFile(app: AppHandle) -> Result<(String, String), String> {
             .map_err(|e| format!("ファイル読み込みの実行エラー: {}", e))?
             .map_err(|e| e.to_string())?;
 
-            Ok((contents, file_name))
+            Ok((contents, file_name, file_path))
         }
         Some(FilePath::Url(_url)) => {
             Err("URL 経由のファイル選択は未対応です".to_string())

@@ -16,6 +16,7 @@ interface UseFileOperationsParams {
 	updateText: (text: string) => void
 	setIsInitialized: (initialized: boolean) => void
 	saveSnapshot: (content: string, description: string) => void
+	setCurrentFilePath: (path: string | null) => void
 }
 
 export const useFileOperations = ({
@@ -28,6 +29,7 @@ export const useFileOperations = ({
 	updateText,
 	setIsInitialized,
 	saveSnapshot,
+	setCurrentFilePath,
 }: UseFileOperationsParams) => {
 	// 初期ファイル読み込み
 	const initializeApp = useCallback(async () => {
@@ -64,16 +66,20 @@ export const useFileOperations = ({
 
 	// ファイル読み込み機能
 	const handleFileLoad = useCallback(
-		(content: string, fileName: string) => {
+		(content: string, fileName: string, filePath?: string) => {
 			// 読み込んだテキストを初期状態として保存
 			setCurrentSavedText(content)
 			setLastSavedText(content)
 			// エディタの内容も更新
 			updateText(content)
+			// ファイルパスを設定
+			// Tauri環境では完全なファイルパス、ブラウザ環境ではファイル名（ファイルハンドルが既に保存されている）
+			setCurrentFilePath(filePath || fileName)
+			console.log('handleFileLoad: File loaded', { fileName, filePath, contentLength: content.length })
 			// 履歴にファイル読み込みを記録
 			saveSnapshot(content, `ファイル読み込み - ${fileName}`)
 		},
-		[saveSnapshot, updateText, setCurrentSavedText, setLastSavedText]
+		[saveSnapshot, updateText, setCurrentSavedText, setLastSavedText, setCurrentFilePath]
 	)
 
 	// テーマ設定を更新

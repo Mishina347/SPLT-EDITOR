@@ -9,10 +9,14 @@ interface UseEventHandlersParams {
 	isSaving: boolean
 	forceSave: () => Promise<void>
 	setCurrentSavedText: (text: string) => void
+	setLastSavedText: (text: string) => void
 	setIsDraggableMode: (draggable: boolean) => void
 	setPendingAction: (action: (() => void) | null) => void
 	setShowSaveConfirm: (show: boolean) => void
 	saveSnapshot: (content: string, description: string) => void
+	currentFilePath: string | null
+	setCurrentFilePath: (path: string | null) => void
+	setShowSaveDialog: (show: boolean) => void
 }
 
 export const useEventHandlers = ({
@@ -21,10 +25,14 @@ export const useEventHandlers = ({
 	isSaving,
 	forceSave,
 	setCurrentSavedText,
+	setLastSavedText,
 	setIsDraggableMode,
 	setPendingAction,
 	setShowSaveConfirm,
 	saveSnapshot,
+	currentFilePath,
+	setCurrentFilePath,
+	setShowSaveDialog,
 }: UseEventHandlersParams) => {
 	// ブラウザのページ離脱前の保存確認（beforeunload）
 	useEffect(() => {
@@ -95,28 +103,114 @@ export const useEventHandlers = ({
 
 				// 既に保存処理中の場合は何もしない
 				if (isSaving) {
+					logger.info('useEventHandlers', 'Save already in progress, skipping')
 					return
 				}
 
+				// 最新のcurrentNotSavedTextを取得（DOMから直接取得）
+				// エディタの内容を直接取得する方法を検討する必要があるが、
+				// まずは現在のcurrentNotSavedTextを使用
+				const textToSave = currentNotSavedText
+				
+				logger.info('useEventHandlers', 'Manual save triggered', {
+					hasFilePath: !!currentFilePath,
+					contentLength: textToSave.length,
+					textPreview: textToSave.substring(0, 50),
+				})
+
 				try {
-					logger.info('useEventHandlers', 'Manual save triggered with content', currentNotSavedText)
+					// ファイルパスがない場合（初回保存）
+					if (!currentFilePath) {
+						if (isTauri()) {
+							// Tauri環境では直接ファイル保存ダイアログを開く
+							try {
+								logger.info('useEventHandlers', 'Opening save dialog...')
+								const { invoke } = await import('@tauri-apps/api/core')
+								
+								// タイムアウトを設定（30秒）
+								const savePromise = invoke<string>('saveTextFile', {
+									content: textToSave,
+								})
+								
+								const timeoutPromise = new Promise<string>((_, reject) => {
+									setTimeout(() => {
+										reject(new Error('ファイル保存がタイムアウトしました'))
+									}, 30000)
+								})
+								
+								const filePath = await Promise.race([savePromise, timeoutPromise])
+								
+								logger.info('useEventHandlers', 'File saved successfully', { filePath })
+								setCurrentFilePath(filePath)
 
-					// forceSaveを使用してauto saveタイマーをリセット＆即座に保存
-					await forceSave()
+								// forceSaveを使用してauto saveタイマーをリセット
+								await forceSave()
 
-					// 手動保存成功時に状態を更新（空文字でも更新）
-					setCurrentSavedText(currentNotSavedText)
+								// 手動保存成功時に状態を更新
+								setCurrentSavedText(textToSave)
+								setLastSavedText(textToSave)
+
+								// イベントバスで保存完了を通知
+								eventBus.publish(EVENTS.TEXT_SAVED, {
+									timestamp: Date.now(),
+									contentLength: textToSave.length,
+								})
+
+								// 手動保存時のスナップショットを追加
+								const fileName = filePath.split(/[/\\]/).pop() || 'untitled.txt'
+								saveSnapshot(textToSave, `ファイル保存 - ${fileName}`)
+
+								logger.info('useEventHandlers', 'Manual save completed successfully')
+							} catch (error) {
+								logger.error('useEventHandlers', 'Save dialog error', error)
+								// キャンセルされた場合は何もしない
+								if (error instanceof Error && (
+									error.message.includes('キャンセル') ||
+									error.message.includes('canceled') ||
+									error.message.includes('タイムアウト')
+								)) {
+									logger.info('useEventHandlers', 'Save cancelled or timed out')
+									return
+								}
+								// その他のエラーは再スロー
+								throw error
+							}
+						} else {
+							// ブラウザ環境ではSaveDialogを表示
+							setShowSaveDialog(true)
+						}
+						return
+					}
+
+					// 既存のファイルに保存
+					logger.info('useEventHandlers', 'Saving to existing file', {
+						filePath: currentFilePath,
+						contentLength: textToSave.length,
+					})
+					
+					const { saveToExistingFile } = await import('@/usecases/file/saveTextFile')
+					await saveToExistingFile(currentFilePath, textToSave)
+					
+					logger.info('useEventHandlers', 'File saved successfully, updating state')
+
+					// 手動保存成功時に状態を更新（forceSaveは呼ばない - 既存ファイルに保存するため）
+					setCurrentSavedText(textToSave)
+					setLastSavedText(textToSave)
 
 					// イベントバスで保存完了を通知
 					eventBus.publish(EVENTS.TEXT_SAVED, {
 						timestamp: Date.now(),
-						contentLength: currentNotSavedText.length,
+						contentLength: textToSave.length,
 					})
 
-					// 手動保存時のスナップショットを追加（空文字でも記録）
-					saveSnapshot(currentNotSavedText, `手動保存 - ${new Date().toLocaleString('ja-JP')}`)
+					// 手動保存時のスナップショットを追加
+					const fileName = currentFilePath.split(/[/\\]/).pop() || 'untitled.txt'
+					saveSnapshot(textToSave, `ファイル保存 - ${fileName}`)
 
-					logger.info('useEventHandlers', 'Manual save completed successfully')
+					logger.info('useEventHandlers', 'Manual save completed successfully', {
+						filePath: currentFilePath,
+						contentLength: textToSave.length,
+					})
 				} catch (error) {
 					logger.error('useEventHandlers', 'Manual save failed', error)
 					eventBus.publish(EVENTS.ERROR_OCCURRED, {
@@ -129,7 +223,17 @@ export const useEventHandlers = ({
 		window.addEventListener('keydown', handleKeyDown)
 
 		return () => window.removeEventListener('keydown', handleKeyDown)
-	}, [currentNotSavedText, isSaving, forceSave, setCurrentSavedText, saveSnapshot])
+	}, [
+		currentNotSavedText,
+		isSaving,
+		forceSave,
+		setCurrentSavedText,
+		setLastSavedText,
+		saveSnapshot,
+		currentFilePath,
+		setCurrentFilePath,
+		setShowSaveDialog,
+	])
 
 	// Tauri: ウィンドウ終了前の保存確認（close-requested）
 	useEffect(() => {

@@ -17,7 +17,7 @@ interface ToolbarProps {
 	onEditorSettingChange: (settings: EditorSettings) => void
 	onPreviewSettingChange: (settings: LayoutConfig) => void
 	onToolbarFocusChange: (displayMode: DISPLAY_MODE) => void
-	onFileLoad?: (content: string, fileName: string) => void
+	onFileLoad?: (content: string, fileName: string, filePath?: string) => void
 	onThemeEdit?: () => void
 	onExportOpen?: () => void
 	themeColors?: {
@@ -122,42 +122,55 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 		onThemeEdit?.()
 	}, [onThemeEdit])
 
-	const handleFileLoad = useCallback(() => {
+	const handleFileLoad = useCallback(async () => {
 		if (!onFileLoad) return
 
-		// ファイル入力要素を再利用または作成
-		if (!fileInputRef.current) {
-			const fileInput = document.createElement('input')
-			fileInput.type = 'file'
-			fileInput.accept = '.txt,.md,.json'
-			fileInput.style.display = 'none'
-			fileInput.setAttribute('aria-label', 'テキストファイルを選択')
-			fileInput.setAttribute('aria-describedby', 'file-input-help')
-			fileInputRef.current = fileInput
-		}
-
-		const fileInput = fileInputRef.current
-
-		// 前回のイベントリスナーをクリア
-		fileInput.onchange = null
-
-		// ファイル選択時の処理
-		fileInput.onchange = event => {
-			const target = event.target as HTMLInputElement
-			if (target.files && target.files[0]) {
-				const file = target.files[0]
-				const reader = new FileReader()
-				reader.onload = e => {
-					const content = e.target?.result as string
-					onFileLoad(content, file.name)
-				}
-				reader.readAsText(file)
+		try {
+			// File System Access APIを使用してファイルを読み込む
+			const { loadTextFile } = await import('@/usecases/file/loadTextFile')
+			const loadedFile = await loadTextFile()
+			onFileLoad(loadedFile.content, loadedFile.fileName, loadedFile.filePath)
+		} catch (error) {
+			// File System Access APIが利用できない場合、またはエラーが発生した場合のフォールバック
+			if (error instanceof Error && error.message.includes('キャンセル')) {
+				// ユーザーがキャンセルした場合は何もしない
+				return
 			}
-			// 値をリセットして同じファイルを再選択できるようにする
-			fileInput.value = ''
+
+			// フォールバック: 従来のファイル選択ダイアログを使用
+			if (!fileInputRef.current) {
+				const fileInput = document.createElement('input')
+				fileInput.type = 'file'
+				fileInput.accept = '.txt,.md,.json,.js,.ts,.jsx,.tsx,.html,.css,.xml,text/*'
+				fileInput.style.display = 'none'
+				fileInput.setAttribute('aria-label', 'テキストファイルを選択')
+				fileInput.setAttribute('aria-describedby', 'file-input-help')
+				fileInputRef.current = fileInput
+			}
+
+			const fileInput = fileInputRef.current
+
+			// 前回のイベントリスナーをクリア
+			fileInput.onchange = null
+
+			// ファイル選択時の処理
+			fileInput.onchange = event => {
+				const target = event.target as HTMLInputElement
+				if (target.files && target.files[0]) {
+					const file = target.files[0]
+					const reader = new FileReader()
+					reader.onload = e => {
+						const content = e.target?.result as string
+						onFileLoad(content, file.name)
+					}
+					reader.readAsText(file)
+				}
+				// 値をリセットして同じファイルを再選択できるようにする
+				fileInput.value = ''
+			}
+			// ファイル選択ダイアログを開く
+			fileInput.click()
 		}
-		// ファイル選択ダイアログを開く
-		fileInput.click()
 	}, [onFileLoad])
 
 	// インライン関数を最適化

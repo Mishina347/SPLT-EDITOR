@@ -19,6 +19,7 @@ import {
 	DocxExportSettings,
 	DEFAULT_DOCX_SETTINGS,
 } from '../../domain'
+import { isTauri } from '../../utils'
 
 export class DocxExporter implements DocxExporterRepository {
 	constructor(private settings: DocxExportSettings = DEFAULT_DOCX_SETTINGS) {}
@@ -67,7 +68,27 @@ export class DocxExporter implements DocxExporterRepository {
 
 		const blob = await Packer.toBlob(doc)
 		const fileName = `${manuscript.title}.${fileExtension}`
-		saveAs(blob, fileName)
+		
+		if (isTauri()) {
+			// Tauri環境ではTauriコマンドを使用してファイルを保存
+			try {
+				const { invoke } = await import('@tauri-apps/api/core')
+				// BlobをUint8Arrayに変換
+				const arrayBuffer = await blob.arrayBuffer()
+				const uint8Array = new Uint8Array(arrayBuffer)
+				
+				await invoke<string>('saveBinaryFile', {
+					fileName,
+					data: Array.from(uint8Array),
+				})
+			} catch (error) {
+				console.error('DOCX export failed in Tauri:', error)
+				throw new Error(`DOCXファイルの保存に失敗しました: ${error}`)
+			}
+		} else {
+			// ブラウザ環境ではfile-saverを使用
+			saveAs(blob, fileName)
+		}
 	}
 
 	private createVerticalWritingContent(manuscript: Manuscript): Paragraph[] {

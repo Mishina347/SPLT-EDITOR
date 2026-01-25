@@ -5,6 +5,7 @@ import { QrCodeExportButton } from './QrCodeExportButton'
 import { DocxExportButton } from './DocxExportButton'
 import { LayoutConfig } from '../../../../domain/preview/pdf/TextContent'
 import { convertTextToManuscript } from '../../../../domain/text/convertTextToManuscript'
+import { getFileName } from '@/utils/fileUtils'
 import styles from './ExportDialog.module.css'
 
 interface ExportDialogProps {
@@ -12,6 +13,7 @@ interface ExportDialogProps {
 	onClose: () => void
 	currentSavedText: string
 	previewSettings: LayoutConfig
+	currentFilePath?: string | null
 }
 
 export const ExportDialog: React.FC<ExportDialogProps> = ({
@@ -19,9 +21,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 	onClose,
 	currentSavedText,
 	previewSettings,
+	currentFilePath,
 }) => {
-	// currentSavedTextをManuscript形式に変換
-	const manuscript = convertTextToManuscript(currentSavedText, '原稿')
+	// ファイル名を取得（拡張子を除去）
+	const fileName = getFileName(currentFilePath, { removeExtension: true })
+	// currentSavedTextをManuscript形式に変換（ファイル名をタイトルとして使用）
+	const manuscript = convertTextToManuscript(currentSavedText, fileName)
 
 	return (
 		<Dialog
@@ -37,6 +42,29 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 					<section className={styles.exportOptions}>
 						<div className={styles.exportOption}>
 							<div>
+								<h4 className={styles.exportTitle}>Word形式 (.docx)</h4>
+								<p className={styles.exportDescription}>A4縦向き、横書きで出力します</p>
+							</div>
+							<DocxExportButton manuscript={manuscript} onExport={onClose} />
+						</div>
+						<div className={styles.exportOption}>
+							<div>
+								<h4 className={styles.exportTitle}>QRコード</h4>
+								<p className={styles.exportDescription}>テキストをQRコードとして出力します</p>
+							</div>
+							<QrCodeExportButton text={currentSavedText} onExport={onClose} />
+						</div>
+						{/* 
+							<div className={styles.exportOption}>
+								<div>
+									<h4 className={styles.exportTitle}>PDF形式 (.pdf)</h4>
+									<p className={styles.exportDescription}>縦書き対応のPDFで出力します</p>
+								</div>
+								<PdfExportButton manuscript={manuscript} />
+							</div>
+						*/}
+						<div className={styles.exportOption}>
+							<div>
 								<h4 className={styles.exportTitle}>テキスト形式 (.txt)</h4>
 								<p className={styles.exportDescription}>.txtで出力します</p>
 							</div>
@@ -49,31 +77,6 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 								onExport={onClose}
 							/>
 						</div>
-
-						<div className={styles.exportOption}>
-							<div>
-								<h4 className={styles.exportTitle}>QRコード</h4>
-								<p className={styles.exportDescription}>テキストをQRコードとして出力します</p>
-							</div>
-							<QrCodeExportButton text={currentSavedText} onExport={onClose} />
-						</div>
-
-						<div className={styles.exportOption}>
-							<div>
-								<h4 className={styles.exportTitle}>Word形式 (.docx)</h4>
-								<p className={styles.exportDescription}>A4縦向き、横書きで出力します</p>
-							</div>
-							<DocxExportButton manuscript={manuscript} onExport={onClose} />
-						</div>
-						{/* 
-							<div className={styles.exportOption}>
-								<div>
-									<h4 className={styles.exportTitle}>PDF形式 (.pdf)</h4>
-									<p className={styles.exportDescription}>縦書き対応のPDFで出力します</p>
-								</div>
-								<PdfExportButton manuscript={manuscript} />
-							</div>
-						*/}
 					</section>
 				</div>
 			</div>

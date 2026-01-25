@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { DocxExporter } from '@/infra/docx/DocxExporter'
 import { DocxExportSettings, DEFAULT_DOCX_SETTINGS, Manuscript } from '@/domain'
 import { saveAs } from 'file-saver'
+import { isTauri } from '@/utils'
 import buttonStyles from '../../../shared/Button/Button.module.css'
 import styles from './DocxExportButton.module.css'
 import { Dialog } from '../..'
@@ -94,18 +95,34 @@ export const DocxExportButton: React.FC<DocxExportButtonProps> = ({ manuscript, 
 		}))
 	}
 
-	const handleSaveAsTemplate = () => {
+	const handleSaveAsTemplate = async () => {
 		const templateData = {
 			settings: exportSettings,
 			timestamp: new Date().toISOString(),
 			description: `${manuscript.title}用のテンプレート設定`,
 		}
 
-		const blob = new Blob([JSON.stringify(templateData, null, 2)], {
-			type: 'application/json',
-		})
+		const jsonContent = JSON.stringify(templateData, null, 2)
+		const fileName = `${manuscript.title}_template_settings.json`
 
-		saveAs(blob, `${manuscript.title}_template_settings.json`)
+		if (isTauri()) {
+			// Tauri環境ではTauriコマンドを使用してファイルを保存
+			try {
+				const { invoke } = await import('@tauri-apps/api/core')
+				await invoke<string>('saveTextFile', {
+					content: jsonContent,
+				})
+			} catch (error) {
+				console.error('Template save failed in Tauri:', error)
+				alert('テンプレート設定の保存に失敗しました。')
+			}
+		} else {
+			// ブラウザ環境ではfile-saverを使用
+			const blob = new Blob([jsonContent], {
+				type: 'application/json',
+			})
+			saveAs(blob, fileName)
+		}
 	}
 
 	const handleLoadTemplate = (event: React.ChangeEvent<HTMLInputElement>) => {

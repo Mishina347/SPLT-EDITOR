@@ -745,6 +745,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 				onClose={handleCloseExportDialog}
 				currentSavedText={currentSavedText}
 				previewSettings={previewSettings}
+				currentFilePath={currentFilePath}
 			/>
 
 			{/* ファイル保存ダイアログ */}

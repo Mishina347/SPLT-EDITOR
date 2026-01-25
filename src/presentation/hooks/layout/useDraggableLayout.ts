@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 import { DISPLAY_MODE } from '@/domain'
 
-import { formatNumber, UI_CONSTANTS } from '@/utils'
+import { formatNumber, UI_CONSTANTS, getFileName } from '@/utils'
 import { LayoutType } from '../../components/layout/LayoutRenderer'
 import { useViewportSize } from '../common'
 import { logger } from '@/utils/logger'
@@ -112,17 +112,8 @@ export const useDraggableLayout = (
 			const isMaximizedMode = isMaximized || viewMode === DISPLAY_MODE.EDITOR
 			const sizes = isMaximizedMode ? commonSizes.maximized : commonSizes.standard
 
-			// ファイル名を取得（パスからファイル名を抽出、または"untitled"）
-			const getFileName = (): string => {
-				if (currentFilePath) {
-					// パスからファイル名を抽出
-					const fileName = currentFilePath.split(/[/\\]/).pop() || currentFilePath
-					return fileName
-				}
-				return 'untitled'
-			}
-
-			const fileName = getFileName()
+			// ファイル名を取得
+			const fileName = getFileName(currentFilePath)
 			const baseTitle = isMaximizedMode ? `${fileName} (最大化)` : fileName
 
 			// 選択範囲がある場合は選択範囲の文字数も表示

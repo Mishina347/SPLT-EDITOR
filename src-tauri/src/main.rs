@@ -189,6 +189,46 @@ async fn saveToExistingFile(file_path: String, content: String) -> Result<(), St
     Ok(())
 }
 
+#[tauri::command]
+async fn saveBinaryFile(app: AppHandle, file_name: String, data: Vec<u8>) -> Result<String, String> {
+    // ファイル保存ダイアログを別スレッドで実行してUIをブロックしないようにする
+    let app_clone = app.clone();
+    let file_name_clone = file_name.clone();
+    let file_path_result = task::spawn_blocking(move || {
+        app_clone
+            .dialog()
+            .file()
+            .set_file_name(&file_name_clone)
+            .add_filter("Word文書", &["docx", "dotx"])
+            .add_filter("すべてのファイル", &["*"])
+            .blocking_save_file()
+    })
+    .await
+    .map_err(|e| format!("ファイル保存ダイアログの実行エラー: {}", e))?;
+
+    match file_path_result {
+        Some(FilePath::Path(path_buf)) => {
+            // バイナリデータをファイルに書き込み（これも別スレッドで実行）
+            let path_clone = path_buf.clone();
+            let data_clone = data.clone();
+            task::spawn_blocking(move || {
+                fs::write(&path_clone, data_clone)
+                    .map_err(|e| format!("ファイル保存エラー: {}", e))
+            })
+            .await
+            .map_err(|e| format!("ファイル書き込みの実行エラー: {}", e))?
+            .map_err(|e| e.to_string())?;
+
+            // ファイルパスを文字列として返す
+            Ok(path_buf.to_string_lossy().to_string())
+        }
+        Some(FilePath::Url(_url)) => {
+            Err("URL 経由のファイル保存は未対応です".to_string())
+        }
+        None => Err("ファイル保存がキャンセルされました".to_string()),
+    }
+}
+
 fn main() {
     println!("[Tauri] Starting application...");
     println!("[Tauri] Initializing plugins...");
@@ -204,7 +244,7 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![saveSettings, loadSettings, openTextFile, saveTextFile, saveToExistingFile])
+        .invoke_handler(tauri::generate_handler![saveSettings, loadSettings, openTextFile, saveTextFile, saveToExistingFile, saveBinaryFile])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 println!("[Tauri] Close requested event received");

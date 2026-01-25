@@ -296,12 +296,26 @@ export const CodeMirrorEditor = ({
 
 		const currentValue = viewRef.current.state.doc.toString()
 		if (currentValue !== value) {
-			viewRef.current.dispatch({
-				changes: {
-					from: 0,
-					to: viewRef.current.state.doc.length,
-					insert: value,
-				},
+			// 更新が進行中でないことを確認し、requestAnimationFrameで次のフレームで実行
+			// これにより、更新中の重複呼び出しを防ぐ
+			requestAnimationFrame(() => {
+				if (!viewRef.current) return
+				
+				const currentValueInFrame = viewRef.current.state.doc.toString()
+				if (currentValueInFrame !== value) {
+					try {
+						viewRef.current.dispatch({
+							changes: {
+								from: 0,
+								to: viewRef.current.state.doc.length,
+								insert: value,
+							},
+						})
+					} catch (error) {
+						// 更新中のエラーをキャッチしてログに記録
+						logger.error('CodeMirrorEditor', 'Failed to update editor value', error)
+					}
+				}
 			})
 		}
 	}, [value])

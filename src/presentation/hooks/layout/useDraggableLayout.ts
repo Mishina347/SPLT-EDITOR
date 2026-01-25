@@ -44,6 +44,7 @@ interface UseDraggableLayoutOptions {
 		lineCount: number
 		pageCount: number
 	}
+	currentFilePath?: string | null
 }
 
 export const useDraggableLayout = (
@@ -57,7 +58,14 @@ export const useDraggableLayout = (
 		setPreviewPosition,
 		setPreviewSize,
 	}: DraggableLayoutConfig,
-	{ isDraggableMode, viewMode, pageInfo, charCount, selectionCharCount }: UseDraggableLayoutOptions
+	{
+		isDraggableMode,
+		viewMode,
+		pageInfo,
+		charCount,
+		selectionCharCount,
+		currentFilePath,
+	}: UseDraggableLayoutOptions
 ) => {
 	const { width: viewportWidth, height: viewportHeight } = useViewportSize()
 
@@ -103,7 +111,19 @@ export const useDraggableLayout = (
 		(isMaximized = false, zIndex?: number, onFocus?: () => void): ContainerConfig => {
 			const isMaximizedMode = isMaximized || viewMode === DISPLAY_MODE.EDITOR
 			const sizes = isMaximizedMode ? commonSizes.maximized : commonSizes.standard
-			const baseTitle = isMaximizedMode ? 'エディター (最大化)' : 'エディター'
+
+			// ファイル名を取得（パスからファイル名を抽出、または"untitled"）
+			const getFileName = (): string => {
+				if (currentFilePath) {
+					// パスからファイル名を抽出
+					const fileName = currentFilePath.split(/[/\\]/).pop() || currentFilePath
+					return fileName
+				}
+				return 'untitled'
+			}
+
+			const fileName = getFileName()
+			const baseTitle = isMaximizedMode ? `${fileName} (最大化)` : fileName
 
 			// 選択範囲がある場合は選択範囲の文字数も表示
 			let titleWithCharCount = baseTitle
@@ -145,6 +165,7 @@ export const useDraggableLayout = (
 			commonSizes,
 			charCount,
 			selectionCharCount,
+			currentFilePath,
 		]
 	)
 

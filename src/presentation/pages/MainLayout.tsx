@@ -106,7 +106,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 	}
 
 	const { currentNotSavedText, charCount, updateText } = useCharCount()
-	const { history, saveSnapshot } = useTextHistory(20)
+	const { history, saveSnapshot, clearHistory } = useTextHistory(20)
 
 	// 選択範囲の文字数情報
 	const [selectionCharCount, setSelectionCharCount] = useState<
@@ -277,6 +277,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 			setIsInitialized,
 			saveSnapshot,
 			setCurrentFilePath,
+			clearHistory,
 		})
 
 	// ダイアログ状態管理
@@ -450,7 +451,7 @@ export const EditorPage: React.FC<EditorPageProps> = ({ initSettings }) => {
 				}
 			},
 		},
-		{ isDraggableMode, viewMode, charCount, pageInfo, selectionCharCount }
+		{ isDraggableMode, viewMode, charCount, pageInfo, selectionCharCount, currentFilePath }
 	)
 
 	// 共通のハンドラー関数

@@ -6,11 +6,9 @@ import {
 	SectionType,
 	AlignmentType,
 	PageOrientation,
-	TextDirection,
 	Header,
 	Footer,
 	PageNumberElement,
-	PageNumber,
 } from 'docx'
 import { saveAs } from 'file-saver'
 import {

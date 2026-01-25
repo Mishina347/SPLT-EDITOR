@@ -3,17 +3,17 @@ import { PreviewMode } from '@/domain'
 import { TabItem } from '@/presentation/components'
 
 export const usePreviewMode = () => {
-	const [mode, setMode] = useState<PreviewMode>(PreviewMode.VERTICAL)
+	const [mode, setMode] = useState<PreviewMode>(PreviewMode.DIFF)
 	const [isFocusMode, setIsFocusMode] = useState(false)
 
 	// タブ設定
 	const tabs: TabItem[] = useMemo(
 		() => [
-			{
-				id: PreviewMode.VERTICAL,
-				label: 'プレビュー',
-				ariaLabel: 'テキストのプレビュー表示',
-			},
+			// {
+			// 	id: PreviewMode.VERTICAL,
+			// 	label: 'プレビュー',
+			// 	ariaLabel: 'テキストのプレビュー表示',
+			// },
 			{
 				id: PreviewMode.DIFF,
 				label: '差分表示',

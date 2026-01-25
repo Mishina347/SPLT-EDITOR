@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback } from 'react'
 import { DocxExporter } from '@/infra/docx/DocxExporter'
 import { DocxExportSettings, DEFAULT_DOCX_SETTINGS, Manuscript } from '@/domain'
 import { saveAs } from 'file-saver'
